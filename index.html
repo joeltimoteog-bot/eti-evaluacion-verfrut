@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sistema ETI – Evaluación de Conocimiento v4</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root{
   /* ── PALETA AZUL / ROJO / BLANCO ── */
@@ -534,6 +536,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
         <button class="btn bpri bsm" onclick="enviarCorreo()">📤 Enviar Correo</button>
         <button class="btn bout bsm" onclick="copiar()">📋 Copiar</button>
         <button class="btn bout bsm" onclick="exportar()">⬇️ .txt</button>
+        <button class="btn bpri bsm" onclick="exportarPDF()">📄 Exportar PDF</button>
         <button class="btn bpri bsm" onclick="irDash()">Dashboard →</button>
       </div>
     </div>
@@ -1589,7 +1592,209 @@ function descargar(contenido, nombre, tipo){
 function exportar(){
   if(!window._rpt){toast('Sin reporte calculado aún','e');return;}
   descargar(window._rpt, `reporte-eti-${S.fecha||'hoy'}.txt`, 'text/plain');
-  toast('Reporte descargado','s');
+  toast('Reporte .txt descargado','s');
+}
+
+function exportarPDF(){
+  if(!window._res){toast('Sin resultados calculados aún','e');return;}
+  toast('Generando PDF con gráficos...','i');
+  const res=window._res;
+  const pg=(res.resGen*100).toFixed(1), ok=res.resGen>=0.7;
+  const tR=res.tipo==='obrero'?'Obrero Campo':'Empleado Agrario';
+  const palabra=res.tipo==='obrero'?'Rutas':'Áreas';
+  const sup3=SUPERVISORES.find(sv=>sv.nom===res.sup);
+  const esR3=sup3?.reemplazante;
+  const supLabel=esR3?`${res.sup} (Reemplazante — cubre: ${res.sector})`:res.sup;
+
+  // Colores del sistema
+  const AZ='#003087', RJ='#cc0000', VD='#007a3d', BL='#ffffff';
+
+  // Promedios por sección
+  const promSecs=SECS.map((sec,si)=>({
+    nom:sec.nom,
+    pct:res.rutas.reduce((a,r)=>a+(r.secs[si]?.cum||0),0)/res.rutas.length
+  }));
+
+  // Construir HTML del PDF
+  const html=`
+  <div style="font-family:Tahoma,Arial,sans-serif;color:#0a1f5c;width:700px;padding:0;margin:0;">
+
+    <!-- ENCABEZADO -->
+    <div style="background:#003087;padding:24px 28px;border-radius:0;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div style="color:#ff9999;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px;">Sistema ETI · Evaluación de Conocimiento</div>
+          <div style="color:#fff;font-size:22px;font-weight:800;line-height:1.1;">Reporte de Evaluación</div>
+          <div style="color:rgba(255,255,255,.6);font-size:11px;margin-top:4px;">Verfrut / RAPEL SAC · Coordinación de Relaciones Laborales</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="background:${ok?VD:RJ};color:#fff;font-size:28px;font-weight:800;padding:10px 18px;border-radius:8px;">${pg}%</div>
+          <div style="color:${ok?'#aaffcc':'#ffaaaa'};font-size:11px;font-weight:700;margin-top:4px;">${ok?'✓ APROBADO':'✗ REQUIERE REFUERZO'}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DATOS GENERALES -->
+    <div style="background:#f0f4fb;padding:16px 28px;border-bottom:2px solid #dce6f5;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <div><div style="font-size:9px;font-weight:700;color:#3a5a8a;text-transform:uppercase;letter-spacing:.06em;">Fecha</div><div style="font-size:13px;font-weight:700;color:#0a1f5c;margin-top:2px;">${fmtF(res.fecha)}</div></div>
+        <div><div style="font-size:9px;font-weight:700;color:#3a5a8a;text-transform:uppercase;letter-spacing:.06em;">Empresa</div><div style="font-size:13px;font-weight:700;color:#0a1f5c;margin-top:2px;">${res.emp}</div></div>
+        <div><div style="font-size:9px;font-weight:700;color:#3a5a8a;text-transform:uppercase;letter-spacing:.06em;">Sector</div><div style="font-size:13px;font-weight:700;color:#0a1f5c;margin-top:2px;">${res.sector||'—'}</div></div>
+        <div><div style="font-size:9px;font-weight:700;color:#3a5a8a;text-transform:uppercase;letter-spacing:.06em;">Supervisor</div><div style="font-size:12px;font-weight:700;color:#0a1f5c;margin-top:2px;">${supLabel}</div></div>
+        <div><div style="font-size:9px;font-weight:700;color:#3a5a8a;text-transform:uppercase;letter-spacing:.06em;">Tipo Personal</div><div style="font-size:13px;font-weight:700;color:#0a1f5c;margin-top:2px;">${tR}</div></div>
+        <div><div style="font-size:9px;font-weight:700;color:#3a5a8a;text-transform:uppercase;letter-spacing:.06em;">${palabra} Evaluadas</div><div style="font-size:13px;font-weight:700;color:#0a1f5c;margin-top:2px;">${res.rutas.length}</div></div>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div style="padding:16px 28px 0;">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;">
+        <div style="background:#fff;border:1.5px solid ${ok?VD:RJ};border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:9px;font-weight:700;color:#3a5a8a;text-transform:uppercase;">Resultado</div>
+          <div style="font-size:22px;font-weight:800;color:${ok?VD:RJ};">${pg}%</div>
+          <div style="font-size:9px;color:${ok?VD:RJ};font-weight:700;">${ok?'APROBADO':'REFUERZO'}</div>
+        </div>
+        <div style="background:#fff;border:1px solid #dce6f5;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:9px;font-weight:700;color:#3a5a8a;text-transform:uppercase;">${palabra} Aprob.</div>
+          <div style="font-size:22px;font-weight:800;color:${VD};">${res.rutas.filter(r=>r.resGrupo>=0.7).length}</div>
+          <div style="font-size:9px;color:#3a5a8a;">de ${res.rutas.length}</div>
+        </div>
+        <div style="background:#fff;border:1px solid #dce6f5;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:9px;font-weight:700;color:#3a5a8a;text-transform:uppercase;">Refuerzo</div>
+          <div style="font-size:22px;font-weight:800;color:${RJ};">${res.rutas.filter(r=>r.resGrupo<0.7).length}</div>
+          <div style="font-size:9px;color:#3a5a8a;">< 70%</div>
+        </div>
+        <div style="background:#fff;border:1px solid #dce6f5;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:9px;font-weight:700;color:#3a5a8a;text-transform:uppercase;">Evaluados</div>
+          <div style="font-size:22px;font-weight:800;color:#003087;">${res.rutas.reduce((a,r)=>a+r.ne,0)}</div>
+          <div style="font-size:9px;color:#3a5a8a;">personas</div>
+        </div>
+      </div>
+
+      <!-- GRÁFICO BARRAS POR TEMA -->
+      <div style="margin-bottom:20px;">
+        <div style="font-size:12px;font-weight:800;color:#003087;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;padding-bottom:5px;border-bottom:2px solid #cc0000;">Promedio por Tema</div>
+        ${promSecs.map(s=>{
+          const pct=(s.pct*100).toFixed(1);
+          const ok2=s.pct>=0.7;
+          return `<div style="margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+              <span style="font-size:11px;font-weight:700;color:#0a1f5c;">${s.nom}</span>
+              <span style="font-size:12px;font-weight:800;color:${ok2?VD:RJ};">${pct}% ${ok2?'✓':'✗'}</span>
+            </div>
+            <div style="background:#dce6f5;border-radius:20px;height:14px;overflow:hidden;">
+              <div style="width:${Math.min(100,parseFloat(pct))}%;height:100%;background:${ok2?VD:RJ};border-radius:20px;display:flex;align-items:center;padding-left:6px;">
+                ${parseFloat(pct)>15?`<span style="font-size:9px;color:#fff;font-weight:700;">${pct}%</span>`:''}
+              </div>
+            </div>
+          </div>`;
+        }).join('')}
+        <div style="margin-top:6px;font-size:9px;color:#3a5a8a;">Semáforo: VERDE = 70% o más (Aprobado) · ROJO = menos de 70% (Requiere refuerzo)</div>
+      </div>
+
+      <!-- TABLA POR RUTA/ÁREA -->
+      <div style="margin-bottom:20px;">
+        <div style="font-size:12px;font-weight:800;color:#003087;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;padding-bottom:5px;border-bottom:2px solid #cc0000;">Resultado por ${palabra}</div>
+        <table style="width:100%;border-collapse:collapse;font-size:10px;">
+          <thead>
+            <tr style="background:#003087;color:#fff;">
+              <th style="padding:7px 8px;text-align:left;border-radius:4px 0 0 0;">Cód.</th>
+              <th style="padding:7px 8px;text-align:left;">${res.tipo==='obrero'?'Ruta':'Área'}</th>
+              <th style="padding:7px 8px;text-align:center;">Eval.</th>
+              <th style="padding:7px 8px;text-align:center;">Legis.</th>
+              <th style="padding:7px 8px;text-align:center;">Bienest.</th>
+              <th style="padding:7px 8px;text-align:center;">Sustent.</th>
+              <th style="padding:7px 8px;text-align:center;">Ética</th>
+              <th style="padding:7px 8px;text-align:center;">SST</th>
+              <th style="padding:7px 8px;text-align:center;">Medio.</th>
+              <th style="padding:7px 8px;text-align:center;">Resultado</th>
+              <th style="padding:7px 8px;text-align:center;border-radius:0 4px 0 0;">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${res.rutas.map((r,i)=>{
+              const rp=(r.resGrupo*100).toFixed(1), rok=r.resGrupo>=0.7;
+              const bg=i%2===0?'#f8faff':'#fff';
+              return `<tr style="background:${bg};">
+                <td style="padding:6px 8px;font-weight:700;color:#003087;">${r.cod||'—'}</td>
+                <td style="padding:6px 8px;font-weight:700;">${r.nom}</td>
+                <td style="padding:6px 8px;text-align:center;">${r.ne}</td>
+                ${r.secs.map(s=>{
+                  const sp=(s.cum*100).toFixed(0);
+                  return `<td style="padding:6px 8px;text-align:center;color:${s.cum>=0.7?VD:RJ};font-weight:700;">${sp}%</td>`;
+                }).join('')}
+                <td style="padding:6px 8px;text-align:center;font-weight:800;color:${rok?VD:RJ};">${rp}%</td>
+                <td style="padding:6px 8px;text-align:center;">
+                  <span style="background:${rok?'#e0f2e9':'#fde8e8'};color:${rok?VD:RJ};padding:2px 7px;border-radius:10px;font-size:9px;font-weight:700;">${rok?'APROBADO':'REFUERZO'}</span>
+                </td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- GRÁFICO BARRAS POR RUTA -->
+      <div style="margin-bottom:20px;">
+        <div style="font-size:12px;font-weight:800;color:#003087;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;padding-bottom:5px;border-bottom:2px solid #cc0000;">Resultado por ${palabra} (visual)</div>
+        ${res.rutas.map(r=>{
+          const rp=(r.resGrupo*100).toFixed(1), rok=r.resGrupo>=0.7;
+          return `<div style="margin-bottom:7px;display:flex;align-items:center;gap:10px;">
+            <div style="font-size:10px;font-weight:700;color:#0a1f5c;min-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.nom}</div>
+            <div style="flex:1;background:#dce6f5;border-radius:20px;height:18px;overflow:hidden;">
+              <div style="width:${Math.min(100,parseFloat(rp))}%;height:100%;background:${rok?VD:RJ};border-radius:20px;display:flex;align-items:center;padding:0 8px;">
+                <span style="font-size:9px;color:#fff;font-weight:700;">${rp}%</span>
+              </div>
+            </div>
+            <span style="font-size:10px;font-weight:800;color:${rok?VD:RJ};min-width:38px;text-align:right;">${rp}%</span>
+          </div>`;
+        }).join('')}
+        <!-- Línea de meta 70% -->
+        <div style="margin-top:6px;display:flex;align-items:center;gap:8px;font-size:9px;color:#3a5a8a;">
+          <div style="width:20px;height:2px;background:#003087;border-top:2px dashed #003087;"></div>
+          <span>Meta mínima: 70%</span>
+        </div>
+      </div>
+
+      <!-- PIE DEL REPORTE -->
+      <div style="border-top:1px solid #dce6f5;padding-top:12px;margin-top:4px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:9px;color:#3a5a8a;">Sistema ETI · Verfrut / RAPEL SAC</div>
+          <div style="font-size:9px;color:#3a5a8a;">Creado por Joel Timoteo Gonza – Coordinador de Relaciones Laborales</div>
+        </div>
+        <div style="font-size:9px;color:#3a5a8a;text-align:right;">
+          Generado: ${new Date().toLocaleString('es-PE')}
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  // Crear elemento temporal y generar PDF
+  const el = document.createElement('div');
+  el.innerHTML = html;
+  el.style.position = 'absolute';
+  el.style.left = '-9999px';
+  el.style.top = '0';
+  document.body.appendChild(el);
+
+  const nombre = `Reporte-ETI-${res.emp}-${res.sector||'sector'}-${res.fecha||'hoy'}.pdf`
+    .replace(/\s+/g,'-').replace(/[^\w\-\.]/g,'');
+
+  const opciones = {
+    margin:       [8, 8, 8, 8],
+    filename:     nombre,
+    image:        {type:'jpeg', quality:0.97},
+    html2canvas:  {scale:2, useCORS:true, logging:false},
+    jsPDF:        {unit:'mm', format:'a4', orientation:'portrait'}
+  };
+
+  html2pdf().set(opciones).from(el).save().then(()=>{
+    document.body.removeChild(el);
+    toast('PDF exportado correctamente','s');
+  }).catch(err=>{
+    document.body.removeChild(el);
+    toast('Error al generar PDF','e');
+    console.error(err);
+  });
 }
 
 // ══════════════════════════════════════════
@@ -1605,3 +1810,4 @@ document.getElementById('mdate').textContent=new Date().toLocaleDateString('es-P
 </script>
 </body>
 </html>
+
