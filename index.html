@@ -1,0 +1,1607 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema ETI – Evaluación de Conocimiento v4</title>
+<style>
+:root{
+  /* ── PALETA AZUL / ROJO / BLANCO ── */
+  --navy:  #003087;   /* azul oscuro principal */
+  --navy2: #00418f;   /* azul medio header */
+  --navy3: #0052a5;   /* azul secciones */
+  --accent:#cc0000;   /* rojo corporativo */
+  --acdim: #a80000;   /* rojo oscuro hover */
+  --red:   #cc0000;   /* rojo (alertas = mismo rojo) */
+  --green: #007a3d;   /* verde aprobado */
+  --gdim:  #006030;   /* verde oscuro */
+  --surf:  #f0f4fb;   /* fondo azul muy claro */
+  --surf2: #dce6f5;   /* fondo azul claro secundario */
+  --text:  #0a1f5c;   /* texto azul muy oscuro */
+  --text2: #3a5a8a;   /* texto azul medio */
+  --bdr:   #b0c4e0;   /* borde azul claro */
+  --white: #ffffff;
+  --sh:    0 4px 24px rgba(0,48,135,.12);
+  --shlg:  0 12px 48px rgba(0,48,135,.20);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+/* ── TAHOMA como fuente base en todo el sistema ── */
+body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);color:var(--text);min-height:100vh;overflow-x:hidden;}
+.screen{display:none;min-height:100vh;flex-direction:column;}
+.screen.active{display:flex;}
+
+/* HEADER */
+.hdr{background:var(--navy);padding:0 1.5rem;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 14px rgba(0,0,0,.3);}
+.logo{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-size:1.05rem;font-weight:800;color:#fff;letter-spacing:.07em;}
+.logo span{color:#ff4444;}
+.hbadge{font-size:.68rem;background:var(--accent);color:#fff;font-weight:700;padding:2px 9px;border-radius:20px;}
+
+/* STEPPER */
+.stbar{background:var(--navy2);padding:.65rem 1.5rem;display:flex;align-items:center;gap:.4rem;overflow-x:auto;flex-shrink:0;}
+.si{display:flex;align-items:center;gap:.3rem;white-space:nowrap;}
+.sd{width:23px;height:23px;border-radius:50%;background:rgba(255,255,255,.1);color:rgba(255,255,255,.3);font-size:.68rem;font-weight:800;display:flex;align-items:center;justify-content:center;font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;flex-shrink:0;}
+.sd.done{background:var(--gdim);color:#fff;}
+.sd.active{background:var(--accent);color:#fff;}
+.sl{font-size:.72rem;color:rgba(255,255,255,.28);font-weight:500;}
+.sl.active{color:#ffaaaa;font-weight:700;}
+.sl.done{color:rgba(255,255,255,.48);}
+.ssep{color:rgba(255,255,255,.13);font-size:.85rem;flex-shrink:0;}
+
+/* MENÚ */
+#sm{background:var(--navy);}
+.mhero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 2rem;text-align:center;position:relative;overflow:hidden;}
+.mhero::before{content:'';position:absolute;width:600px;height:600px;background:radial-gradient(circle,rgba(0,48,135,.07) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;}
+.mey{font-size:.72rem;font-weight:500;letter-spacing:.2em;color:#ff8888;text-transform:uppercase;margin-bottom:1rem;}
+.mt{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-size:clamp(1.9rem,5vw,3rem);font-weight:800;color:#fff;line-height:1.1;margin-bottom:.7rem;}
+.mt span{color:#ff6666;}
+.ms{color:rgba(255,255,255,.42);font-size:.9rem;margin-bottom:2.5rem;max-width:400px;}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:.85rem;width:100%;max-width:820px;}
+.mc{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:1.7rem 1.3rem;cursor:pointer;transition:all .22s;text-align:left;position:relative;overflow:hidden;}
+.mc::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,48,135,.08),transparent);opacity:0;transition:opacity .22s;}
+.mc:hover{transform:translateY(-3px);border-color:rgba(0,48,135,.28);}
+.mc:hover::before{opacity:1;}
+.mci{font-size:1.8rem;margin-bottom:.8rem;display:block;}
+.mct{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-size:.95rem;font-weight:700;color:#fff;margin-bottom:.3rem;}
+.mcd{font-size:.77rem;color:rgba(255,255,255,.38);line-height:1.5;}
+.mc.pri{background:var(--accent);border-color:var(--accent);}
+.mc.pri .mct{color:#fff;}
+.mc.pri .mcd{color:rgba(255,255,255,.75);}
+.mc.pri:hover{background:var(--acdim);}
+.mfoot{padding:1.3rem;text-align:center;color:rgba(255,255,255,.18);font-size:.72rem;}
+
+/* WIZARD */
+.wwrap{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:2rem 1.2rem;overflow-y:auto;}
+.wcard{background:#fff;border-radius:18px;box-shadow:var(--shlg);width:100%;max-width:660px;overflow:hidden;}
+.whdr{background:var(--navy);padding:1.6rem 2rem;}
+.wstep{font-size:.68rem;font-weight:700;letter-spacing:.15em;color:#ff8888;text-transform:uppercase;margin-bottom:.3rem;}
+.wtit{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-size:1.35rem;font-weight:800;color:#fff;}
+.wsub{font-size:.82rem;color:rgba(255,255,255,.42);margin-top:.25rem;}
+.wbody{padding:1.7rem 2rem;}
+.wfoot{padding:1.2rem 2rem;border-top:1px solid var(--surf2);display:flex;justify-content:space-between;align-items:center;gap:.8rem;flex-wrap:wrap;}
+
+/* TIPO PERSONAL */
+.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1.1rem;}
+.tbtn{border:2px solid var(--bdr);border-radius:12px;padding:.9rem;cursor:pointer;text-align:center;transition:all .2s;background:var(--surf);}
+.tbtn:hover{border-color:var(--accent);background:rgba(204,0,0,.05);}
+.tbtn.sel{border-color:var(--accent);background:rgba(204,0,0,.08);}
+.tbtn-ico{font-size:1.5rem;display:block;margin-bottom:.35rem;}
+.tbtn-lbl{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-size:.82rem;font-weight:700;color:var(--navy);}
+.tbtn-sub{font-size:.71rem;color:var(--text2) !important;margin-top:.18rem;}
+.tbtn.sel .tbtn-lbl{color:var(--navy) !important;}
+.tbtn.sel .tbtn-sub{color:var(--navy3) !important;}
+
+/* FORM */
+.fg{display:flex;flex-direction:column;gap:.35rem;margin-bottom:1rem;}
+.fl{font-size:.77rem;font-weight:600;color:var(--text2);letter-spacing:.04em;}
+.req{color:var(--red);}
+.fc{background:var(--surf);border:1.5px solid var(--bdr);border-radius:9px;padding:.62rem .88rem;color:var(--text);font-size:.87rem;font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;transition:border-color .18s,box-shadow .18s;width:100%;}
+.fc:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,48,135,.13);}
+.fc optgroup{background:var(--navy);color:var(--accent);font-size:.7rem;}
+.fh{font-size:.72rem;color:var(--text2);}
+.ibox{background:rgba(0,48,135,.07);border:1px solid rgba(0,48,135,.22);border-radius:10px;padding:.85rem 1.05rem;margin-bottom:1rem;}
+.ibt{font-size:.7rem;font-weight:700;color:var(--acdim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.25rem;}
+.ibv{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-size:1.5rem;font-weight:800;color:var(--text);}
+.ibs{font-size:.72rem;color:var(--text2);margin-top:.1rem;}
+
+/* ACORDEÓN */
+.aclist{display:flex;flex-direction:column;gap:.65rem;}
+.ac{border:1.5px solid var(--bdr);border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 2px 10px rgba(13,27,42,.06);}
+.ac.open{border-color:var(--accent);}
+.ac.done{border-color:var(--gdim);}
+.achdr{display:grid;grid-template-columns:36px 1fr auto auto;align-items:center;gap:.65rem;padding:.8rem 1rem;cursor:pointer;background:var(--surf);transition:background .18s;}
+.ac.open .achdr{background:rgba(204,0,0,.05);}
+.ac.done .achdr{background:rgba(62,207,142,.05);}
+.acnum{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-weight:800;font-size:.78rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ac.done .acnum{background:var(--gdim);color:#fff;}
+.acinfo{min-width:0;}
+.acname{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-weight:700;font-size:.86rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.acmeta{font-size:.69rem;color:var(--text2);margin-top:.08rem;}
+.acarr{font-size:.78rem;color:var(--text2);transition:transform .2s;flex-shrink:0;}
+.ac.open .acarr{transform:rotate(180deg);}
+.acbody{display:none;border-top:1px solid var(--bdr);}
+.ac.open .acbody{display:block;}
+.acpbar{height:4px;background:var(--surf2);}
+.acpfill{height:100%;background:linear-gradient(90deg,var(--accent),var(--acdim));transition:width .35s;}
+.ac.done .acpfill{background:linear-gradient(90deg,var(--green),var(--gdim));}
+
+/* CAMPOS RUTA */
+.rfields{padding:.9rem 1rem;background:var(--surf);display:grid;grid-template-columns:1fr 90px 115px 1fr;gap:.55rem;align-items:end;border-bottom:1px solid var(--bdr);}
+.total-eval-banner{background:var(--navy);border-radius:10px;padding:.65rem 1rem;margin-bottom:.75rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;}
+.teb-item{text-align:center;}
+.teb-label{font-size:.62rem;color:rgba(255,255,255,.45);font-weight:600;text-transform:uppercase;letter-spacing:.06em;}
+.teb-val{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-size:1.3rem;font-weight:800;color:#ff9999;}
+.teb-sep{color:rgba(255,255,255,.2);font-size:1.2rem;}
+.teb-eq{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-size:.8rem;font-weight:700;color:rgba(255,255,255,.55);}
+
+/* CUESTIONARIO */
+.cqwrap{padding:0 1rem 1.1rem;}
+.secblk{margin-top:.9rem;border-radius:9px;overflow:hidden;border:1px solid var(--bdr);}
+.sbhdr{background:var(--navy3);padding:.5rem .9rem;display:flex;align-items:center;justify-content:space-between;}
+.sbt{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-weight:700;font-size:.74rem;color:#fff;letter-spacing:.07em;text-transform:uppercase;}
+.sbm{font-size:.67rem;color:rgba(255,255,255,.45);}
+.sbody{background:#fff;}
+
+/* FILA PREGUNTA */
+.prow{display:flex;align-items:flex-start;gap:.5rem;padding:.5rem .8rem;border-bottom:1px solid var(--surf2);}
+.prow:last-child{border-bottom:none;}
+.pnum{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-weight:800;font-size:.72rem;color:var(--navy3);min-width:20px;padding-top:.15rem;flex-shrink:0;}
+.ptxt{font-size:.78rem;color:var(--text2);line-height:1.45;flex:1;}
+.pmx{display:inline-block;margin-left:.3rem;background:rgba(13,27,42,.07);border-radius:5px;padding:1px 5px;font-size:.64rem;font-weight:700;color:var(--navy3);}
+.psel-wrap{display:flex;flex-direction:column;gap:.28rem;flex-shrink:0;}
+
+/* SELECT PUNTAJE */
+.psel{border:1.5px solid var(--bdr);border-radius:7px;padding:.32rem .45rem;font-size:.8rem;font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;color:var(--text2);background:var(--surf);cursor:pointer;transition:border-color .15s,background .15s;width:88px;text-align:center;}
+.psel:focus{outline:none;border-color:var(--accent);background:#fff;color:var(--text);}
+.psel.scored{background:#fff;border-color:var(--navy3);color:var(--navy);font-weight:600;}
+.psel.smax{background:rgba(62,207,142,.08);border-color:var(--gdim);color:var(--gdim);font-weight:700;}
+/* Forzar color de texto en option del select nativo */
+.psel option{color:var(--text);background:#fff;}
+
+/* SUBTOTAL SECCION */
+.strow{background:var(--surf2);padding:.42rem .9rem;display:flex;align-items:center;justify-content:space-between;border-top:1.5px solid var(--bdr);}
+.stlbl{font-size:.72rem;font-weight:600;color:var(--text2);}
+.stval{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-weight:800;font-size:.86rem;}
+
+/* RESULTADOS */
+.rlayout{flex:1;padding:2rem 1.7rem;max-width:1100px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:1.7rem;}
+.ptit{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-size:1.3rem;font-weight:800;color:var(--text);}
+.psub{font-size:.82rem;color:var(--text2);margin-top:.15rem;}
+.rhdr{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:.85rem;}
+.kstrip{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:.85rem;}
+.kcard{background:#fff;border-radius:12px;padding:1.1rem 1rem;box-shadow:var(--sh);position:relative;overflow:hidden;}
+.kcard::after{content:'';position:absolute;left:0;top:0;bottom:0;width:3.5px;background:var(--accent);border-radius:3px 0 0 3px;}
+.kcard.kg::after{background:var(--green);}
+.kcard.kr::after{background:var(--red);}
+.klbl{font-size:.67rem;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;}
+.kval{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-size:1.75rem;font-weight:800;color:var(--text);margin:.2rem 0 .08rem;}
+.ksub{font-size:.71rem;color:var(--text2);}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(248px,1fr));gap:.85rem;}
+.scard{background:#fff;border-radius:12px;padding:1.1rem;box-shadow:var(--sh);}
+.scdhdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:.65rem;}
+.scdname{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-weight:700;font-size:.82rem;color:var(--text);}
+.scdpct{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-size:1.15rem;font-weight:800;color:var(--gdim);}
+.scdpct.r{color:var(--red);}
+.btrk{height:7px;background:var(--surf2);border-radius:20px;overflow:hidden;margin-bottom:.42rem;}
+.bfil{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--green),var(--gdim));transition:width .8s cubic-bezier(.23,1,.32,1);}
+.bfil.r{background:linear-gradient(90deg,var(--red),#c04040);}
+.scdmeta{display:flex;justify-content:space-between;font-size:.69rem;color:var(--text2);}
+.bdg{display:inline-block;font-size:.65rem;font-weight:700;letter-spacing:.05em;padding:2px 8px;border-radius:20px;text-transform:uppercase;}
+.bg{background:rgba(62,207,142,.12);color:var(--gdim);}
+.br{background:rgba(224,82,82,.12);color:var(--red);}
+.rhrow{display:flex;justify-content:space-between;flex-wrap:wrap;gap:.8rem;}
+
+/* TABLA RUTAS */
+.rtbl{width:100%;border-collapse:collapse;font-size:.76rem;background:#fff;border-radius:12px;overflow:hidden;box-shadow:var(--sh);}
+.rtbl th{background:var(--navy);color:#fff;font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-weight:700;font-size:.66rem;letter-spacing:.06em;padding:.58rem .8rem;text-align:left;white-space:nowrap;}
+.rtbl td{padding:.55rem .8rem;border-bottom:1px solid var(--surf2);vertical-align:middle;}
+.rtbl tr:last-child td{border:none;}
+.cpill{background:var(--navy);color:var(--accent);font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-weight:700;font-size:.65rem;padding:2px 7px;border-radius:5px;}
+
+/* REPORTE */
+.rbox{background:var(--navy);border-radius:14px;padding:1.7rem;color:#fff;position:relative;overflow:hidden;}
+.rbox::before{content:'';position:absolute;top:-50px;right:-50px;width:170px;height:170px;background:radial-gradient(circle,rgba(204,0,0,.08),transparent 70%);pointer-events:none;}
+.rtit{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-size:.88rem;font-weight:800;color:#ff9999;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.9rem;}
+.rcont{font-size:.77rem;line-height:1.9;color:rgba(255,255,255,.78);white-space:pre-wrap;font-family:Tahoma,'Courier New',monospace;}
+.ract{display:flex;gap:.65rem;margin-top:1.2rem;flex-wrap:wrap;}
+
+/* DASHBOARD */
+.dlayout{flex:1;padding:2rem 1.7rem;max-width:1060px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:1.7rem;}
+.grow{display:grid;grid-template-columns:165px 1fr 76px 104px;align-items:center;gap:.85rem;background:#fff;border-radius:9px;padding:.78rem 1rem;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+.gname{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-weight:700;font-size:.8rem;color:var(--text);}
+.gtrk{height:9px;background:var(--surf2);border-radius:20px;overflow:hidden;}
+.gfil{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--green),var(--gdim));transition:width .8s;}
+.gfil.r{background:linear-gradient(90deg,var(--red),#c04040);}
+.gpct{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-weight:800;font-size:.88rem;text-align:right;}
+.gpct.gn{color:var(--gdim);}
+.gpct.rd{color:var(--red);}
+.demp{text-align:center;padding:3.5rem;color:var(--text2);font-size:.87rem;}
+
+/* BTN */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.32rem;padding:.62rem 1.25rem;border-radius:9px;border:none;cursor:pointer;font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.04em;transition:all .18s;}
+/* Primario: amarillo sobre azul oscuro — siempre visible */
+.bpri{background:var(--accent);color:#fff;}
+.bpri:hover{background:var(--acdim);transform:translateY(-1px);}
+/* Outline: borde gris, texto oscuro — para fondos claros */
+.bout{background:transparent;border:1.5px solid var(--bdr);color:var(--text2);}
+.bout:hover{background:var(--surf2);}
+/* Ghost header: solo para botones EN el header oscuro */
+.bgho{background:rgba(255,255,255,.1);color:rgba(255,255,255,.75);border:1px solid rgba(255,255,255,.18);}
+.bgho:hover{background:rgba(255,255,255,.18);color:#fff;}
+/* Secundario: para fondos claros (dashboard, resultados) — texto oscuro */
+.bsec{background:var(--surf2);color:var(--text);border:1.5px solid var(--bdr);}
+.bsec:hover{background:var(--bdr);color:var(--text);}
+/* Secundario oscuro: solo dentro del reporte box (fondo navy) */
+.bsec-dark{background:rgba(255,255,255,.12);color:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.2);}
+.bsec-dark:hover{background:rgba(255,255,255,.2);color:#fff;}
+/* Peligro */
+.bdng{background:rgba(224,82,82,.1);color:var(--red);border:1.5px solid rgba(224,82,82,.28);}
+.bdng:hover{background:rgba(224,82,82,.2);}
+.bsm{padding:.38rem .8rem;font-size:.72rem;border-radius:7px;}
+.bbl{width:100%;}
+
+/* MODAL */
+.mov{position:fixed;inset:0;background:rgba(13,27,42,.72);display:none;align-items:center;justify-content:center;z-index:999;backdrop-filter:blur(4px);}
+.mov.open{display:flex;}
+.mdl{background:#fff;border-radius:17px;padding:1.7rem;max-width:430px;width:90%;box-shadow:var(--shlg);animation:mIn .22s ease;}
+@keyframes mIn{from{transform:scale(.95) translateY(8px);opacity:0;}to{transform:scale(1) translateY(0);opacity:1;}}
+.mtit{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-size:1.05rem;font-weight:800;color:var(--text);margin-bottom:.42rem;}
+.mbdy{font-size:.83rem;color:var(--text2);line-height:1.6;margin-bottom:1.2rem;}
+.mact{display:flex;gap:.65rem;justify-content:flex-end;}
+
+/* TOAST */
+.tc{position:fixed;top:70px;right:1.2rem;z-index:9999;display:flex;flex-direction:column;gap:.48rem;}
+.tst{background:var(--navy);color:#fff;padding:.68rem .95rem;border-radius:9px;font-size:.78rem;box-shadow:var(--shlg);display:flex;align-items:center;gap:.4rem;animation:tIn .26s ease;max-width:295px;}
+.tst.s{border-left:3px solid var(--green);}
+.tst.e{border-left:3px solid var(--red);}
+.tst.i{border-left:3px solid var(--accent);}
+@keyframes tIn{from{transform:translateX(15px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+.chip{background:var(--surf2);border:1px solid var(--bdr);border-radius:20px;padding:2px 8px;font-size:.7rem;color:var(--text2);font-weight:500;display:inline-block;}
+.chips{display:flex;gap:.32rem;flex-wrap:wrap;}
+
+@media(max-width:660px){
+  .rfields{grid-template-columns:1fr 1fr;}
+  .grow{grid-template-columns:1fr 1fr;}
+  .gtrk{grid-column:1/-1;}
+  .wbody,.whdr,.wfoot{padding:1.3rem 1.5rem;}
+}
+</style>
+</head>
+<body>
+
+<div class="tc" id="tc"></div>
+<div class="mov" id="mov">
+  <div class="mdl">
+    <div class="mtit" id="mtit">¿Confirmar?</div>
+    <div class="mbdy" id="mbdy"></div>
+    <div class="mact">
+      <button class="btn bout bsm" onclick="closeMod()">Cancelar</button>
+      <button class="btn bdng bsm" id="mbtn">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MENÚ ══ -->
+<div class="screen active" id="sm">
+  <header class="hdr">
+    <div class="logo">ETI<span>·</span>EVAL</div>
+    <div class="hbadge">UNIFRUTTI GROUP</div>
+  </header>
+  <div class="mhero">
+    <div class="mey">Sistema de Evaluación de Conocimiento</div>
+    <h1 class="mt">Evaluaciones<br><span>ETI</span> Capacitación</h1>
+    <p class="ms">35 preguntas oficiales · 6 temas · Cálculo automático · Reporte gerencial</p>
+    <div class="mgrid">
+      <div class="mc pri" onclick="iniciar()">
+        <span class="mci">📋</span>
+        <div class="mct">Nueva Evaluación</div>
+        <div class="mcd">Registro paso a paso por rutas</div>
+      </div>
+      <div class="mc" onclick="irDash()">
+        <span class="mci">📊</span>
+        <div class="mct">Dashboard</div>
+        <div class="mcd">Ranking y cumplimiento por grupo</div>
+      </div>
+      <div class="mc" onclick="verUlt()">
+        <span class="mci">📈</span>
+        <div class="mct">Ver Último Reporte</div>
+        <div class="mcd">Revisar y enviar por correo</div>
+      </div>
+    </div>
+
+    <!-- PANEL ÚLTIMO REPORTE EN EL MENÚ -->
+    <div id="menu-reporte-panel" style="display:none;width:100%;max-width:860px;margin-top:1.2rem;">
+      <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:1.2rem 1.4rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.6rem;margin-bottom:.8rem;">
+          <div>
+            <div style="font-size:.72rem;font-weight:700;color:#ff9999;text-transform:uppercase;letter-spacing:.1em;">Último reporte calculado</div>
+            <div style="font-size:.88rem;font-weight:700;color:#fff;margin-top:.2rem;" id="menu-rpt-meta">—</div>
+          </div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+            <button class="btn bpri bsm" onclick="verUlt()">👁 Ver Reporte</button>
+            <button class="btn bsm" style="background:#cc0000;color:#fff;border:none;" onclick="enviarCorreoDirecto()">📤 Enviar Correo</button>
+            <button class="btn bsm" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.18);" onclick="copiarDirecto()">📋 Copiar</button>
+          </div>
+        </div>
+        <div style="background:rgba(0,0,0,.25);border-radius:8px;padding:.8rem;max-height:140px;overflow-y:auto;">
+          <pre style="font-size:.72rem;color:rgba(255,255,255,.7);white-space:pre-wrap;font-family:Tahoma,monospace;line-height:1.7;" id="menu-rpt-preview">—</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="mfoot">
+    Verfrut / RAPEL SAC &mdash; Coordinación de Relaciones Laborales &mdash; <span id="mdate"></span><br>
+    <span style="color:rgba(255,255,255,.28);font-size:.68rem;margin-top:.3rem;display:inline-block">
+      Sistema creado por <strong style="color:rgba(255,255,255,.5)">Joel Timoteo Gonza</strong> &mdash; Coordinador de Relaciones Laborales
+    </span>
+  </div>
+</div>
+
+<!-- ══ PASO 1 ══ -->
+<div class="screen" id="sp1">
+  <header class="hdr"><div class="logo">ETI<span>·</span>EVAL</div><button class="btn bgho bsm" onclick="go('sm')">← Menú</button></header>
+  <div class="stbar" id="stb1"></div>
+  <div class="wwrap">
+    <div class="wcard">
+      <div class="whdr">
+        <div class="wstep">Paso 1 de 3 — Datos Generales</div>
+        <div class="wtit">¿Quién realiza la evaluación?</div>
+        <div class="wsub">Empresa, supervisor, tipo de personal y fecha</div>
+      </div>
+      <div class="wbody">
+        <div class="fg">
+          <label class="fl">Empresa / Sector <span class="req">*</span></label>
+          <select class="fc" id="p1e"><option value="">— Seleccionar —</option><option>VERFRUT</option><option>RAPEL SAC</option></select>
+        </div>
+        <div class="fg">
+          <label class="fl">Supervisor responsable <span class="req">*</span></label>
+          <select class="fc" id="p1s" onchange="onSupChange()">
+            <option value="">— Seleccionar supervisor —</option>
+            <optgroup label="── Administradores ──">
+              <option value="Joel Timoteo Gonza">Joel Timoteo Gonza</option>
+              <option value="Olga Vilela Ludeña">Olga Vilela Ludeña</option>
+              <option value="Jorge Chavez Coordova">Jorge Chavez Coordova</option>
+            </optgroup>
+            <optgroup label="── Supervisores de Campo ──">
+              <option value="Elberth Castro Bayona">Elberth Castro Bayona — San Vicente</option>
+              <option value="Sergio Viera Giron">Sergio Viera Giron — Algarrobos</option>
+              <option value="Alexander Martinez Juarez">Alexander Martinez Juarez — Punta Arenas</option>
+              <option value="Roberto Molero Abad">Roberto Molero Abad — Planta Rapel</option>
+              <option value="Pool Tamayo Rodriguez">Pool Tamayo Rodriguez — El Papayo</option>
+              <option value="Pool Tamayo Rodriguez (Limones)">Pool Tamayo Rodriguez — Limones</option>
+              <option value="Alex Tineo Ramos">Alex Tineo Ramos — Olivares Bajo</option>
+              <option value="Flor Pulache Viera">Flor Pulache Viera — Los Olivares</option>
+              <option value="Alex Zapata Suarez">Alex Zapata Suarez — Aproa</option>
+              <option value="Yhanelly Iluzon Venegas">Yhanelly Iluzon Venegas — Santa Rosa</option>
+            </optgroup>
+            <optgroup label="── Supervisores (sector por confirmar) ──">
+              <option value="Muriel Mechato Navarro">Muriel Mechato Navarro</option>
+              <option value="Socorro Miranda Pasapera">Socorro Miranda Pasapera</option>
+              <option value="Jhonny Avendaño Granda">Jhonny Avendaño Granda</option>
+              <option value="Jaime Siancas Viera">Jaime Siancas Viera</option>
+              <option value="Deysi Quispe Juarez">Deysi Quispe Juarez</option>
+            </optgroup>
+          </select>
+        </div>
+        <!-- Sector automático / editable para reemplazantes -->
+        <div class="fg" id="sector-autobox" style="display:none;">
+          <label class="fl" id="p1sector-lbl">📍 Sector asignado (automático)</label>
+          <!-- Sector fijo (supervisores normales) -->
+          <div style="background:rgba(0,78,152,.08);border:1.5px solid rgba(0,78,152,.28);border-radius:9px;padding:.62rem .88rem;font-weight:700;font-size:.88rem;color:#003087"
+               id="p1sector"></div>
+          <!-- Sector editable (reemplazantes) -->
+          <select class="fc" id="p1sector-inp" style="display:none;" onchange="p1sectorInpChange()">
+            <option value="">— ¿Qué sector está cubriendo? —</option>
+            <option>San Vicente</option>
+            <option>Algarrobos</option>
+            <option>Punta Arenas</option>
+            <option>Planta Rapel</option>
+            <option>El Papayo</option>
+            <option>Limones</option>
+            <option>Olivares Bajo</option>
+            <option>Los Olivares</option>
+            <option>Aproa</option>
+            <option>Santa Rosa</option>
+          </select>
+          <div class="fh" id="p1sector-hint" style="display:none;color:#cc0000;">
+            Seleccione el sector del supervisor al que está reemplazando
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">Tipo de personal evaluado <span class="req">*</span></label>
+          <div class="tgrid">
+            <div class="tbtn" id="bt1" onclick="selT('obrero')">
+              <span class="tbtn-ico">👷</span>
+              <div class="tbtn-lbl">Obrero Campo</div>
+              <div class="tbtn-sub">Personal de campo / cosecha</div>
+            </div>
+            <div class="tbtn" id="bt2" onclick="selT('empleado')">
+              <span class="tbtn-ico">💼</span>
+              <div class="tbtn-lbl">Empleado Agrario</div>
+              <div class="tbtn-sub">Administrativo / técnico</div>
+            </div>
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">Fecha de evaluación</label>
+          <input type="date" class="fc" id="p1f">
+        </div>
+      </div>
+      <div class="wfoot">
+        <span class="fh">Campos <span class="req">*</span> obligatorios</span>
+        <button class="btn bpri" onclick="p1next()">Siguiente → ¿Cuántas rutas?</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PASO 2 ══ -->
+<div class="screen" id="sp2">
+  <header class="hdr"><div class="logo">ETI<span>·</span>EVAL</div><button class="btn bgho bsm" onclick="go('sp1')">← Atrás</button></header>
+  <div class="stbar" id="stb2"></div>
+  <div class="wwrap">
+    <div class="wcard">
+      <div class="whdr">
+        <div class="wstep">Paso 2 de 3 — Grupos Evaluados</div>
+        <div class="wtit" id="p2-wtit">¿Cuántas rutas procedieron?</div>
+        <div class="wsub" id="p2-wsub">Número de rutas/grupos que completaron la jornada ETI</div>
+      </div>
+      <div class="wbody">
+        <div class="ibox" id="p2cfg"></div>
+        <div class="fg">
+          <label class="fl" id="p2-lbl-tipo">Número de rutas evaluadas <span class="req">*</span></label>
+          <select class="fc" id="p2n" onchange="p2ch()">
+            <option value="">— Seleccionar cantidad —</option>
+            <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+            <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+            <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+            <option value="10">10</option><option value="12">12</option><option value="15">15</option>
+            <option value="20">20</option><option value="25">25</option>
+          </select>
+          <span class="fh" id="p2-hint-tipo">Se generará un cuestionario completo (35 preguntas) por cada ruta</span>
+        </div>
+
+        <!-- Panel de áreas (solo para empleado agrario) -->
+        <div id="p2-areas-panel" style="display:none;margin-bottom:.8rem;">
+          <div class="fg" style="margin-bottom:.5rem;">
+            <label class="fl">Área a evaluar (seleccione o agregue)</label>
+            <select class="fc" id="p2areas" onchange="p2ch()">
+              <option value="">— Seleccionar área —</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:.5rem;align-items:center;">
+            <input class="fc" id="p2newarea" placeholder="+ Nueva área..." style="flex:1;padding:.5rem .8rem;font-size:.82rem;">
+            <button class="btn bpri bsm" onclick="agregarArea()" style="flex-shrink:0;white-space:nowrap;">+ Agregar</button>
+          </div>
+          <div class="fh" style="margin-top:.3rem;">Las áreas agregadas quedan disponibles en esta sesión</div>
+        </div>
+        <div id="p2prev" style="display:none">
+          <div class="ibox">
+            <div class="ibt">Se generarán</div>
+            <div class="ibv" id="p2pv">—</div>
+            <div class="ibs" id="p2ps">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="wfoot">
+        <button class="btn bout bsm" onclick="go('sp1')">← Atrás</button>
+        <button class="btn bpri" onclick="p2next()">Siguiente → Registrar Rutas</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PASO 3: ACORDEÓN + CUESTIONARIO ══ -->
+<div class="screen" id="sp3">
+  <header class="hdr"><div class="logo">ETI<span>·</span>EVAL</div><button class="btn bgho bsm" onclick="go('sp2')">← Atrás</button></header>
+  <div class="stbar" id="stb3"></div>
+  <div class="wwrap" style="align-items:flex-start;padding-top:1.6rem;">
+    <div class="wcard" style="max-width:800px;">
+      <div class="whdr">
+        <div class="wstep">Paso 3 de 3 — Rutas y Cuestionarios</div>
+        <div class="wtit">Complete cada ruta con las 35 preguntas</div>
+        <div class="wsub">Un evaluado por columna — seleccione el puntaje obtenido en cada pregunta</div>
+      </div>
+      <div class="wbody" style="padding:1.1rem 1.4rem;">
+        <div class="ibox" id="p3banner" style="margin-bottom:.75rem;"></div>
+        <!-- BANNER TOTAL EVALUACIONES -->
+        <div class="total-eval-banner" id="p3totbanner" style="margin-bottom:.75rem;"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.65rem;">
+          <span style="font-size:.74rem;font-weight:600;color:var(--text2)">Rutas completadas:</span>
+          <span style="font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-weight:800;font-size:.88rem;color:var(--text)" id="p3prog">0 / 0</span>
+        </div>
+        <div class="btrk" style="margin-bottom:.9rem;"><div class="bfil" id="p3fill" style="width:0%"></div></div>
+        <div class="aclist" id="p3list"></div>
+      </div>
+      <div class="wfoot">
+        <button class="btn bout bsm" onclick="go('sp2')">← Atrás</button>
+        <button class="btn bpri" onclick="calcular()">⚡ Calcular Resultados</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ RESULTADOS ══ -->
+<div class="screen" id="sres">
+  <header class="hdr">
+    <div class="logo">ETI<span>·</span>EVAL <span style="color:rgba(255,255,255,.22);margin:0 .3rem">›</span><span style="font-weight:400;font-size:.82rem;color:rgba(255,255,255,.48)">Resultados</span></div>
+    <button class="btn bgho bsm" onclick="go('sm')">← Menú</button>
+  </header>
+  <div class="rlayout">
+    <div class="rhdr">
+      <div><div class="ptit">Resultados de la Evaluación</div><div class="psub" id="rmeta">—</div></div>
+      <div style="display:flex;gap:.65rem;flex-wrap:wrap;">
+        <button class="btn bout bsm" onclick="go('sp3')">← Editar</button>
+        <button class="btn bpri bsm" onclick="enviarCorreo()">📤 Enviar Correo</button>
+        <button class="btn bout bsm" onclick="copiar()">📋 Copiar</button>
+        <button class="btn bout bsm" onclick="exportar()">⬇️ .txt</button>
+        <button class="btn bpri bsm" onclick="irDash()">Dashboard →</button>
+      </div>
+    </div>
+    <div class="kstrip" id="rkpis"></div>
+    <div>
+      <div class="ptit" style="font-size:.98rem;margin-bottom:.75rem">Resultado por Ruta</div>
+      <div style="overflow-x:auto;">
+        <table class="rtbl">
+          <thead><tr>
+            <th>Cód.</th><th>Ruta / Grupo</th><th>Tipo</th><th>Eval.</th>
+            <th>Legisl.</th><th>Bienestar</th><th>Sustent.</th><th>Ética</th><th>SST</th><th>Medio.</th>
+            <th>Resultado</th><th>Estado</th>
+          </tr></thead>
+          <tbody id="rtbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div>
+      <div class="ptit" style="font-size:.98rem;margin-bottom:.75rem">Promedio por Tema (todos los grupos)</div>
+      <div class="sgrid" id="rsecs"></div>
+    </div>
+    <div class="rbox">
+      <div class="rtit">📧 Reporte Gerencial</div>
+      <div class="rcont" id="rrpt">—</div>
+      <div class="ract">
+        <button class="btn bpri bsm" onclick="copiar()">📋 Copiar</button>
+        <button class="btn bsec-dark bsm" onclick="exportar()">⬇️ Exportar .txt</button>
+        <button class="btn bsec-dark bsm" onclick="enviarCorreo()">📤 Enviar por Correo</button>
+      </div>
+    </div>
+    <!-- FIRMA RESULTADOS -->
+    <div style="text-align:center;padding:.8rem 0 .2rem;border-top:1px solid var(--bdr);">
+      <div style="font-size:.7rem;color:var(--text2)">Sistema ETI · Verfrut / RAPEL SAC &mdash; Coordinación de Relaciones Laborales</div>
+      <div style="font-size:.68rem;color:var(--text2);margin-top:.15rem">Creado por <strong>Joel Timoteo Gonza</strong> &mdash; Coordinador de Relaciones Laborales</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DASHBOARD ══ -->
+<div class="screen" id="sdash">
+  <header class="hdr">
+    <div class="logo">ETI<span>·</span>EVAL <span style="color:rgba(255,255,255,.22);margin:0 .3rem">›</span><span style="font-weight:400;font-size:.82rem;color:rgba(255,255,255,.48)">Dashboard</span></div>
+    <button class="btn bgho bsm" onclick="go('sm')">← Menú</button>
+  </header>
+  <div class="dlayout">
+    <div class="rhdr">
+      <div><div class="ptit">Dashboard de Grupos</div><div class="psub">Ranking acumulado de todas las evaluaciones registradas</div></div>
+      <div style="display:flex;gap:.55rem;flex-wrap:wrap;">
+        <button class="btn bdng bsm" onclick="limpH()">🗑 Limpiar</button>
+        <button class="btn bout bsm" onclick="exportDashTxt()">📄 Exportar .txt</button>
+        <button class="btn bout bsm" onclick="exportDashCsv()">📊 Exportar .csv</button>
+        <button class="btn bpri bsm" onclick="iniciar()">+ Nueva</button>
+      </div>
+    </div>
+    <div class="kstrip" id="dkpis"></div>
+    <div>
+      <div class="ptit" style="font-size:.98rem;margin-bottom:.75rem">Ranking de Rutas</div>
+      <div id="dlist"></div>
+    </div>
+    <!-- FIRMA -->
+    <div style="text-align:center;padding:1.2rem 0 .5rem;border-top:1px solid var(--bdr);margin-top:.5rem;">
+      <div style="font-size:.7rem;color:var(--text2)">Sistema ETI · Verfrut / RAPEL SAC &mdash; Coordinación de Relaciones Laborales</div>
+      <div style="font-size:.68rem;color:var(--text2);margin-top:.18rem">Creado por <strong>Joel Timoteo Gonza</strong> &mdash; Coordinador de Relaciones Laborales</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// CUESTIONARIO REAL — 35 preguntas extraídas
+// Cada pregunta: {n: número, t: texto, max: puntaje máximo}
+// Lógica: el puntaje máximo de cada sección = suma de max de sus preguntas
+// ══════════════════════════════════════════
+const SECS = [
+  {
+    id:'leg', nom:'Legislación Laboral', peso:0.18,
+    pregs:[
+      {n:1,  t:'¿Sabes cuánto te pagan al mes? Escríbelo.',                                                                      max:2},
+      {n:2,  t:'La jornada legal de trabajo son las horas que debemos trabajar, ¿cuántas horas tú trabajas al día y a la semana?', max:2},
+      {n:3,  t:'Si el jefe lo solicita, está permitido hacer sobretiempo, ¿cuántas horas extras podemos hacer como máximo al día o en una semana?', max:2},
+      {n:4,  t:'¿Dónde debes marcar tu asistencia al entrar y salir? Indica la hora de ingreso y de salida.',                     max:2},
+      {n:5,  t:'¿Cuánto tiempo tienes de refrigerio para comer o descansar?',                                                     max:2},
+      {n:6,  t:'¿Qué beneficios de acuerdo a la Ley te otorga la empresa además de las vacaciones?',                              max:4},
+      {n:7,  t:'¿Sabes dónde encontrar el Reglamento Interno de Trabajo y la boleta mensual de pago?',                            max:4},
+    ]
+  },
+  {
+    id:'bie', nom:'Bienestar Social', peso:0.32,
+    pregs:[
+      {n:8,  t:'¿Conoces a la asistenta social? Escribe su nombre.',                                                              max:2},
+      {n:9,  t:'¿Cómo se llama el comité o grupo de representantes de los trabajadores? Si conoces a algún representante, escribe su nombre.', max:4},
+      {n:10, t:'Las quejas o sugerencias se pueden dejar en los buzones azules, ¿dónde están estos buzones?',                     max:4},
+      {n:11, t:'Si tienes una queja o una sugerencia, ¿con quién puedes hablar?',                                                 max:4},
+      {n:12, t:'¿Sabes quién revisa los buzones de sugerencias y quejas y qué días los revisa?',                                  max:4},
+      {n:13, t:'¿Dónde se publica el registro de respuestas a las quejas o sugerencias?',                                         max:2},
+      {n:14, t:'Si un compañero te realiza bromas de connotación sexual o te acosa sexualmente, ¿a quién debes pedirle ayuda y realizar tu denuncia?', max:2},
+      {n:15, t:'Cuando un trabajador hombre tiene un bebé, puede pedir un permiso que se llama "licencia de paternidad", ¿cuántos días pagados puede faltar con esta licencia?', max:1},
+      {n:16, t:'Cuando una trabajadora mujer tiene un bebé, puede pedir un permiso que se llama "licencia de maternidad", ¿cuántos días pagados puede faltar con esta licencia?', max:1},
+      {n:17, t:'¿Cuántos días pagados puedes faltar cuando pides la licencia por accidente grave o enfermedad terminal de un familiar directo?', max:2},
+      {n:18, t:'¿Cuántos días pagados puedes faltar si fallece un familiar directo?',                                              max:2},
+      {n:19, t:'¿Qué otros beneficios adicionales, distintos a los de ley, te otorga la empresa? (Ejemplo: Celebración del día de la madre o del padre)', max:4},
+    ]
+  },
+  {
+    id:'sus', nom:'Sustentabilidad', peso:0.16,
+    pregs:[
+      {n:20, t:'¿Qué quiere decir que una empresa es "sustentable"? Selecciona una.',                                             max:2},
+      {n:21, t:'¿Cuántos son los Objetivos de Desarrollo Sostenible (ODS)?',                                                      max:2},
+      {n:22, t:'¿Qué ODS: Objetivos de Desarrollo Sostenible recuerdas? Escribe al menos tres ejemplos.',                         max:4},
+      {n:23, t:'Las sugerencias o ideas para cuidar el planeta y a la sociedad se pueden dejar en los buzones verdes, ¿dónde están estos buzones?', max:4},
+      {n:24, t:'¿Quiénes revisan los buzones de ideas verdes y qué días los revisan?',                                             max:4},
+    ]
+  },
+  {
+    id:'eti', nom:'Ética Empresarial', peso:0.06,
+    pregs:[
+      {n:25, t:'¿Qué otro nombre tienen las políticas de ética y buenas prácticas laborales? Escribe el nombre de las que recuerdas.', max:2},
+      {n:26, t:'El código de conducta tiene 11 principios, ¿cuáles recuerdas? Escribe al menos tres.',                            max:2},
+      {n:27, t:'Una empresa ética lo demuestra previniendo y reportando los casos de posibles delitos como fraude tributario, corrupción a funcionarios, favoritismos.', max:2},
+    ]
+  },
+  {
+    id:'sst', nom:'Seguridad y Salud en el Trabajo', peso:0.12,
+    pregs:[
+      {n:28, t:'¿Conoces el procedimiento de lavado de manos? Escribe al menos dos momentos en los que debes lavarte las manos.', max:2},
+      {n:29, t:'¿Qué equipos de protección personal o EPPs debes usar en tu labor? Escribe al menos dos.',                        max:2},
+      {n:30, t:'¿Conoces dónde está el tópico más cercano? Escribe ubicación (sector, oficina). ¿Conoces dónde está el lactario más cercano? Escribe ubicación.', max:4},
+      {n:31, t:'Si ocurre un accidente o te sientes mal de Salud, ¿a quién le comunicas y cómo te comunicas?',                    max:2},
+      {n:32, t:'¿Qué haces para cuidar el medio ambiente en tu área de trabajo?',                                                 max:2},
+    ]
+  },
+  {
+    id:'med', nom:'Compromiso Medioambiental', peso:0.16,
+    pregs:[
+      {n:33, t:'El cambio climático son todos esos cambios en el clima que traen efectos negativos al planeta, ¿qué consecuencias recuerdas? Escribe al menos tres.',                              max:4},
+      {n:34, t:'En la empresa tenemos animalitos, zonas con plantas nativas, jardines y reservorios con peces, ¿cómo podemos ayudar a proteger esta biodiversidad?',                              max:4},
+      {n:35, t:'Todos los desperdicios tienen una forma distinta de separarse, ¿qué debemos hacer para que los desechos estén bien manejados? Escribe al menos tres.',                             max:4},
+      {n:36, t:'¿Cómo podemos ahorrar energía en la empresa? Escribe al menos tres ejemplos.',                                     max:4},
+    ]
+  }
+];
+
+// Calcular máximo real por sección
+SECS.forEach(s => { s.maxSec = s.pregs.reduce((a,p)=>a+p.max,0); });
+
+// ══════════════════════════════════════════
+// SUPERVISORES CON SECTORES ASIGNADOS
+// ══════════════════════════════════════════
+const SUPERVISORES = [
+  // ADMINISTRADORES
+  {nom:'Joel Timoteo Gonza',              sector:'',   rol:'Administrador',  reemplazante:false},
+  {nom:'Olga Vilela Ludeña',              sector:'',   rol:'Administrador',  reemplazante:false},
+  {nom:'Jorge Chavez Coordova',           sector:'',   rol:'Administrador',  reemplazante:false},
+  // SUPERVISORES CON SECTOR FIJO
+  {nom:'Elberth Castro Bayona',           sector:'San Vicente',   rol:'Supervisor', reemplazante:false},
+  {nom:'Sergio Viera Giron',              sector:'Algarrobos',    rol:'Supervisor', reemplazante:false},
+  {nom:'Alexander Martinez Juarez',       sector:'Punta Arenas',  rol:'Supervisor', reemplazante:false},
+  {nom:'Roberto Molero Abad',             sector:'Planta Rapel',  rol:'Supervisor', reemplazante:false},
+  {nom:'Pool Tamayo Rodriguez',           sector:'El Papayo',     rol:'Supervisor', reemplazante:false},
+  {nom:'Pool Tamayo Rodriguez (Limones)', sector:'Limones',       rol:'Supervisor', reemplazante:false},
+  {nom:'Alex Tineo Ramos',               sector:'Olivares Bajo', rol:'Supervisor', reemplazante:false},
+  {nom:'Flor Pulache Viera',             sector:'Los Olivares',  rol:'Supervisor', reemplazante:false},
+  {nom:'Alex Zapata Suarez',             sector:'Aproa',         rol:'Supervisor', reemplazante:false},
+  {nom:'Yhanelly Iluzon Venegas',        sector:'Santa Rosa',    rol:'Supervisor', reemplazante:false},
+  // SUPERVISORES REEMPLAZANTES (sector variable según a quién cubren)
+  {nom:'Muriel Mechato Navarro',          sector:'', rol:'Reemplazante', reemplazante:true},
+  {nom:'Socorro Miranda Pasapera',        sector:'', rol:'Reemplazante', reemplazante:true},
+  {nom:'Jhonny Avendaño Granda',          sector:'', rol:'Reemplazante', reemplazante:true},
+  {nom:'Jaime Siancas Viera',             sector:'', rol:'Reemplazante', reemplazante:true},
+  {nom:'Deysi Quispe Juarez',             sector:'', rol:'Reemplazante', reemplazante:true},
+];
+
+// ÁREAS para Empleado Agrario (editables en sesión)
+let AREAS = [
+  'Riego','Sanidad','Administración','Operaciones',
+  'Departamento Técnico','Gestión Humana',
+  'Seguridad y Salud en el Trabajo','BPM',
+  'Salud Ocupacional','Transporte','Adquisiciones'
+];
+
+function supSector(nombre){
+  const sup = SUPERVISORES.find(s=>s.nom===nombre);
+  return sup ? sup.sector : '—';
+}
+
+function getSectorActual(){
+  // Devuelve el sector real considerando si es reemplazante
+  const sel     = document.getElementById('p1s').value;
+  const supData = SUPERVISORES.find(s=>s.nom===sel);
+  if(!supData || supData.reemplazante){
+    // Reemplazante: leer del select editable
+    return document.getElementById('p1sector-inp')?.value || '';
+  }
+  return supData.sector || '';
+}
+
+function p1sectorInpChange(){
+  // Mostrar/ocultar hint
+  const v    = document.getElementById('p1sector-inp')?.value;
+  const hint = document.getElementById('p1sector-hint');
+  if(hint) hint.style.display = v ? 'none' : 'block';
+}
+
+function renderSupSelect(){
+  const adm  = SUPERVISORES.filter(s=>s.rol==='Administrador');
+  const fijo = SUPERVISORES.filter(s=>s.rol==='Supervisor');
+  const remp = SUPERVISORES.filter(s=>s.rol==='Reemplazante');
+  return `<option value="">— Seleccionar supervisor —</option>
+    <optgroup label="── Administradores ──">
+      ${adm.map(s=>`<option value="${s.nom}">${s.nom}</option>`).join('')}
+    </optgroup>
+    <optgroup label="── Supervisores de Sector ──">
+      ${fijo.map(s=>`<option value="${s.nom}">${s.nom} — ${s.sector}</option>`).join('')}
+    </optgroup>
+    <optgroup label="── Supervisores Reemplazantes ──">
+      ${remp.map(s=>`<option value="${s.nom}">${s.nom} (reemplazante)</option>`).join('')}
+    </optgroup>`;
+}
+
+function onSupChange(){
+  const sel    = document.getElementById('p1s').value;
+  const secBox = document.getElementById('sector-autobox');
+  const secEl  = document.getElementById('p1sector');
+  const secInp = document.getElementById('p1sector-inp');
+  const secLbl = document.getElementById('p1sector-lbl');
+  if(!sel){ secBox.style.display='none'; return; }
+
+  const supData = SUPERVISORES.find(s=>s.nom===sel);
+  secBox.style.display = 'block';
+
+  if(!supData || supData.reemplazante){
+    // REEMPLAZANTE: mostrar selector de sector a cubrir
+    if(secEl)  secEl.style.display  = 'none';
+    if(secInp) secInp.style.display = 'block';
+    if(secLbl) secLbl.textContent   = '📍 Sector que está cubriendo (reemplazante)';
+    if(secInp) secInp.value = '';
+  } else {
+    // SUPERVISOR FIJO: mostrar sector automático
+    if(secEl)  secEl.style.display  = 'block';
+    if(secInp) secInp.style.display = 'none';
+    if(secLbl) secLbl.textContent   = '📍 Sector asignado (automático)';
+    if(secEl)  secEl.textContent    = supData.sector || '—';
+  }
+}
+
+// ══════════════════════════════════════════
+// ÁREAS — render dinámico
+// ══════════════════════════════════════════
+function renderAreasSelect(){
+  const el = document.getElementById('p2areas');
+  if(!el) return;
+  el.innerHTML = `<option value="">— Seleccionar área —</option>`
+    + AREAS.map(a=>`<option value="${a}">${a}</option>`).join('');
+}
+
+function agregarArea(){
+  const inp = document.getElementById('p2newarea');
+  if(!inp) return;
+  const val = inp.value.trim();
+  if(!val){toast('Escribe el nombre del área','e');return;}
+  if(AREAS.includes(val)){toast('Esa área ya existe','i');return;}
+  AREAS.push(val);
+  renderAreasSelect();
+  inp.value = '';
+  toast(`Área "${val}" agregada correctamente`,'s');
+}
+
+// ══════════════════════════════════════════
+// ESTADO GLOBAL
+// ══════════════════════════════════════════
+let S = {emp:'',sup:'',sector:'',tipo:'',fecha:'',rutas:[]};
+let tipo = '';
+let hist = JSON.parse(localStorage.getItem('eti_v4')||'[]');
+
+// ══════════════════════════════════════════
+// NAVEGACIÓN
+// ══════════════════════════════════════════
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+  if(id==='sm') updMenuReporte();
+}
+
+function stpr(eid, act){
+  const steps=[{n:1,l:'Datos Generales'},{n:2,l:'Cantidad de Rutas'},{n:3,l:'Cuestionarios'}];
+  document.getElementById(eid).innerHTML=steps.map((st,i)=>{
+    const c=st.n<act?'done':st.n===act?'active':'';
+    return `<div class="si"><div class="sd ${c}">${st.n<act?'✓':st.n}</div><span class="sl ${c}">${st.l}</span></div>${i<steps.length-1?'<span class="ssep">›</span>':''}`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// PASO 1
+// ══════════════════════════════════════════
+function iniciar(){
+  S={emp:'',sup:'',sector:'',tipo:'',fecha:'',rutas:[]};tipo='';
+  // Renderizar select supervisores dinámico
+  const selSup = document.getElementById('p1s');
+  if(selSup) selSup.innerHTML = renderSupSelect();
+  document.getElementById('p1e').value='';
+  document.getElementById('p1f').value=hoy();
+  document.getElementById('bt1').classList.remove('sel');
+  document.getElementById('bt2').classList.remove('sel');
+  const secBox = document.getElementById('sector-autobox');
+  if(secBox) secBox.style.display='none';
+  stpr('stb1',1); go('sp1');
+}
+
+function selT(t){
+  tipo=t;
+  document.getElementById('bt1').classList.toggle('sel',t==='obrero');
+  document.getElementById('bt2').classList.toggle('sel',t==='empleado');
+  // Actualizar label paso 2 según tipo
+  const lbl2 = document.getElementById('p2-lbl-tipo');
+  if(lbl2) lbl2.textContent = t==='obrero' ? 'Número de rutas evaluadas' : 'Número de áreas evaluadas';
+  const hint2 = document.getElementById('p2-hint-tipo');
+  if(hint2) hint2.textContent = t==='obrero'
+    ? 'Se generará un cuestionario completo (35 preguntas) por cada ruta'
+    : 'Se generará un cuestionario completo (35 preguntas) por cada área';
+}
+
+function p1next(){
+  const e=document.getElementById('p1e').value;
+  const s=document.getElementById('p1s').value;
+  if(!e||!s){toast('Seleccione empresa y supervisor','e');return;}
+  if(!tipo){toast('Seleccione el tipo de personal','e');return;}
+  const sector = getSectorActual();
+  const supData = SUPERVISORES.find(sv=>sv.nom===s);
+  if(supData && supData.reemplazante && !sector){
+    toast('Seleccione el sector que está cubriendo','e'); return;
+  }
+  S.emp=e; S.sup=s; S.sector=sector; S.tipo=tipo;
+  S.fecha=document.getElementById('p1f').value||hoy();
+  const supData2 = SUPERVISORES.find(sv=>sv.nom===s);
+  const esRemp   = supData2?.reemplazante;
+  const sectorLbl= esRemp ? `📍 ${sector} (Reemplazante)` : `📍 ${sector}`;
+  const tl=tipo==='obrero'?'👷 Obrero Campo':'💼 Empleado Agrario';
+  document.getElementById('p2cfg').innerHTML=`<div class="ibt">Sesión configurada</div>
+    <div style="margin-top:.4rem;display:flex;gap:.32rem;flex-wrap:wrap;">
+      <span class="chip">🏢 ${e}</span>
+      <span class="chip">👤 ${s}</span>
+      <span class="chip">${sectorLbl}</span>
+      <span class="chip">${tl}</span>
+      <span class="chip">📅 ${fmtF(S.fecha)}</span>
+    </div>`;
+  // Actualizar textos del paso 2
+  const lbl2 = document.getElementById('p2-lbl-tipo');
+  if(lbl2) lbl2.textContent = tipo==='obrero' ? 'Número de rutas evaluadas' : 'Número de áreas evaluadas';
+  const hint2 = document.getElementById('p2-hint-tipo');
+  if(hint2) hint2.textContent = tipo==='obrero'
+    ? 'Se generará un cuestionario completo (35 preguntas) por cada ruta'
+    : 'Se generará un cuestionario completo (35 preguntas) por cada área';
+  // Actualizar título paso 2
+  const wt2=document.getElementById('p2-wtit');
+  const ws2=document.getElementById('p2-wsub');
+  if(wt2) wt2.textContent=tipo==='obrero'?'¿Cuántas rutas procedieron?':'¿Cuántas áreas se evaluaron?';
+  if(ws2) ws2.textContent=tipo==='obrero'
+    ?'Número de rutas que completaron la jornada ETI'
+    :'Número de áreas que completaron la jornada ETI';
+  // Panel de áreas (solo empleado)
+  const areasPanel = document.getElementById('p2-areas-panel');
+  if(areasPanel) areasPanel.style.display = tipo==='empleado' ? 'block' : 'none';
+  if(tipo==='empleado') renderAreasSelect();
+  document.getElementById('p2n').value='';
+  document.getElementById('p2prev').style.display='none';
+  stpr('stb2',2); go('sp2');
+}
+
+// ══════════════════════════════════════════
+// PASO 2
+// ══════════════════════════════════════════
+function p2ch(){
+  const n=parseInt(document.getElementById('p2n').value);
+  const b=document.getElementById('p2prev');
+  if(!n){b.style.display='none';return;}
+  b.style.display='block';
+  const palabra=S.tipo==='obrero'?(n===1?'ruta':'rutas'):(n===1?'área':'áreas');
+  document.getElementById('p2pv').textContent=`${n} ${palabra}`;
+  document.getElementById('p2ps').textContent=`${n} cuestionario${n>1?'s':''} de 35 preguntas cada uno`;
+}
+
+function p2next(){
+  const n=parseInt(document.getElementById('p2n').value);
+  const palabra=S.tipo==='obrero'?'rutas':'áreas';
+  if(!n){toast(`Seleccione el número de ${palabra}`,'e');return;}
+  const prev=S.rutas||[];
+  const areaPresel=S.tipo==='empleado'?(document.getElementById('p2areas')?.value||''):'';
+  S.rutas=Array.from({length:n},(_,i)=>prev[i]||{
+    nom:S.tipo==='empleado'&&i===0&&areaPresel?areaPresel:'',
+    cod:'',tot:50,nev:5,sc:{}
+  });
+  renderP3(); stpr('stb3',3); go('sp3');
+}
+
+// ══════════════════════════════════════════
+// PASO 3 — ACORDEÓN
+// ══════════════════════════════════════════
+function maxEv(t){return Math.min(10,Math.max(1,Math.ceil(t*0.1)));}
+function hoy(){return new Date().toISOString().split('T')[0];}
+
+function renderP3(){
+  const tl=S.tipo==='obrero'?'👷 Obrero Campo':'💼 Empleado Agrario';
+  const palabra=S.tipo==='obrero'?'rutas':'áreas';
+  document.getElementById('p3banner').innerHTML=`<div class="ibt">Tipo de personal · Sector</div>
+    <div style="font-weight:800;font-size:1rem;color:var(--text);margin-top:.2rem">${tl} &nbsp;·&nbsp; 📍 ${S.sector}</div>
+    <div style="font-size:.71rem;color:var(--text2);margin-top:.08rem">${S.emp} · ${S.sup} · ${fmtF(S.fecha)}</div>`;
+  // Paso 3 título dinámico
+  const wt=document.querySelector('#sp3 .wtit');
+  const ws=document.querySelector('#sp3 .wsub');
+  if(wt) wt.textContent=`Complete cada ${S.tipo==='obrero'?'ruta':'área'} con las 35 preguntas`;
+  if(ws) ws.textContent=`Un evaluado por columna — seleccione el puntaje obtenido en cada pregunta`;
+  document.getElementById('p3list').innerHTML=S.rutas.map((_,i)=>mkAc(i)).join('');
+  updP3();
+  toggleAc(0,true);
+}
+
+function buildEvOpts(neAct, tot){
+  const minReq=Math.max(1,Math.ceil((tot||50)*0.1));
+  const maxPerm=Math.min(10, minReq+4); // permite hasta 4 más del mínimo
+  let o='';
+  for(let v=1;v<=Math.min(10,maxPerm);v++){
+    const isMin=v===minReq;
+    o+=`<option value="${v}" ${v===neAct?'selected':''}>${v} evaluado${v>1?'s':''}${isMin?' (10% req.)':''}</option>`;
+  }
+  return o;
+}
+
+function mkAc(i){
+  const r=S.rutas[i], ne=r.nev||maxEv(r.tot||50), pct=calcPct(i), done=pct>=100;
+  const esEmp=S.tipo==='empleado';
+  const nomLabel = esEmp ? 'Área evaluada' : 'Nombre de la ruta';
+  const nomPlaceholder = esEmp ? 'Ej: Gestión Humana' : 'Ej: Ruta Norte – Campo A';
+  const defNom = esEmp ? `Área ${i+1}` : `Ruta ${i+1}`;
+  const codLabel = esEmp ? 'Código área' : 'Código ruta';
+  const codPlaceholder = esEmp ? 'AR-01' : 'RT-01';
+  const totLabel = esEmp ? 'Total empleados en área' : 'Total trabajadores en ruta';
+  return `<div class="ac ${done?'done':''}" id="ac${i}">
+    <div class="acpbar"><div class="acpfill" id="apf${i}" style="width:${pct}%"></div></div>
+    <div class="achdr" onclick="toggleAc(${i})">
+      <div class="acnum">${i+1}</div>
+      <div class="acinfo">
+        <div class="acname" id="acn${i}">${r.nom||`${defNom} — (sin nombre)`}</div>
+        <div class="acmeta" id="acm${i}">${r.cod?r.cod+' · ':''}${r.tot||50} pers. · ${ne} eval. · ${pct.toFixed(0)}% completado</div>
+      </div>
+      <span class="bdg ${done?'bg':'br'}" id="acbdg${i}">${done?'LISTO':'PENDIENTE'}</span>
+      <span class="acarr">▼</span>
+    </div>
+    <div class="acbody">
+      <div class="rfields">
+        <div class="fg" style="margin:0">
+          <label class="fl" style="font-size:.7rem">${nomLabel} <span class="req">*</span></label>
+          ${esEmp
+            ? `<select class="fc" style="padding:.45rem .78rem;font-size:.82rem" id="rn${i}" onchange="rfchArea(${i})">
+                <option value="">— Seleccionar —</option>
+                ${AREAS.map(a=>`<option value="${a}" ${r.nom===a?'selected':''}>${a}</option>`).join('')}
+               </select>`
+            : `<input class="fc" style="padding:.45rem .78rem;font-size:.82rem" id="rn${i}" placeholder="${nomPlaceholder}" value="${r.nom}" oninput="rfch(${i})">`
+          }
+        </div>
+        <div class="fg" style="margin:0">
+          <label class="fl" style="font-size:.7rem">${codLabel}</label>
+          <input class="fc" style="padding:.45rem .78rem;font-size:.82rem" id="rc${i}" placeholder="${codPlaceholder}" value="${r.cod}" oninput="rfch(${i})">
+        </div>
+        <div class="fg" style="margin:0">
+          <label class="fl" style="font-size:.7rem">${totLabel}</label>
+          <input class="fc" type="number" style="padding:.45rem .78rem;font-size:.82rem" id="rt${i}" placeholder="50" min="1" max="500" value="${r.tot||''}" oninput="rfch(${i})">
+        </div>
+        <div class="fg" style="margin:0">
+          <label class="fl" style="font-size:.7rem">N° evaluados <span style="color:var(--text2);font-weight:400">(mín 10% · máx 10)</span></label>
+          <select class="fc" style="padding:.45rem .78rem;font-size:.82rem" id="rev${i}" onchange="rfchEv(${i})">
+            ${buildEvOpts(ne, r.tot||50)}
+          </select>
+        </div>
+      </div>
+      <div class="cqwrap" id="cq${i}">${mkCuest(i)}</div>
+    </div>
+  </div>`;
+}
+
+function rfchArea(i){
+  // Para empleado: cuando cambia el select de área
+  const sel=document.getElementById(`rn${i}`);
+  if(!sel) return;
+  S.rutas[i].nom=sel.value;
+  document.getElementById(`acn${i}`).textContent=sel.value||`Área ${i+1} — (sin nombre)`;
+  updAc(i); updP3();
+}
+
+function mkCuest(ri){
+  const r=S.rutas[ri], ne=r.nev||maxEv(r.tot||50);
+  // Cabecera de evaluados
+  let evHdrs='';
+  for(let ei=0;ei<ne;ei++) evHdrs+=`<div style="text-align:center;font-size:.65rem;color:var(--text2);font-weight:600;min-width:88px">Eval. ${ei+1}</div>`;
+
+  let html='';
+  SECS.forEach(sec=>{
+    const maxSec=sec.maxSec;
+    html+=`<div class="secblk">
+      <div class="sbhdr">
+        <span class="sbt">📌 ${sec.nom}</span>
+        <span class="sbm">Peso: ${(sec.peso*100).toFixed(0)}% · Máx: ${maxSec} pts</span>
+      </div>
+      <div class="sbody">`;
+
+    // Fila encabezado evaluados
+    html+=`<div style="display:flex;align-items:center;gap:.5rem;padding:.38rem .8rem;background:var(--surf2);border-bottom:1px solid var(--bdr);">
+      <div style="flex:1;font-size:.67rem;font-weight:600;color:var(--text2)">Pregunta</div>
+      ${Array.from({length:ne},(_,ei)=>`<div style="text-align:center;font-size:.65rem;color:var(--text2);font-weight:600;min-width:88px;flex-shrink:0">Eval. ${ei+1}</div>`).join('')}
+    </div>`;
+
+    sec.pregs.forEach(preg=>{
+      const savedVals=Array.from({length:ne},(_,ei)=>r.sc?.[sec.id]?.[preg.n]?.[ei]??'');
+      html+=`<div class="prow">
+        <span class="pnum">${preg.n}</span>
+        <div class="ptxt">${preg.t}<span class="pmx">Máx ${preg.max} pt${preg.max>1?'s':''}</span></div>`;
+      // Un select por evaluado
+      for(let ei=0;ei<ne;ei++){
+        const v=savedVals[ei];
+        const cls='psel'+(v?' scored'+(parseInt(v)===preg.max?' smax':''):'');
+        html+=`<select class="${cls}" style="flex-shrink:0"
+          id="s${ri}_${sec.id}_${preg.n}_${ei}"
+          data-ri="${ri}" data-sid="${sec.id}" data-pn="${preg.n}" data-ei="${ei}" data-max="${preg.max}"
+          onchange="onSel(this)">
+          ${mkOpts(preg.max,v)}
+        </select>`;
+      }
+      html+=`</div>`;
+    });
+
+    // Fila subtotal
+    html+=`<div class="strow">
+      <span class="stlbl">Promedio sección (todos los evaluados)</span>
+      <span><span class="stval" id="stv${ri}_${sec.id}">—</span>
+      <span style="font-size:.7rem;color:var(--text2)" id="stp${ri}_${sec.id}"></span></span>
+    </div>`;
+    html+=`</div></div>`;
+  });
+  return html;
+}
+
+function mkOpts(max, saved){
+  let o=`<option value="" ${!saved?'selected':''}>— pts —</option>`;
+  for(let v=1;v<=max;v++) o+=`<option value="${v}" ${saved==v?'selected':''}>${v} pt${v>1?'s':''} ${v===max?'✓':''}  </option>`;
+  return o;
+}
+
+function toggleAc(i,force=false){
+  const el=document.getElementById(`ac${i}`);
+  if(force||!el.classList.contains('open')) el.classList.add('open');
+  else el.classList.remove('open');
+}
+
+function rfch(i){
+  const nom=document.getElementById(`rn${i}`).value.trim();
+  const cod=document.getElementById(`rc${i}`).value.trim();
+  const tot=parseInt(document.getElementById(`rt${i}`).value)||50;
+  // Reconstruir opciones del selector de evaluados según nuevo total
+  const selEv=document.getElementById(`rev${i}`);
+  const neAct=S.rutas[i].nev||maxEv(tot);
+  if(selEv) selEv.innerHTML=buildEvOpts(neAct,tot);
+  const ne=selEv?parseInt(selEv.value)||maxEv(tot):maxEv(tot);
+  S.rutas[i].nom=nom; S.rutas[i].cod=cod; S.rutas[i].tot=tot; S.rutas[i].nev=ne;
+  document.getElementById(`acn${i}`).textContent=nom||`Ruta ${i+1} — (sin nombre)`;
+  // Re-generar cuestionario si cambió el número de evaluados
+  document.getElementById(`cq${i}`).innerHTML=mkCuest(i);
+  recalcSubs(i);
+  updAc(i);
+  updP3();
+}
+
+function rfchEv(i){
+  // Cambio manual del número de evaluados
+  const selEv=document.getElementById(`rev${i}`);
+  const ne=parseInt(selEv.value)||maxEv(S.rutas[i].tot||50);
+  S.rutas[i].nev=ne;
+  S.rutas[i].sc={}; // limpiar scores al cambiar evaluados
+  document.getElementById(`cq${i}`).innerHTML=mkCuest(i);
+  recalcSubs(i);
+  updAc(i);
+  updP3();
+  toast(`Ruta ${i+1}: ${ne} evaluado${ne>1?'s':''} configurado${ne>1?'s':''}. Cuestionario regenerado.`,'i');
+}
+
+function onSel(el){
+  const ri=+el.dataset.ri, sid=el.dataset.sid, pn=+el.dataset.pn, ei=+el.dataset.ei, mx=+el.dataset.max;
+  const v=el.value;
+  if(!S.rutas[ri].sc) S.rutas[ri].sc={};
+  if(!S.rutas[ri].sc[sid]) S.rutas[ri].sc[sid]={};
+  if(!S.rutas[ri].sc[sid][pn]) S.rutas[ri].sc[sid][pn]=[];
+  S.rutas[ri].sc[sid][pn][ei]=v;
+  el.className='psel'+(v?' scored'+(parseInt(v)===mx?' smax':''):'');
+  recalcSubs(ri);
+  updAc(ri);
+  updP3();
+}
+
+// ══════════════════════════════════════════
+// LÓGICA DE CÁLCULO CORRECTA
+// Para cada sección:
+//   1. Por cada evaluado: suma sus respuestas en esa sección
+//   2. Suma todos los subtotales de evaluados
+//   3. Divide entre cantidad de evaluados → promedio sección del grupo
+// ══════════════════════════════════════════
+function recalcSubs(ri){
+  const r=S.rutas[ri], ne=r.nev||maxEv(r.tot||50);
+  SECS.forEach(sec=>{
+    // Paso 1: subtotal por evaluado en esta sección
+    const evSubs=[];
+    for(let ei=0;ei<ne;ei++){
+      let sum=0, ok=true;
+      sec.pregs.forEach(preg=>{
+        const v=parseFloat(r.sc?.[sec.id]?.[preg.n]?.[ei]);
+        if(isNaN(v)||r.sc?.[sec.id]?.[preg.n]?.[ei]==='') ok=false;
+        else sum+=v;
+      });
+      if(ok) evSubs.push(sum);
+    }
+    const stvEl=document.getElementById(`stv${ri}_${sec.id}`);
+    const stpEl=document.getElementById(`stp${ri}_${sec.id}`);
+    if(!stvEl) return;
+    if(evSubs.length){
+      // Paso 2+3: promedio = suma subtotales / N evaluados completos
+      const prom=evSubs.reduce((a,b)=>a+b,0)/evSubs.length;
+      const pct=(prom/sec.maxSec*100).toFixed(1);
+      stvEl.textContent=prom.toFixed(2)+' pts';
+      stvEl.style.color=parseFloat(pct)>=70?'var(--gdim)':'var(--red)';
+      stpEl.textContent=` (${pct}%)`;
+    } else {
+      stvEl.textContent='—'; stvEl.style.color='var(--text2)';
+      stpEl.textContent='';
+    }
+  });
+}
+
+function calcPct(ri){
+  const r=S.rutas[ri], ne=r.nev||maxEv(r.tot||50);
+  let tot=0,fill=0;
+  SECS.forEach(sec=>sec.pregs.forEach(preg=>{
+    for(let ei=0;ei<ne;ei++){
+      tot++;
+      const v=r.sc?.[sec.id]?.[preg.n]?.[ei];
+      if(v!==undefined&&v!==''&&v!==null) fill++;
+    }
+  }));
+  return tot>0?fill/tot*100:0;
+}
+
+function updAc(i){
+  const pct=calcPct(i), done=pct>=100, r=S.rutas[i], ne=r.nev||maxEv(r.tot||50);
+  const el=document.getElementById(`ac${i}`);
+  el.classList.toggle('done',done);
+  const pf=document.getElementById(`apf${i}`);
+  if(pf) pf.style.width=pct+'%';
+  const acm=document.getElementById(`acm${i}`);
+  if(acm) acm.textContent=`${r.cod?r.cod+' · ':''}${r.tot||50} trab. · ${ne} eval. · ${pct.toFixed(0)}% completado`;
+  const bdg=document.getElementById(`acbdg${i}`);
+  if(bdg){bdg.textContent=done?'LISTO':'PENDIENTE';bdg.className=`bdg ${done?'bg':'br'}`;}
+}
+
+function updP3(){
+  const tot=S.rutas.length;
+  const done=S.rutas.filter((_,i)=>calcPct(i)>=100).length;
+  const totalEval=S.rutas.reduce((a,r)=>a+(r.nev||maxEv(r.tot||50)),0);
+  document.getElementById('p3prog').textContent=`${done} / ${tot}`;
+  document.getElementById('p3fill').style.width=tot?done/tot*100+'%':'0%';
+  // Banner totales
+  const banner=document.getElementById('p3totbanner');
+  if(banner){
+    const rutasN=tot;
+    const evPorRuta=S.rutas.map(r=>r.nev||maxEv(r.tot||50));
+    const todosIgual=evPorRuta.every(v=>v===evPorRuta[0]);
+    const resumen=todosIgual
+      ? `${rutasN} rutas × ${evPorRuta[0]} evaluados = ${totalEval} evaluaciones totales`
+      : `${rutasN} rutas con distinto N° evaluados = ${totalEval} evaluaciones totales`;
+    banner.innerHTML=`
+      <div class="teb-item"><div class="teb-label">Rutas</div><div class="teb-val">${rutasN}</div></div>
+      <div class="teb-sep">×</div>
+      <div class="teb-item"><div class="teb-label">Eval. promedio</div><div class="teb-val">${todosIgual?evPorRuta[0]:'Varios'}</div></div>
+      <div class="teb-sep">=</div>
+      <div class="teb-item"><div class="teb-label">Total evaluaciones</div><div class="teb-val" style="color:#fff">${totalEval}</div></div>
+      <div class="teb-eq">${resumen}</div>`;
+  }
+}
+
+// ══════════════════════════════════════════
+// CÁLCULO FINAL
+// ══════════════════════════════════════════
+function calcular(){
+  const inc=S.rutas.filter((_,i)=>calcPct(i)<100).length;
+  if(inc>0){if(!confirm(`${inc} ruta(s) sin completar. ¿Calcular con datos disponibles?`))return;}
+  if(S.rutas.findIndex(r=>!r.nom.trim())>=0){toast('Hay rutas sin nombre','e');return;}
+
+  const rRes=S.rutas.map((ruta,ri)=>{
+    const ne=ruta.nev||maxEv(ruta.tot||50);
+    const secs=SECS.map(sec=>{
+      // PASO 1: subtotal de cada evaluado en esta sección
+      const evSubs=[];
+      for(let ei=0;ei<ne;ei++){
+        let sum=0, ok=true;
+        sec.pregs.forEach(preg=>{
+          const v=parseFloat(ruta.sc?.[sec.id]?.[preg.n]?.[ei]);
+          if(isNaN(v)) ok=false; else sum+=v;
+        });
+        if(ok) evSubs.push(sum);
+      }
+      // PASO 2: suma de subtotales / cantidad evaluados = promedio sección
+      const promSec=evSubs.length?evSubs.reduce((a,b)=>a+b,0)/evSubs.length:0;
+      // PASO 3: normalizar
+      const cum=promSec/sec.maxSec;
+      // PASO 4: ponderar
+      const pond=cum*sec.peso;
+      return{...sec, promSec, cum, pond, evSubs};
+    });
+    // PASO 5: resultado grupo = suma de ponderados
+    const resGrupo=secs.reduce((a,s)=>a+s.pond,0);
+    return{...ruta, ne, secs, resGrupo};
+  });
+
+  // RESULTADO GENERAL = promedio de todos los grupos
+  const resGen=rRes.reduce((a,r)=>a+r.resGrupo,0)/rRes.length;
+  const res={emp:S.emp, sup:S.sup, sector:S.sector, tipo:S.tipo, fecha:S.fecha, rutas:rRes, resGen};
+
+  // Historial
+  const palabra=S.tipo==='obrero'?'ruta':'área';
+  rRes.forEach(r=>{
+    hist.push({nom:r.nom, cod:r.cod, emp:S.emp, sup:S.sup, sector:S.sector,
+               tipo:S.tipo, fecha:S.fecha, resGrupo:r.resGrupo, ts:Date.now()});
+  });
+  try{localStorage.setItem('eti_v4',JSON.stringify(hist.slice(-500)));}catch(e){}
+
+  window._res=res;
+  renderRes(res);
+  updMenuReporte();
+  go('sres');
+  toast(`✅ ${S.rutas.length} ${palabra}(s) calculadas correctamente`,'s');
+}
+
+// ══════════════════════════════════════════
+// RENDER RESULTADOS
+// ══════════════════════════════════════════
+function renderRes(res){
+  const pg=(res.resGen*100).toFixed(1), ok=res.resGen>=0.7;
+  const tl=res.tipo==='obrero'?'👷 Obrero Campo':'💼 Empleado Agrario';
+  const palabraP=res.tipo==='obrero'?'ruta(s)':'área(s)';
+  const palabraS=res.tipo==='obrero'?'Ruta / Grupo':'Área Evaluada';
+  const palabraR=res.tipo==='obrero'?'Rutas':'Áreas';
+  const tR=res.tipo==='obrero'?'Obrero Campo':'Empleado Agrario';
+  const pal=res.tipo==='obrero'?'rutas':'áreas';
+
+  document.getElementById('rmeta').textContent=
+    `${res.emp} · ${res.sup} · 📍${res.sector||'—'} · ${tl} · ${fmtF(res.fecha)} · ${res.rutas.length} ${palabraP}`;
+
+  // ── Encabezado tabla dinámico ──
+  const thGrupo = document.querySelector('#sres .rtbl thead tr th:nth-child(2)');
+  if(thGrupo) thGrupo.textContent = palabraS;
+
+  // ── KPIs ──
+  const totalEval = res.rutas.reduce((a,r)=>a+r.ne,0);
+  const mismosEval = res.rutas.every(r=>r.ne===res.rutas[0].ne);
+  document.getElementById('rkpis').innerHTML=`
+    <div class="kcard ${ok?'kg':'kr'}">
+      <div class="klbl">Resultado General</div>
+      <div class="kval" style="color:${ok?'var(--gdim)':'var(--red)'}">${pg}%</div>
+      <div class="ksub">${ok?'✅ APROBADO':'⚠️ REQUIERE REFUERZO'}</div>
+    </div>
+    <div class="kcard">
+      <div class="klbl">Sector · Personal</div>
+      <div class="kval" style="font-size:.8rem;margin-top:.3rem;line-height:1.3">${res.sector||'—'}</div>
+      <div class="ksub">${tl} · ${res.emp}</div>
+    </div>
+    <div class="kcard kg">
+      <div class="klbl">${palabraR} Aprobadas</div>
+      <div class="kval">${res.rutas.filter(r=>r.resGrupo>=0.7).length}</div>
+      <div class="ksub">de ${res.rutas.length}</div>
+    </div>
+    <div class="kcard kr">
+      <div class="klbl">En Refuerzo</div>
+      <div class="kval">${res.rutas.filter(r=>r.resGrupo<0.7).length}</div>
+      <div class="ksub">< 70%</div>
+    </div>
+    <div class="kcard">
+      <div class="klbl">Total Evaluaciones</div>
+      <div class="kval">${totalEval}</div>
+      <div class="ksub">${res.rutas.length} ${pal} × ${mismosEval?res.rutas[0].ne+' eval. c/u':'varios'}</div>
+    </div>`;
+
+  // ── Tabla rutas/áreas ──
+  document.getElementById('rtbody').innerHTML=res.rutas.map(r=>{
+    const rp=(r.resGrupo*100).toFixed(1), rok=r.resGrupo>=0.7;
+    return `<tr>
+      <td><span class="cpill">${r.cod||'—'}</span></td>
+      <td style="font-weight:600">${r.nom}</td>
+      <td style="font-size:.7rem">${res.tipo==='obrero'?'👷 Campo':'💼 Agrario'}</td>
+      <td style="text-align:center">${r.ne}</td>
+      ${r.secs.map(s=>`<td style="text-align:center;font-size:.74rem;color:${s.cum>=0.7?'var(--gdim)':'var(--red)'}">${(s.cum*100).toFixed(1)}%</td>`).join('')}
+      <td style="text-align:center;font-weight:800;color:${rok?'var(--gdim)':'var(--red)'}">${rp}%</td>
+      <td style="text-align:center"><span class="bdg ${rok?'bg':'br'}">${rok?'APROBADO':'REFUERZO'}</span></td>
+    </tr>`;
+  }).join('');
+
+  // ── Secciones promedio ──
+  const promSecs=SECS.map((sec,si)=>({...sec,cumProm:res.rutas.reduce((a,r)=>a+(r.secs[si]?.cum||0),0)/res.rutas.length}));
+  document.getElementById('rsecs').innerHTML=promSecs.map(s=>{
+    const p=(s.cumProm*100).toFixed(1), ok2=s.cumProm>=0.7;
+    return `<div class="scard">
+      <div class="scdhdr"><div class="scdname">${s.nom}</div><div class="scdpct${ok2?'':' r'}">${p}%</div></div>
+      <div class="btrk"><div class="bfil${ok2?'':' r'}" style="width:${Math.min(100,parseFloat(p))}%"></div></div>
+      <div class="scdmeta"><span>Peso: ${(s.peso*100).toFixed(0)}% · Máx: ${s.maxSec} pts</span><span class="bdg ${ok2?'bg':'br'}">${ok2?'APROBADO':'REFUERZO'}</span></div>
+    </div>`;
+  }).join('');
+
+  // ── REPORTE GERENCIAL ──
+  const f=fmtF(res.fecha);
+  const palLabel=res.tipo==='obrero'?'Rutas evaluadas':'Áreas evaluadas';
+  const palDetalle=res.tipo==='obrero'?'RUTA':'ÁREA';
+  const supData3 = SUPERVISORES.find(sv=>sv.nom===res.sup);
+  const esRemp3  = supData3?.reemplazante;
+  const supLinea = esRemp3
+    ? `${res.sup} (Reemplazante — cubre: ${res.sector})`
+    : res.sup;
+  let rpt=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REPORTE DE EVALUACIÓN ETI – CAPACITACIÓN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Fecha             : ${f}
+Empresa           : ${res.emp}
+Supervisor        : ${supLinea}
+Sector            : ${res.sector||'—'}
+Tipo de personal  : ${tR}
+${palLabel.padEnd(18)}: ${res.rutas.length}
+Total evaluaciones: ${totalEval} personas
+
+────────────────────────────────────────────────
+PROMEDIO POR TEMA (todos los grupos)
+────────────────────────────────────────────────`;
+  promSecs.forEach(s=>{
+    const sp=(s.cumProm*100).toFixed(1), ok2=s.cumProm>=0.7;
+    rpt+=`\n  ${ok2?'✓':'✗'} ${s.nom.padEnd(36)} ${sp.padStart(5)}%   ${ok2?'APROBADO':'REFUERZO'}`;
+  });
+
+  rpt+=`\n\n────────────────────────────────────────────────
+DETALLE POR ${palDetalle}
+────────────────────────────────────────────────`;
+  res.rutas.forEach(r=>{
+    const rp=(r.resGrupo*100).toFixed(1), est=r.resGrupo>=0.7?'✅ APROBADO':'⚠️ REFUERZO';
+    rpt+=`\n\n[${r.cod||'—'}] ${r.nom}  (${r.ne} evaluado${r.ne>1?'s':''})\n${'─'.repeat(52)}`;
+    r.secs.forEach(s=>{
+      const sp=(s.cum*100).toFixed(1), ponPct=(s.pond*100).toFixed(2);
+      rpt+=`\n  ${s.cum>=0.7?'✓':'✗'} ${s.nom.padEnd(34)} ${s.promSec.toFixed(2).padStart(5)} pts  ${sp.padStart(5)}%  Pond:${ponPct}%`;
+    });
+    rpt+=`\n  ${'─'.repeat(48)}\n  RESULTADO : ${rp.padStart(6)}%   ${est}`;
+  });
+
+  rpt+=`\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RESULTADO GENERAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Promedio general   : ${pg}%
+Estado             : ${ok?'✅ APROBADO – Cumple estándar ETI':'⚠️ REQUIERE REFUERZO – Planificar capacitación'}
+${palabraR} aprobadas : ${res.rutas.filter(r=>r.resGrupo>=0.7).length} / ${res.rutas.length}
+${palabraR} en refuerzo: ${res.rutas.filter(r=>r.resGrupo<0.7).length} / ${res.rutas.length}
+
+SEMAFORO: ROJO (0-69%)  |  VERDE (70-100%)
+
+Generado por Sistema ETI · ${res.emp}
+Coordinacion de Relaciones Laborales
+Joel Timoteo Gonza – Coordinador de Relaciones Laborales
+${new Date().toLocaleString('es-PE')}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+  document.getElementById('rrpt').textContent=rpt;
+  window._rpt=rpt;
+}
+
+// ══════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════
+function irDash(){renderDash();go('sdash');}
+function renderDash(){
+  const h=hist;
+  document.getElementById('dkpis').innerHTML=`
+    <div class="kcard"><div class="klbl">Rutas Registradas</div><div class="kval">${h.length}</div><div class="ksub">acumulado</div></div>
+    <div class="kcard kg"><div class="klbl">Promedio</div><div class="kval">${h.length?((h.reduce((a,x)=>a+x.resGrupo,0)/h.length)*100).toFixed(1)+'%':'—'}</div><div class="ksub">todas las rutas</div></div>
+    <div class="kcard kr"><div class="klbl">En Refuerzo</div><div class="kval" style="color:var(--red)">${h.filter(x=>x.resGrupo<0.7).length}</div><div class="ksub">< 70%</div></div>`;
+  if(!h.length){document.getElementById('dlist').innerHTML='<div class="demp"><div style="font-size:3rem;margin-bottom:1rem">📊</div>Sin datos. Calcule una evaluación primero.</div>';return;}
+  document.getElementById('dlist').innerHTML=[...h].sort((a,b)=>b.resGrupo-a.resGrupo).map(r=>{
+    const p=(r.resGrupo*100).toFixed(1),ok=r.resGrupo>=0.7;
+    return `<div class="grow">
+      <div><div class="gname">${r.nom||'—'}</div><div style="font-size:.7rem;color:var(--text2)">${r.tipo==='obrero'?'👷':'💼'} ${r.emp||''} · ${r.sup||''}</div></div>
+      <div class="gtrk"><div class="gfil ${ok?'':'r'}" style="width:${Math.min(100,parseFloat(p))}%"></div></div>
+      <div class="gpct ${ok?'gn':'rd'}">${p}%</div>
+      <div><span class="bdg ${ok?'bg':'br'}">${ok?'APROBADO':'REFUERZO'}</span></div>
+    </div>`;
+  }).join('');
+}
+function limpH(){confMod('¿Limpiar historial?','Se eliminarán todos los registros.',()=>{hist=[];localStorage.removeItem('eti_v4');renderDash();toast('Historial eliminado','i');});}
+
+function exportDashTxt(){
+  if(!hist.length){toast('No hay registros para exportar','e');return;}
+  const h=[...hist].sort((a,b)=>b.resGrupo-a.resGrupo);
+  const prom=h.reduce((a,x)=>a+x.resGrupo,0)/h.length;
+  const aprobadas=h.filter(x=>x.resGrupo>=0.7).length;
+  const refuerzo=h.filter(x=>x.resGrupo<0.7).length;
+  let txt=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DASHBOARD ETI – ESTADÍSTICAS DE EVALUACIÓN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Exportado     : ${new Date().toLocaleString('es-PE')}
+Total rutas   : ${h.length}
+Promedio gral : ${(prom*100).toFixed(1)}%
+Aprobadas     : ${aprobadas}  |  En refuerzo: ${refuerzo}
+
+SEMÁFORO: ROJO (0–69%)  |  VERDE (70–100%)
+
+────────────────────────────────────────────────
+RANKING DE RUTAS (mayor a menor resultado)
+────────────────────────────────────────────────
+N   Codigo   Ruta                           Tipo           Supervisor              Empresa      Fecha        Resultado  Estado
+`;
+  h.forEach((r,i)=>{
+    const p=(r.resGrupo*100).toFixed(1), ok=r.resGrupo>=0.7;
+    const tipo=r.tipo==='obrero'?'Obrero Campo  ':'Empl. Agrario ';
+    txt+=`${String(i+1).padStart(2,'0')}  ${(r.cod||'-').padEnd(8)} ${(r.nom||'-').padEnd(30)} ${tipo} ${(r.sup||'-').padEnd(22)} ${(r.emp||'-').padEnd(11)} ${(r.fecha||'-').padEnd(12)} ${p.padStart(6)}%   ${ok?'APROBADO':'REFUERZO'}\n`;
+  });
+  txt+=`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Sistema ETI · Verfrut / RAPEL SAC
+Creado por Joel Timoteo Gonza - Coordinador de Relaciones Laborales
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+  descargar(txt, `dashboard-eti-${new Date().toISOString().split('T')[0]}.txt`, 'text/plain');
+  toast('Dashboard exportado en .txt','s');
+}
+
+function exportDashCsv(){
+  if(!hist.length){toast('No hay registros para exportar','e');return;}
+  const h=[...hist].sort((a,b)=>b.resGrupo-a.resGrupo);
+  const enc=v=>'"'+(String(v||'').replace(/"/g,'""'))+'"';
+  let csv='N,Codigo,Ruta / Grupo,Tipo Personal,Supervisor,Empresa,Fecha,Resultado (%),Estado\n';
+  h.forEach((r,i)=>{
+    const p=(r.resGrupo*100).toFixed(1), ok=r.resGrupo>=0.7;
+    const tipo=r.tipo==='obrero'?'Obrero Campo':'Empleado Agrario';
+    csv+=`${i+1},${enc(r.cod)},${enc(r.nom)},${enc(tipo)},${enc(r.sup)},${enc(r.emp)},${enc(r.fecha)},${p},${ok?'APROBADO':'REFUERZO'}\n`;
+  });
+  descargar('\uFEFF'+csv, `dashboard-eti-${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
+  toast('Dashboard exportado en .csv (Excel)','s');
+}
+
+// ══════════════════════════════════════════
+// ACCIONES
+// ══════════════════════════════════════════
+function verUlt(){
+  if(!window._res){toast('Sin resultados calculados aún. Haga una evaluación primero.','i');return;}
+  renderRes(window._res);
+  go('sres');
+}
+
+function copiar(){
+  if(!window._rpt)return;
+  navigator.clipboard.writeText(window._rpt).then(()=>toast('Reporte copiado al portapapeles','s'));
+}
+
+// Copiar desde el menú directamente
+function copiarDirecto(){
+  if(!window._rpt){toast('Sin reporte aún','i');return;}
+  navigator.clipboard.writeText(window._rpt).then(()=>toast('Reporte copiado al portapapeles','s'));
+}
+
+// Enviar correo desde el menú directamente
+function enviarCorreoDirecto(){
+  if(!window._res){toast('Sin reporte calculado aún','i');return;}
+  enviarCorreo();
+}
+
+// Actualizar panel del menú con el último reporte
+function updMenuReporte(){
+  const panel   = document.getElementById('menu-reporte-panel');
+  const meta    = document.getElementById('menu-rpt-meta');
+  const preview = document.getElementById('menu-rpt-preview');
+  if(!panel) return;
+  if(!window._res || !window._rpt){
+    panel.style.display='none';
+    return;
+  }
+  panel.style.display='block';
+  const res=window._res;
+  const pg=(res.resGen*100).toFixed(1), ok=res.resGen>=0.7;
+  const sup3=SUPERVISORES.find(sv=>sv.nom===res.sup);
+  const esR3=sup3?.reemplazante;
+  const supLabel=esR3?`${res.sup} (Reemplaz.)`:`${res.sup}`;
+  meta.innerHTML=`<span style="color:${ok?'#3ecf8e':'#ff6666'};font-size:1.05rem;font-weight:800;">${pg}%</span>
+    &nbsp;${ok?'✅ APROBADO':'⚠️ REFUERZO'}
+    &nbsp;·&nbsp; ${res.emp} &nbsp;·&nbsp; ${supLabel}
+    &nbsp;·&nbsp; 📍${res.sector||'—'}
+    &nbsp;·&nbsp; ${fmtF(res.fecha)}`;
+  // Preview primeras líneas del reporte
+  const lineas=window._rpt.split('\n').slice(0,18).join('\n');
+  preview.textContent=lineas+'...';
+}
+
+function enviarCorreo(){
+  if(!window._rpt){toast('Sin reporte calculado aún','e');return;}
+  const res=window._res;
+  if(!res){return;}
+  const pct=(res.resGen*100).toFixed(1);
+  const tl=res.tipo==='obrero'?'Obrero Campo':'Empleado Agrario';
+  const palabra=res.tipo==='obrero'?'rutas':'áreas';
+  const asunto=encodeURIComponent(
+    `Reporte ETI – ${res.emp} – ${res.sup} – ${fmtF(res.fecha)} – ${pct}%`
+  );
+  // Cuerpo del correo: resumen general + detalle por grupo
+  let cuerpo=`REPORTE DE EVALUACIÓN ETI – CAPACITACIÓN\n\n`;
+  cuerpo+=`Fecha       : ${fmtF(res.fecha)}\n`;
+  cuerpo+=`Empresa     : ${res.emp}\n`;
+  cuerpo+=`Supervisor  : ${res.sup}\n`;
+  cuerpo+=`Sector      : ${res.sector||'—'}\n`;
+  cuerpo+=`Personal    : ${tl}\n`;
+  cuerpo+=`${palabra.charAt(0).toUpperCase()+palabra.slice(1)} evaluadas: ${res.rutas.length}\n\n`;
+  cuerpo+=`RESULTADO GENERAL: ${pct}%  ${res.resGen>=0.7?'APROBADO':'REQUIERE REFUERZO'}\n\n`;
+  cuerpo+=`─────────────────────────────────────\n`;
+  cuerpo+=`PROMEDIO POR TEMA (todos los grupos)\n`;
+  cuerpo+=`─────────────────────────────────────\n`;
+  const promSecs=SECS.map((sec,si)=>({
+    nom:sec.nom,
+    prom:res.rutas.reduce((a,r)=>a+(r.secs[si]?.cum||0),0)/res.rutas.length
+  }));
+  promSecs.forEach(s=>{
+    cuerpo+=`${s.nom.padEnd(38)} ${(s.prom*100).toFixed(1)}%  ${s.prom>=0.7?'APROBADO':'REFUERZO'}\n`;
+  });
+  cuerpo+=`\n─────────────────────────────────────\n`;
+  cuerpo+=`RESULTADO POR ${palabra.toUpperCase()}\n`;
+  cuerpo+=`─────────────────────────────────────\n`;
+  res.rutas.forEach(r=>{
+    const rp=(r.resGrupo*100).toFixed(1);
+    cuerpo+=`[${r.cod}] ${r.nom.padEnd(28)} ${rp}%  ${r.resGrupo>=0.7?'APROBADO':'REFUERZO'}  (${r.ne} eval.)\n`;
+  });
+  cuerpo+=`\nGenerado por Sistema ETI · ${res.emp}\n`;
+  cuerpo+=`Coordinado por Joel Timoteo Gonza – Coordinador de Relaciones Laborales`;
+
+  const mailto=`mailto:?subject=${asunto}&body=${encodeURIComponent(cuerpo)}`;
+  window.location.href=mailto;
+  toast('Abriendo cliente de correo...','s');
+}
+
+function descargar(contenido, nombre, tipo){
+  const blob=new Blob([contenido],{type:tipo+';charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=nombre;
+  a.style.display='none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(url); document.body.removeChild(a); }, 500);
+}
+
+function exportar(){
+  if(!window._rpt){toast('Sin reporte calculado aún','e');return;}
+  descargar(window._rpt, `reporte-eti-${S.fecha||'hoy'}.txt`, 'text/plain');
+  toast('Reporte descargado','s');
+}
+
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+function fmtF(iso){if(!iso)return'—';const d=new Date(iso+'T12:00:00');return d.toLocaleDateString('es-PE',{weekday:'short',year:'numeric',month:'short',day:'numeric'});}
+function toast(msg,t='i'){const d=document.createElement('div');d.className=`tst ${t}`;d.textContent=msg;document.getElementById('tc').appendChild(d);setTimeout(()=>d.remove(),4000);}
+let _cb=null;
+function confMod(t,b,cb){document.getElementById('mtit').textContent=t;document.getElementById('mbdy').textContent=b;_cb=cb;document.getElementById('mov').classList.add('open');}
+document.getElementById('mbtn').addEventListener('click',()=>{if(_cb)_cb();closeMod();});
+function closeMod(){document.getElementById('mov').classList.remove('open');_cb=null;}
+document.getElementById('mdate').textContent=new Date().toLocaleDateString('es-PE',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+</script>
+</body>
+</html>
