@@ -6,6 +6,7 @@
 <title>Sistema ETI – Evaluación de Conocimiento v4</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
   /* ── PALETA AZUL / ROJO / BLANCO ── */
@@ -282,11 +283,119 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
   </div>
 </div>
 
+<!-- ══ LOGIN ══ -->
+<div class="screen active" id="slogin">
+  <div style="min-height:100vh;background:#003087;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;">
+    <div style="text-align:center;margin-bottom:2rem;">
+      <div style="color:#ff9999;font-size:.72rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;margin-bottom:.5rem;">Sistema de Evaluación</div>
+      <div style="color:#fff;font-size:2.2rem;font-weight:800;line-height:1.1;">ETI<span style="color:#cc0000;">·</span>EVAL</div>
+      <div style="color:rgba(255,255,255,.5);font-size:.82rem;margin-top:.4rem;">Verfrut / RAPEL SAC · Unifrutti Group</div>
+    </div>
+    <div style="background:#fff;border-radius:16px;padding:2rem;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+      <div style="font-size:1rem;font-weight:800;color:#003087;margin-bottom:1.4rem;text-align:center;">Iniciar Sesión</div>
+      <div class="fg">
+        <label class="fl">Usuario</label>
+        <input class="fc" type="text" id="linput" placeholder="Ingrese su usuario" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('lpwd').focus()">
+      </div>
+      <div class="fg">
+        <label class="fl">Contraseña</label>
+        <div style="position:relative;">
+          <input class="fc" type="password" id="lpwd" placeholder="Ingrese su contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:2.5rem;">
+          <span onclick="togglePwd()" style="position:absolute;right:.75rem;top:50%;transform:translateY(-50%);cursor:pointer;font-size:.9rem;color:#3a5a8a;" id="lpwdico">👁</span>
+        </div>
+      </div>
+      <div id="lerr" style="display:none;background:#fde8e8;border-left:3px solid #cc0000;border-radius:0 6px 6px 0;padding:.6rem .9rem;font-size:.8rem;color:#cc0000;margin-bottom:.8rem;">Usuario o contraseña incorrectos</div>
+      <button class="btn bpri" style="width:100%;padding:.8rem;font-size:.95rem;font-weight:800;" onclick="doLogin()">Ingresar →</button>
+      <div style="text-align:center;margin-top:1.2rem;font-size:.72rem;color:#b0c4e0;">Coordinación de Relaciones Laborales<br>Joel Timoteo Gonza</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PANEL ADMINISTRADOR ══ -->
+<div class="screen" id="sadmin">
+  <header class="hdr">
+    <div class="logo">ETI<span>·</span>EVAL <span style="color:rgba(255,255,255,.3);margin:0 .3rem">›</span><span style="font-size:.8rem;font-weight:400;color:rgba(255,255,255,.5)">Administrador</span></div>
+    <div style="display:flex;gap:.5rem;align-items:center;">
+      <span style="font-size:.75rem;color:rgba(255,255,255,.5);" id="admin-user-lbl"></span>
+      <button class="btn bgho bsm" onclick="doLogout()">Cerrar Sesión</button>
+    </div>
+  </header>
+  <div class="dlayout">
+
+    <!-- TABS ADMIN -->
+    <div style="display:flex;gap:.5rem;margin-bottom:1.2rem;flex-wrap:wrap;">
+      <button class="btn bpri bsm" id="atab1" onclick="adminTab('stats')">📊 Estadísticas Globales</button>
+      <button class="btn bout bsm" id="atab2" onclick="adminTab('users')">👥 Gestión de Usuarios</button>
+      <button class="btn bout bsm" id="atab3" onclick="adminTab('registros')">📋 Todos los Registros</button>
+    </div>
+
+    <!-- TAB ESTADÍSTICAS -->
+    <div id="admin-stats">
+      <div class="ptit" style="margin-bottom:.8rem;">Estadísticas Globales del Sistema</div>
+      <div class="kstrip" id="admin-kpis"></div>
+      <div style="margin-top:1rem;">
+        <div class="ptit" style="font-size:.95rem;margin-bottom:.6rem;">Registros por Supervisor</div>
+        <div id="admin-por-sup"></div>
+      </div>
+      <div style="margin-top:1rem;">
+        <div class="ptit" style="font-size:.95rem;margin-bottom:.6rem;">Todos los Registros Generados</div>
+        <div id="admin-tabla-global"></div>
+      </div>
+    </div>
+
+    <!-- TAB USUARIOS -->
+    <div id="admin-users" style="display:none;">
+      <div class="ptit" style="margin-bottom:.8rem;">Gestión de Usuarios</div>
+      <div style="background:#fff;border-radius:12px;padding:1.2rem;border:1px solid var(--bdr);margin-bottom:1rem;">
+        <div style="font-size:.85rem;font-weight:700;color:#003087;margin-bottom:.8rem;">➕ Agregar Nuevo Usuario</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:.6rem;align-items:end;">
+          <div class="fg" style="margin:0;">
+            <label class="fl">Usuario</label>
+            <input class="fc" id="nu-user" placeholder="ej: jperez-2026">
+          </div>
+          <div class="fg" style="margin:0;">
+            <label class="fl">Contraseña</label>
+            <input class="fc" id="nu-pwd" placeholder="contraseña">
+          </div>
+          <div class="fg" style="margin:0;">
+            <label class="fl">Nombre completo</label>
+            <input class="fc" id="nu-nom" placeholder="Juan Pérez García">
+          </div>
+          <button class="btn bpri" onclick="addUser()" style="padding:.6rem 1rem;white-space:nowrap;">+ Agregar</button>
+        </div>
+      </div>
+      <div id="admin-user-list"></div>
+    </div>
+
+    <!-- TAB REGISTROS -->
+    <div id="admin-registros" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem;flex-wrap:wrap;gap:.5rem;">
+        <div class="ptit">Todos los Registros del Sistema</div>
+        <div style="display:flex;gap:.5rem;">
+          <select class="fc" id="filtro-sup" onchange="renderAdminRegistros()" style="font-size:.8rem;padding:.4rem .7rem;">
+            <option value="">Todos los supervisores</option>
+          </select>
+          <button class="btn bout bsm" onclick="exportAdminExcel()">📊 Excel Global</button>
+        </div>
+      </div>
+      <div id="admin-registros-tabla"></div>
+    </div>
+
+    <div style="text-align:center;padding:.8rem 0 .2rem;border-top:1px solid var(--bdr);margin-top:1rem;">
+      <div style="font-size:.68rem;color:var(--text2)">Sistema ETI · Verfrut / RAPEL SAC · Administrador: Joel Timoteo Gonza</div>
+    </div>
+  </div>
+</div>
+
 <!-- ══ MENÚ ══ -->
 <div class="screen active" id="sm">
   <header class="hdr">
     <div class="logo">ETI<span>·</span>EVAL</div>
-    <div class="hbadge">UNIFRUTTI GROUP</div>
+    <div style="display:flex;align-items:center;gap:.6rem;">
+      <span style="font-size:.72rem;color:rgba(255,255,255,.45);" id="menu-user-lbl"></span>
+      <div class="hbadge">UNIFRUTTI GROUP</div>
+      <button class="btn bgho bsm" onclick="doLogout()" style="font-size:.72rem;">Salir</button>
+    </div>
   </header>
   <div class="mhero">
     <div class="mey">Sistema de Evaluación de Conocimiento</div>
@@ -536,7 +645,8 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
         <button class="btn bpri bsm" onclick="enviarCorreo()">📤 Enviar Correo</button>
         <button class="btn bout bsm" onclick="copiar()">📋 Copiar</button>
         <button class="btn bout bsm" onclick="exportar()">⬇️ .txt</button>
-        <button class="btn bpri bsm" onclick="exportarPDF()">📄 Exportar PDF</button>
+        <button class="btn bpri bsm" onclick="exportarPDF()">📄 PDF</button>
+        <button class="btn bpri bsm" onclick="exportarExcel()">📊 Excel</button>
         <button class="btn bpri bsm" onclick="irDash()">Dashboard →</button>
       </div>
     </div>
@@ -588,6 +698,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
         <button class="btn bdng bsm" onclick="limpH()">🗑 Limpiar</button>
         <button class="btn bout bsm" onclick="exportDashTxt()">📄 Exportar .txt</button>
         <button class="btn bout bsm" onclick="exportDashCsv()">📊 Exportar .csv</button>
+        <button class="btn bpri bsm" onclick="exportarExcelCompleto()">📊 Excel Completo</button>
         <button class="btn bpri bsm" onclick="iniciar()">+ Nueva</button>
       </div>
     </div>
@@ -805,20 +916,350 @@ function agregarArea(){
 }
 
 // ══════════════════════════════════════════
-// ESTADO GLOBAL
+// SISTEMA DE USUARIOS Y LOGIN
 // ══════════════════════════════════════════
-let S = {emp:'',sup:'',sector:'',tipo:'',fecha:'',rutas:[]};
+
+// Usuarios base del sistema
+const USUARIOS_BASE = [
+  {user:'jtimoteo',  pwd:'kevin2025.',  nom:'Joel Timoteo Gonza',       rol:'admin'},
+  {user:'ecastro',   pwd:'ecastro-2026',  nom:'Elberth Castro Bayona',    rol:'supervisor'},
+  {user:'yluzon',    pwd:'yluzon-2026',   nom:'Yhanelly Iluzon Venegas',  rol:'supervisor'},
+  {user:'almartinez',pwd:'almartinez-2026',nom:'Alexander Martinez Juarez',rol:'supervisor'},
+  {user:'sviera',    pwd:'sviera-2026',   nom:'Sergio Viera Giron',       rol:'supervisor'},
+  {user:'rmolero',   pwd:'rmolero-2026',  nom:'Roberto Molero Abad',      rol:'supervisor'},
+  {user:'fzapata',   pwd:'fzapata-2026',  nom:'Alex Zapata Suarez',       rol:'supervisor'},
+  {user:'javendano', pwd:'javendano-2026',nom:'Jhonny Avendaño Granda',   rol:'supervisor'},
+  {user:'mmechato',  pwd:'mmechato-2026', nom:'Muriel Mechato Navarro',   rol:'supervisor'},
+  {user:'fpulache',  pwd:'fpulache-2026', nom:'Flor Pulache Viera',       rol:'supervisor'},
+  {user:'atineo',    pwd:'atineo-2026',   nom:'Alex Tineo Ramos',         rol:'supervisor'},
+  {user:'glucia',    pwd:'glucia-2026',   nom:'Lucia (Asistente)',        rol:'supervisor'},
+  {user:'ovilela',   pwd:'ovilela-2026',  nom:'Olga Vilela Ludeña',       rol:'supervisor'},
+  {user:'jchavez',   pwd:'jchavez-2026',  nom:'Jorge Chavez Coordova',    rol:'supervisor'},
+];
+
+// Cargar usuarios extras agregados por admin
+function getUsuarios(){
+  const extras=JSON.parse(localStorage.getItem('eti_usuarios_extra')||'[]');
+  return [...USUARIOS_BASE, ...extras];
+}
+
+function saveUsuariosExtra(lista){
+  const base=USUARIOS_BASE.map(u=>u.user);
+  const extras=lista.filter(u=>!base.includes(u.user));
+  localStorage.setItem('eti_usuarios_extra',JSON.stringify(extras));
+}
+
+// Usuario activo en sesión
+let SESSION = JSON.parse(sessionStorage.getItem('eti_session')||'null');
+
+// ── LOGIN ──
+function doLogin(){
+  const u=document.getElementById('linput').value.trim();
+  const p=document.getElementById('lpwd').value;
+  const err=document.getElementById('lerr');
+  err.style.display='none';
+
+  const usr=getUsuarios().find(x=>x.user===u && x.pwd===p);
+  if(!usr){
+    err.style.display='block';
+    document.getElementById('lpwd').value='';
+    return;
+  }
+
+  SESSION={user:usr.user, nom:usr.nom, rol:usr.rol};
+  sessionStorage.setItem('eti_session',JSON.stringify(SESSION));
+
+  // Cargar historial del usuario
+  const key=usr.rol==='admin'?'eti_v4':'eti_v4_'+usr.user;
+  hist=JSON.parse(localStorage.getItem(key)||'[]');
+
+  document.getElementById('linput').value='';
+  document.getElementById('lpwd').value='';
+
+  if(usr.rol==='admin'){
+    document.getElementById('admin-user-lbl').textContent=usr.nom+' (Admin)';
+    renderAdmin();
+    go('sadmin');
+  } else {
+    // Preseleccionar supervisor en paso 1
+    setTimeout(()=>{
+      const sel=document.getElementById('p1s');
+      if(sel){
+        sel.innerHTML=renderSupSelect();
+        // Buscar el supervisor que corresponde al usuario
+        const supMatch=SUPERVISORES.find(s=>
+          s.nom.toLowerCase().includes(usr.nom.split(' ')[0].toLowerCase())||
+          s.nom.toLowerCase().includes(usr.nom.split(' ')[1]?.toLowerCase()||'')
+        );
+        if(supMatch){
+          sel.value=supMatch.nom;
+          onSupChange();
+        }
+      }
+    },100);
+    updMenuReporte();
+    go('sm');
+    toast('Bienvenido, '+usr.nom,'s');
+  }
+}
+
+function doLogout(){
+  SESSION=null;
+  sessionStorage.removeItem('eti_session');
+  hist=[];
+  go('slogin');
+  toast('Sesión cerrada','i');
+}
+
+function togglePwd(){
+  const i=document.getElementById('lpwd');
+  i.type=i.type==='password'?'text':'password';
+}
+
+// Guardar historial por usuario al calcular
+function guardarHistorialUsuario(nuevosRegistros){
+  if(!SESSION) return;
+  const key=SESSION.rol==='admin'?'eti_v4':'eti_v4_'+SESSION.user;
+  hist.push(...nuevosRegistros.map(r=>({...r, usuario:SESSION.user, nomUsuario:SESSION.nom})));
+  try{localStorage.setItem(key,JSON.stringify(hist.slice(-500)));}catch(e){}
+}
+
+// ── PANEL ADMINISTRADOR ──
+function adminTab(tab){
+  document.getElementById('admin-stats').style.display    = tab==='stats'    ?'block':'none';
+  document.getElementById('admin-users').style.display    = tab==='users'    ?'block':'none';
+  document.getElementById('admin-registros').style.display= tab==='registros'?'block':'none';
+  ['atab1','atab2','atab3'].forEach((id,i)=>{
+    const tabs=['stats','users','registros'];
+    const el=document.getElementById(id);
+    el.className=tab===tabs[i]?'btn bpri bsm':'btn bout bsm';
+  });
+}
+
+function renderAdmin(){
+  renderAdminStats();
+  renderAdminUsers();
+  renderAdminRegistros();
+}
+
+function getAllHist(){
+  // Recopilar historial de TODOS los usuarios
+  const todos=[];
+  getUsuarios().forEach(u=>{
+    const key=u.rol==='admin'?'eti_v4':'eti_v4_'+u.user;
+    const h=JSON.parse(localStorage.getItem(key)||'[]');
+    h.forEach(r=>todos.push({...r, usuario:r.usuario||u.user, nomUsuario:r.nomUsuario||u.nom}));
+  });
+  return todos;
+}
+
+function renderAdminStats(){
+  const todos=getAllHist();
+  const total=todos.length;
+  const aprobados=todos.filter(r=>r.resGrupo>=0.7).length;
+  const prom=total?todos.reduce((a,r)=>a+r.resGrupo,0)/total:0;
+
+  document.getElementById('admin-kpis').innerHTML=`
+    <div class="kcard"><div class="klbl">Total Registros</div><div class="kval">${total}</div><div class="ksub">todos los usuarios</div></div>
+    <div class="kcard kg"><div class="klbl">Aprobados</div><div class="kval">${aprobados}</div><div class="ksub">${total?((aprobados/total)*100).toFixed(0)+'%':0} del total</div></div>
+    <div class="kcard kr"><div class="klbl">En Refuerzo</div><div class="kval">${total-aprobados}</div><div class="ksub">${total?((1-aprobados/total)*100).toFixed(0)+'%':0} del total</div></div>
+    <div class="kcard"><div class="klbl">Promedio Global</div><div class="kval">${total?(prom*100).toFixed(1)+'%':'—'}</div><div class="ksub">${prom>=0.7?'✅ Aprobado':'⚠ Refuerzo'}</div></div>
+    <div class="kcard"><div class="klbl">Usuarios Activos</div><div class="kval">${getUsuarios().length}</div><div class="ksub">registrados en sistema</div></div>`;
+
+  // Por supervisor
+  const porSup={};
+  todos.forEach(r=>{
+    const k=r.nomUsuario||r.usuario||'—';
+    if(!porSup[k]) porSup[k]={nom:k,total:0,aprobados:0,sumaRes:0};
+    porSup[k].total++;
+    if(r.resGrupo>=0.7) porSup[k].aprobados++;
+    porSup[k].sumaRes+=r.resGrupo;
+  });
+
+  const supList=Object.values(porSup).sort((a,b)=>b.total-a.total);
+  document.getElementById('admin-por-sup').innerHTML=supList.length?`
+    <table class="rtbl">
+      <thead><tr>
+        <th>Supervisor</th><th>Total Reg.</th><th>Aprobados</th><th>Refuerzo</th><th>Promedio</th><th>Estado</th>
+      </tr></thead>
+      <tbody>
+        ${supList.map(s=>{
+          const pm=(s.sumaRes/s.total*100).toFixed(1);
+          const ok=s.sumaRes/s.total>=0.7;
+          return `<tr>
+            <td style="font-weight:700;">${s.nom}</td>
+            <td style="text-align:center;">${s.total}</td>
+            <td style="text-align:center;color:var(--gdim);font-weight:700;">${s.aprobados}</td>
+            <td style="text-align:center;color:var(--red);font-weight:700;">${s.total-s.aprobados}</td>
+            <td style="text-align:center;font-weight:800;color:${ok?'var(--gdim)':'var(--red)'};">${pm}%</td>
+            <td style="text-align:center;"><span class="bdg ${ok?'bg':'br'}">${ok?'APROBADO':'REFUERZO'}</span></td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>` : '<div style="color:var(--text2);font-size:.85rem;padding:1rem;">Sin registros aún.</div>';
+}
+
+function renderAdminUsers(){
+  const usuarios=getUsuarios();
+  document.getElementById('admin-user-list').innerHTML=`
+    <table class="rtbl">
+      <thead><tr><th>#</th><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Registros</th><th>Acción</th></tr></thead>
+      <tbody>
+        ${usuarios.map((u,i)=>{
+          const key=u.rol==='admin'?'eti_v4':'eti_v4_'+u.user;
+          const regs=JSON.parse(localStorage.getItem(key)||'[]').length;
+          const esBase=USUARIOS_BASE.find(b=>b.user===u.user);
+          return `<tr>
+            <td>${i+1}</td>
+            <td><code style="background:var(--sf2);padding:2px 6px;border-radius:4px;font-size:.8rem;">${u.user}</code></td>
+            <td style="font-weight:700;">${u.nom}</td>
+            <td><span class="bdg ${u.rol==='admin'?'bg':'br'}" style="font-size:.7rem;">${u.rol==='admin'?'ADMIN':'SUPERVISOR'}</span></td>
+            <td style="text-align:center;">${regs}</td>
+            <td>${!esBase?`<button class="btn bdng bsm" onclick="delUser('${u.user}')" style="font-size:.72rem;">Eliminar</button>`:'<span style="font-size:.72rem;color:var(--text2);">Base</span>'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+function addUser(){
+  const u=document.getElementById('nu-user').value.trim();
+  const p=document.getElementById('nu-pwd').value.trim();
+  const n=document.getElementById('nu-nom').value.trim();
+  if(!u||!p||!n){toast('Completa todos los campos','e');return;}
+  const todos=getUsuarios();
+  if(todos.find(x=>x.user===u)){toast('Ese usuario ya existe','e');return;}
+  const extras=JSON.parse(localStorage.getItem('eti_usuarios_extra')||'[]');
+  extras.push({user:u,pwd:p,nom:n,rol:'supervisor'});
+  localStorage.setItem('eti_usuarios_extra',JSON.stringify(extras));
+  document.getElementById('nu-user').value='';
+  document.getElementById('nu-pwd').value='';
+  document.getElementById('nu-nom').value='';
+  renderAdminUsers();
+  toast('Usuario "'+u+'" agregado correctamente','s');
+}
+
+function delUser(userKey){
+  confMod('¿Eliminar usuario?','Se eliminará el usuario "'+userKey+'" y sus datos.',()=>{
+    const extras=JSON.parse(localStorage.getItem('eti_usuarios_extra')||'[]');
+    const nuevos=extras.filter(u=>u.user!==userKey);
+    localStorage.setItem('eti_usuarios_extra',JSON.stringify(nuevos));
+    localStorage.removeItem('eti_v4_'+userKey);
+    renderAdminUsers();
+    toast('Usuario eliminado','i');
+  });
+}
+
+function renderAdminRegistros(){
+  const todos=getAllHist();
+  const filtro=document.getElementById('filtro-sup')?.value||'';
+
+  // Poblar filtro
+  const sups=[...new Set(todos.map(r=>r.nomUsuario||r.usuario||'—'))].sort();
+  const sel=document.getElementById('filtro-sup');
+  if(sel){
+    const actual=sel.value;
+    sel.innerHTML='<option value="">Todos los supervisores</option>'+
+      sups.map(s=>`<option value="${s}" ${s===actual?'selected':''}>${s}</option>`).join('');
+  }
+
+  const filtrados=filtro?todos.filter(r=>(r.nomUsuario||r.usuario)===filtro):todos;
+  const ordenados=[...filtrados].sort((a,b)=>new Date(b.fecha||0)-new Date(a.fecha||0));
+
+  document.getElementById('admin-registros-tabla').innerHTML=ordenados.length?`
+    <div style="overflow-x:auto;">
+    <table class="rtbl">
+      <thead><tr>
+        <th>#</th><th>Supervisor</th><th>Empresa</th><th>Sector</th><th>Tipo</th>
+        <th>Ruta/Área</th><th>Código</th><th>Fecha</th><th>Resultado</th><th>Estado</th>
+      </tr></thead>
+      <tbody>
+        ${ordenados.map((r,i)=>{
+          const rp=(r.resGrupo*100).toFixed(1), rok=r.resGrupo>=0.7;
+          return `<tr>
+            <td>${i+1}</td>
+            <td style="font-weight:700;">${r.nomUsuario||r.usuario||'—'}</td>
+            <td>${r.emp||'—'}</td>
+            <td>${r.sector||'—'}</td>
+            <td style="font-size:.75rem;">${r.tipo==='obrero'?'👷 Campo':'💼 Agrario'}</td>
+            <td style="font-weight:600;">${r.nom||'—'}</td>
+            <td><span class="cpill">${r.cod||'—'}</span></td>
+            <td style="font-size:.78rem;">${fmtF(r.fecha)}</td>
+            <td style="font-weight:800;color:${rok?'var(--gdim)':'var(--red)'};">${rp}%</td>
+            <td><span class="bdg ${rok?'bg':'br'}">${rok?'APROBADO':'REFUERZO'}</span></td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table></div>` : '<div style="color:var(--text2);font-size:.85rem;padding:1rem;">Sin registros aún.</div>';
+}
+
+function exportAdminExcel(){
+  if(typeof XLSX==='undefined'){toast('Librería Excel cargando...','e');return;}
+  const todos=getAllHist();
+  if(!todos.length){toast('Sin registros para exportar','e');return;}
+
+  const wb=XLSX.utils.book_new();
+  const rows=[
+    ['REPORTE GLOBAL - SISTEMA ETI - TODOS LOS USUARIOS'],
+    ['Verfrut / RAPEL SAC - Administrador: Joel Timoteo Gonza'],
+    ['Exportado: '+new Date().toLocaleString('es-PE')],
+    [''],
+    ['#','Supervisor','Usuario','Empresa','Sector','Tipo','Ruta/Area','Codigo','Fecha','Resultado (%)','Estado']
+  ];
+  const ordenados=[...todos].sort((a,b)=>new Date(b.fecha||0)-new Date(a.fecha||0));
+  ordenados.forEach((r,i)=>{
+    rows.push([
+      i+1,
+      r.nomUsuario||'—',
+      r.usuario||'—',
+      r.emp||'—',
+      r.sector||'—',
+      r.tipo==='obrero'?'Obrero Campo':'Empleado Agrario',
+      r.nom||'—',
+      r.cod||'—',
+      r.fecha||'—',
+      parseFloat((r.resGrupo*100).toFixed(1)),
+      r.resGrupo>=0.7?'APROBADO':'REQUIERE REFUERZO'
+    ]);
+  });
+
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:5},{wch:28},{wch:14},{wch:12},{wch:14},{wch:16},{wch:28},{wch:9},{wch:12},{wch:14},{wch:18}];
+  if(ws['A1']) ws['A1'].s={font:{bold:true,sz:13,color:{rgb:'003087'}}};
+  XLSX.utils.book_append_sheet(wb, ws, 'Registros Globales');
+  XLSX.writeFile(wb, `ETI-Global-${new Date().toISOString().split('T')[0]}.xlsx`);
+  toast('Excel global exportado','s');
+}
 let tipo = '';
-let hist = JSON.parse(localStorage.getItem('eti_v4')||'[]');
+let hist = [];
+
+// ── Arranque: verificar sesión activa ──
+(function(){
+  if(SESSION){
+    const key=SESSION.rol==='admin'?'eti_v4':'eti_v4_'+SESSION.user;
+    hist=JSON.parse(localStorage.getItem(key)||'[]');
+  }
+})();
 
 // ══════════════════════════════════════════
 // NAVEGACIÓN
 // ══════════════════════════════════════════
 function go(id){
+  // Protección: si no hay sesión, redirigir a login
+  if(!SESSION && id!=='slogin'){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('slogin').classList.add('active');
+    return;
+  }
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
-  if(id==='sm') updMenuReporte();
+  if(id==='sm'){
+    updMenuReporte();
+    const lbl=document.getElementById('menu-user-lbl');
+    if(lbl && SESSION) lbl.textContent=SESSION.nom;
+  }
+  if(id==='sadmin') renderAdmin();
 }
 
 function stpr(eid, act){
@@ -1260,13 +1701,15 @@ function calcular(){
   const resGen=rRes.reduce((a,r)=>a+r.resGrupo,0)/rRes.length;
   const res={emp:S.emp, sup:S.sup, sector:S.sector, tipo:S.tipo, fecha:S.fecha, rutas:rRes, resGen};
 
-  // Historial
+  // Historial — guardar con usuario activo
   const palabra=S.tipo==='obrero'?'ruta':'área';
   rRes.forEach(r=>{
     hist.push({nom:r.nom, cod:r.cod, emp:S.emp, sup:S.sup, sector:S.sector,
-               tipo:S.tipo, fecha:S.fecha, resGrupo:r.resGrupo, ts:Date.now()});
+               tipo:S.tipo, fecha:S.fecha, resGrupo:r.resGrupo, ts:Date.now(),
+               usuario:SESSION?.user||'—', nomUsuario:SESSION?.nom||'—'});
   });
-  try{localStorage.setItem('eti_v4',JSON.stringify(hist.slice(-500)));}catch(e){}
+  const histKey=SESSION?.rol==='admin'?'eti_v4':'eti_v4_'+(SESSION?.user||'anon');
+  try{localStorage.setItem(histKey,JSON.stringify(hist.slice(-500)));}catch(e){}
 
   window._res=res;
   renderRes(res);
@@ -1595,9 +2038,366 @@ function exportar(){
   toast('Reporte .txt descargado','s');
 }
 
+// ══════════════════════════════════════════
+// EXPORTAR EXCEL — REPORTE ACTUAL
+// ══════════════════════════════════════════
+function exportarExcel(){
+  if(!window._res){toast('Sin resultados calculados aún','e');return;}
+  if(typeof XLSX==='undefined'){toast('Librería Excel cargando, intenta de nuevo','e');return;}
+
+  const res=window._res;
+  const wb=XLSX.utils.book_new();
+  const AZ='003087', RJ='CC0000', VD='007A3D', AM='FFC000';
+
+  // ── HOJA 1: RESUMEN GENERAL ──
+  const tR=res.tipo==='obrero'?'Obrero Campo':'Empleado Agrario';
+  const palabra=res.tipo==='obrero'?'Rutas':'Áreas';
+  const pg=(res.resGen*100).toFixed(1);
+  const ok=res.resGen>=0.7;
+  const sup3=SUPERVISORES.find(sv=>sv.nom===res.sup);
+  const supLabel=sup3?.reemplazante
+    ?`${res.sup} (Reemplazante - cubre: ${res.sector})`
+    :res.sup;
+
+  const resumen=[
+    ['SISTEMA ETI - EVALUACION DE CONOCIMIENTO','','','',''],
+    ['Verfrut / RAPEL SAC - Coordinacion de Relaciones Laborales','','','',''],
+    ['Creado por Joel Timoteo Gonza - Coordinador de Relaciones Laborales','','','',''],
+    [''],
+    ['DATOS GENERALES'],
+    ['Fecha',             fmtF(res.fecha)],
+    ['Empresa',           res.emp],
+    ['Supervisor',        supLabel],
+    ['Sector',            res.sector||'—'],
+    ['Tipo de personal',  tR],
+    [palabra+' evaluadas',res.rutas.length],
+    ['Total evaluados',   res.rutas.reduce((a,r)=>a+r.ne,0)+' personas'],
+    [''],
+    ['RESULTADO GENERAL'],
+    ['Resultado',         pg+'%'],
+    ['Estado',            ok?'APROBADO':'REQUIERE REFUERZO'],
+    [palabra+' aprobadas',res.rutas.filter(r=>r.resGrupo>=0.7).length+' / '+res.rutas.length],
+    [palabra+' en refuerzo',res.rutas.filter(r=>r.resGrupo<0.7).length+' / '+res.rutas.length],
+    [''],
+    ['PROMEDIO POR TEMA'],
+    ['Tema','% Cumplimiento','Estado','Peso','Puntaje Max'],
+  ];
+
+  const promSecs=SECS.map((sec,si)=>({
+    nom:sec.nom, peso:sec.peso, maxSec:sec.maxSec,
+    pct:res.rutas.reduce((a,r)=>a+(r.secs[si]?.cum||0),0)/res.rutas.length
+  }));
+
+  promSecs.forEach(s=>{
+    resumen.push([
+      s.nom,
+      parseFloat((s.pct*100).toFixed(1)),
+      s.pct>=0.7?'APROBADO':'REQUIERE REFUERZO',
+      (s.peso*100).toFixed(0)+'%',
+      s.maxSec+' pts'
+    ]);
+  });
+
+  const ws1=XLSX.utils.aoa_to_sheet(resumen);
+
+  // Anchos columnas hoja 1
+  ws1['!cols']=[{wch:38},{wch:22},{wch:22},{wch:10},{wch:12}];
+
+  // Estilos hoja 1 — título
+  ['A1','A2','A3'].forEach(cell=>{
+    if(ws1[cell]) ws1[cell].s={
+      font:{bold:true,color:{rgb:cell==='A1'?AZ:'555555'},sz:cell==='A1'?13:10},
+      fill:{fgColor:{rgb:'F0F4FB'}}
+    };
+  });
+
+  XLSX.utils.book_append_sheet(wb, ws1, 'Resumen General');
+
+  // ── HOJA 2: DETALLE POR RUTA/ÁREA ──
+  const cabecera=[
+    'Codigo',
+    res.tipo==='obrero'?'Ruta':'Area',
+    'Tipo Personal',
+    'Empresa',
+    'Supervisor',
+    'Sector',
+    'Fecha',
+    'N Evaluados',
+    ...SECS.map(s=>s.nom+' (%)'),
+    'Resultado (%)',
+    'Estado'
+  ];
+
+  const filas=[cabecera];
+  res.rutas.forEach(r=>{
+    filas.push([
+      r.cod||'—',
+      r.nom,
+      tR,
+      res.emp,
+      supLabel,
+      res.sector||'—',
+      res.fecha,
+      r.ne,
+      ...r.secs.map(s=>parseFloat((s.cum*100).toFixed(1))),
+      parseFloat((r.resGrupo*100).toFixed(1)),
+      r.resGrupo>=0.7?'APROBADO':'REQUIERE REFUERZO'
+    ]);
+  });
+
+  // Fila de promedios al final
+  filas.push([]);
+  const promedioFila=[
+    '','PROMEDIO GENERAL','','','','','','',
+    ...promSecs.map(s=>parseFloat((s.pct*100).toFixed(1))),
+    parseFloat(pg),
+    ok?'APROBADO':'REQUIERE REFUERZO'
+  ];
+  filas.push(promedioFila);
+
+  const ws2=XLSX.utils.aoa_to_sheet(filas);
+  ws2['!cols']=[
+    {wch:8},{wch:28},{wch:16},{wch:12},{wch:30},{wch:14},{wch:12},{wch:10},
+    ...SECS.map(()=>({wch:16})),
+    {wch:14},{wch:16}
+  ];
+
+  // Estilo encabezado
+  cabecera.forEach((_,ci)=>{
+    const addr=XLSX.utils.encode_cell({r:0,c:ci});
+    if(ws2[addr]) ws2[addr].s={
+      font:{bold:true,color:{rgb:'FFFFFF'},sz:10},
+      fill:{fgColor:{rgb:AZ}},
+      alignment:{horizontal:'center',vertical:'center'},
+      border:{bottom:{style:'thin',color:{rgb:'CCCCCC'}}}
+    };
+  });
+
+  // Estilo filas de datos — verde/rojo según estado
+  res.rutas.forEach((_,ri)=>{
+    const row=ri+1;
+    const rok=res.rutas[ri].resGrupo>=0.7;
+    const totalCols=cabecera.length;
+    for(let ci=0;ci<totalCols;ci++){
+      const addr=XLSX.utils.encode_cell({r:row,c:ci});
+      if(ws2[addr]){
+        ws2[addr].s={
+          fill:{fgColor:{rgb:ri%2===0?'F8FAFF':'FFFFFF'}},
+          font:{sz:10,
+            color:ci>=8&&ci<8+SECS.length?{rgb:res.rutas[ri].secs[ci-8]?.cum>=0.7?VD:RJ}:{rgb:'0A1F5C'},
+            bold:ci===8+SECS.length||ci===8+SECS.length+1
+          },
+          alignment:{horizontal:ci>=7?'center':'left'}
+        };
+        // Celda Estado con color
+        if(ci===8+SECS.length+1){
+          ws2[addr].s.font.color={rgb:rok?VD:RJ};
+          ws2[addr].s.font.bold=true;
+        }
+      }
+    }
+  });
+
+  XLSX.utils.book_append_sheet(wb, ws2, 'Detalle por '+palabra);
+
+  // ── HOJA 3: DASHBOARD (historial) ──
+  if(hist.length>0){
+    const hCab=['N','Codigo','Nombre','Tipo Personal','Empresa','Supervisor','Sector','Fecha','Resultado (%)','Estado'];
+    const hFilas=[hCab];
+    const hSort=[...hist].sort((a,b)=>new Date(b.fecha||b.ts)-new Date(a.fecha||a.ts));
+    hSort.forEach((r,i)=>{
+      const rok=r.resGrupo>=0.7;
+      hFilas.push([
+        i+1,
+        r.cod||'—',
+        r.nom||'—',
+        r.tipo==='obrero'?'Obrero Campo':'Empleado Agrario',
+        r.emp||'—',
+        r.sup||'—',
+        r.sector||'—',
+        r.fecha||'—',
+        parseFloat((r.resGrupo*100).toFixed(1)),
+        rok?'APROBADO':'REQUIERE REFUERZO'
+      ]);
+    });
+
+    // Fila resumen al final
+    hFilas.push([]);
+    const prom=hist.reduce((a,r)=>a+r.resGrupo,0)/hist.length;
+    const aprobH=hist.filter(r=>r.resGrupo>=0.7).length;
+    hFilas.push(['','','RESUMEN DASHBOARD','','',
+      'Total registros: '+hist.length,
+      'Aprobados: '+aprobH,
+      'Refuerzo: '+(hist.length-aprobH),
+      parseFloat((prom*100).toFixed(1)),
+      prom>=0.7?'PROMEDIO APROBADO':'PROMEDIO EN REFUERZO'
+    ]);
+
+    const ws3=XLSX.utils.aoa_to_sheet(hFilas);
+    ws3['!cols']=[{wch:5},{wch:8},{wch:28},{wch:16},{wch:12},{wch:28},{wch:16},{wch:12},{wch:14},{wch:20}];
+
+    // Estilo encabezado dashboard
+    hCab.forEach((_,ci)=>{
+      const addr=XLSX.utils.encode_cell({r:0,c:ci});
+      if(ws3[addr]) ws3[addr].s={
+        font:{bold:true,color:{rgb:'FFFFFF'},sz:10},
+        fill:{fgColor:{rgb:'CC0000'}},
+        alignment:{horizontal:'center'}
+      };
+    });
+
+    XLSX.utils.book_append_sheet(wb, ws3, 'Dashboard Historico');
+  }
+
+  // Descargar
+  const fecha=res.fecha||new Date().toISOString().split('T')[0];
+  const nombre=`Reporte-ETI-${res.emp}-${res.sector||'sector'}-${fecha}.xlsx`
+    .replace(/\s+/g,'-').replace(/[^\w\-\.]/g,'');
+
+  XLSX.writeFile(wb, nombre);
+  toast('Excel exportado correctamente con '+(hist.length>0?'3':'2')+' hojas','s');
+}
+
+// ══════════════════════════════════════════
+// EXPORTAR EXCEL COMPLETO — DESDE DASHBOARD
+// ══════════════════════════════════════════
+function exportarExcelCompleto(){
+  if(!hist.length){toast('No hay registros en el dashboard','e');return;}
+  if(typeof XLSX==='undefined'){toast('Librería Excel cargando, intenta de nuevo','e');return;}
+
+  const wb=XLSX.utils.book_new();
+  const AZ='003087', RJ='CC0000', VD='007A3D';
+
+  // Ordenar historial por fecha descendente
+  const hSort=[...hist].sort((a,b)=>new Date(b.fecha||0)-new Date(a.fecha||0));
+  const prom=hSort.reduce((a,r)=>a+r.resGrupo,0)/hSort.length;
+  const aprobH=hSort.filter(r=>r.resGrupo>=0.7).length;
+
+  // ── HOJA 1: DASHBOARD COMPLETO ──
+  const rows=[
+    ['SISTEMA ETI - DASHBOARD HISTORICO DE EVALUACIONES'],
+    ['Verfrut / RAPEL SAC - Coordinacion de Relaciones Laborales'],
+    ['Creado por Joel Timoteo Gonza - Coordinador de Relaciones Laborales'],
+    ['Exportado: '+new Date().toLocaleString('es-PE')],
+    [''],
+    ['RESUMEN GENERAL'],
+    ['Total de registros',    hSort.length],
+    ['Promedio general',      parseFloat((prom*100).toFixed(1))+'%'],
+    ['Total aprobados',       aprobH],
+    ['Total en refuerzo',     hSort.length-aprobH],
+    ['% Aprobacion',          parseFloat(((aprobH/hSort.length)*100).toFixed(1))+'%'],
+    [''],
+    ['N','Codigo','Nombre Ruta/Area','Tipo','Empresa','Supervisor','Sector','Fecha','Resultado (%)','Estado']
+  ];
+
+  hSort.forEach((r,i)=>{
+    rows.push([
+      i+1,
+      r.cod||'—',
+      r.nom||'—',
+      r.tipo==='obrero'?'Obrero Campo':'Empleado Agrario',
+      r.emp||'—',
+      r.sup||'—',
+      r.sector||'—',
+      r.fecha||'—',
+      parseFloat((r.resGrupo*100).toFixed(1)),
+      r.resGrupo>=0.7?'APROBADO':'REQUIERE REFUERZO'
+    ]);
+  });
+
+  const ws1=XLSX.utils.aoa_to_sheet(rows);
+  ws1['!cols']=[{wch:5},{wch:9},{wch:30},{wch:16},{wch:12},{wch:28},{wch:16},{wch:12},{wch:14},{wch:20}];
+
+  // Estilo título
+  if(ws1['A1']) ws1['A1'].s={font:{bold:true,sz:13,color:{rgb:AZ}},fill:{fgColor:{rgb:'F0F4FB'}}};
+
+  // Estilo encabezado tabla (fila 13 = índice 12)
+  ['N','Codigo','Nombre Ruta/Area','Tipo','Empresa','Supervisor','Sector','Fecha','Resultado (%)','Estado']
+    .forEach((_,ci)=>{
+      const addr=XLSX.utils.encode_cell({r:12,c:ci});
+      if(ws1[addr]) ws1[addr].s={
+        font:{bold:true,color:{rgb:'FFFFFF'},sz:10},
+        fill:{fgColor:{rgb:AZ}},
+        alignment:{horizontal:'center'}
+      };
+    });
+
+  // Filas de datos con colores
+  hSort.forEach((r,ri)=>{
+    const row=13+ri;
+    const rok=r.resGrupo>=0.7;
+    for(let ci=0;ci<10;ci++){
+      const addr=XLSX.utils.encode_cell({r:row,c:ci});
+      if(ws1[addr]){
+        ws1[addr].s={
+          fill:{fgColor:{rgb:ri%2===0?'F0F4FB':'FFFFFF'}},
+          font:{sz:10, color:{rgb:ci===9?(rok?VD:RJ):'0A1F5C'}, bold:ci===8||ci===9},
+          alignment:{horizontal:ci>=7?'center':'left'}
+        };
+      }
+    }
+  });
+
+  XLSX.utils.book_append_sheet(wb, ws1, 'Dashboard Completo');
+
+  // ── HOJA 2: RANKING (ordenado por resultado) ──
+  const ranking=[...hSort].sort((a,b)=>b.resGrupo-a.resGrupo);
+  const rowsRank=[
+    ['RANKING POR RESULTADO - MAYOR A MENOR'],
+    [''],
+    ['Posicion','Codigo','Nombre','Tipo','Empresa','Sector','Fecha','Resultado (%)','Estado']
+  ];
+  ranking.forEach((r,i)=>{
+    rowsRank.push([
+      i+1,
+      r.cod||'—',
+      r.nom||'—',
+      r.tipo==='obrero'?'Obrero Campo':'Empleado Agrario',
+      r.emp||'—',
+      r.sector||'—',
+      r.fecha||'—',
+      parseFloat((r.resGrupo*100).toFixed(1)),
+      r.resGrupo>=0.7?'APROBADO':'REQUIERE REFUERZO'
+    ]);
+  });
+
+  const ws2=XLSX.utils.aoa_to_sheet(rowsRank);
+  ws2['!cols']=[{wch:9},{wch:9},{wch:30},{wch:16},{wch:12},{wch:16},{wch:12},{wch:14},{wch:20}];
+  if(ws2['A1']) ws2['A1'].s={font:{bold:true,sz:12,color:{rgb:RJ}}};
+
+  ['Posicion','Codigo','Nombre','Tipo','Empresa','Sector','Fecha','Resultado (%)','Estado']
+    .forEach((_,ci)=>{
+      const addr=XLSX.utils.encode_cell({r:2,c:ci});
+      if(ws2[addr]) ws2[addr].s={
+        font:{bold:true,color:{rgb:'FFFFFF'},sz:10},
+        fill:{fgColor:{rgb:RJ}},
+        alignment:{horizontal:'center'}
+      };
+    });
+
+  ranking.forEach((r,ri)=>{
+    const row=3+ri;
+    const rok=r.resGrupo>=0.7;
+    for(let ci=0;ci<9;ci++){
+      const addr=XLSX.utils.encode_cell({r:row,c:ci});
+      if(ws2[addr]) ws2[addr].s={
+        fill:{fgColor:{rgb:ri%2===0?'FFF5F5':'FFFFFF'}},
+        font:{sz:10,color:{rgb:ci===8?(rok?VD:RJ):'0A1F5C'},bold:ci===7||ci===8},
+        alignment:{horizontal:ci>=6?'center':'left'}
+      };
+    }
+  });
+
+  XLSX.utils.book_append_sheet(wb, ws2, 'Ranking');
+
+  // Descargar
+  const nombre=`Dashboard-ETI-${new Date().toISOString().split('T')[0]}.xlsx`;
+  XLSX.writeFile(wb, nombre);
+  toast('Excel con Dashboard exportado: 2 hojas','s');
+}
+
 function exportarPDF(){
   if(!window._res){toast('Sin resultados calculados aún','e');return;}
-  toast('Generando PDF con gráficos...','i');
   const res=window._res;
   const pg=(res.resGen*100).toFixed(1), ok=res.resGen>=0.7;
   const tR=res.tipo==='obrero'?'Obrero Campo':'Empleado Agrario';
@@ -1605,197 +2405,174 @@ function exportarPDF(){
   const sup3=SUPERVISORES.find(sv=>sv.nom===res.sup);
   const esR3=sup3?.reemplazante;
   const supLabel=esR3?`${res.sup} (Reemplazante — cubre: ${res.sector})`:res.sup;
+  const AZ='#003087', RJ='#cc0000', VD='#007a3d';
 
-  // Colores del sistema
-  const AZ='#003087', RJ='#cc0000', VD='#007a3d', BL='#ffffff';
-
-  // Promedios por sección
   const promSecs=SECS.map((sec,si)=>({
     nom:sec.nom,
     pct:res.rutas.reduce((a,r)=>a+(r.secs[si]?.cum||0),0)/res.rutas.length
   }));
 
-  // Construir HTML del PDF
-  const html=`
-  <div style="font-family:Tahoma,Arial,sans-serif;color:#0a1f5c;width:700px;padding:0;margin:0;">
+  const contenido=`
+    <div style="font-family:Tahoma,Arial,sans-serif;color:#0a1f5c;max-width:900px;margin:0 auto;">
 
-    <!-- ENCABEZADO -->
-    <div style="background:#003087;padding:24px 28px;border-radius:0;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-        <div>
-          <div style="color:#ff9999;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px;">Sistema ETI · Evaluación de Conocimiento</div>
-          <div style="color:#fff;font-size:22px;font-weight:800;line-height:1.1;">Reporte de Evaluación</div>
-          <div style="color:rgba(255,255,255,.6);font-size:11px;margin-top:4px;">Verfrut / RAPEL SAC · Coordinación de Relaciones Laborales</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="background:${ok?VD:RJ};color:#fff;font-size:28px;font-weight:800;padding:10px 18px;border-radius:8px;">${pg}%</div>
-          <div style="color:${ok?'#aaffcc':'#ffaaaa'};font-size:11px;font-weight:700;margin-top:4px;">${ok?'✓ APROBADO':'✗ REQUIERE REFUERZO'}</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- DATOS GENERALES -->
-    <div style="background:#f0f4fb;padding:16px 28px;border-bottom:2px solid #dce6f5;">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
-        <div><div style="font-size:9px;font-weight:700;color:#3a5a8a;text-transform:uppercase;letter-spacing:.06em;">Fecha</div><div style="font-size:13px;font-weight:700;color:#0a1f5c;margin-top:2px;">${fmtF(res.fecha)}</div></div>
-        <div><div style="font-size:9px;font-weight:700;color:#3a5a8a;text-transform:uppercase;letter-spacing:.06em;">Empresa</div><div style="font-size:13px;font-weight:700;color:#0a1f5c;margin-top:2px;">${res.emp}</div></div>
-        <div><div style="font-size:9px;font-weight:700;color:#3a5a8a;text-transform:uppercase;letter-spacing:.06em;">Sector</div><div style="font-size:13px;font-weight:700;color:#0a1f5c;margin-top:2px;">${res.sector||'—'}</div></div>
-        <div><div style="font-size:9px;font-weight:700;color:#3a5a8a;text-transform:uppercase;letter-spacing:.06em;">Supervisor</div><div style="font-size:12px;font-weight:700;color:#0a1f5c;margin-top:2px;">${supLabel}</div></div>
-        <div><div style="font-size:9px;font-weight:700;color:#3a5a8a;text-transform:uppercase;letter-spacing:.06em;">Tipo Personal</div><div style="font-size:13px;font-weight:700;color:#0a1f5c;margin-top:2px;">${tR}</div></div>
-        <div><div style="font-size:9px;font-weight:700;color:#3a5a8a;text-transform:uppercase;letter-spacing:.06em;">${palabra} Evaluadas</div><div style="font-size:13px;font-weight:700;color:#0a1f5c;margin-top:2px;">${res.rutas.length}</div></div>
-      </div>
-    </div>
-
-    <!-- KPIs -->
-    <div style="padding:16px 28px 0;">
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;">
-        <div style="background:#fff;border:1.5px solid ${ok?VD:RJ};border-radius:8px;padding:10px;text-align:center;">
-          <div style="font-size:9px;font-weight:700;color:#3a5a8a;text-transform:uppercase;">Resultado</div>
-          <div style="font-size:22px;font-weight:800;color:${ok?VD:RJ};">${pg}%</div>
-          <div style="font-size:9px;color:${ok?VD:RJ};font-weight:700;">${ok?'APROBADO':'REFUERZO'}</div>
-        </div>
-        <div style="background:#fff;border:1px solid #dce6f5;border-radius:8px;padding:10px;text-align:center;">
-          <div style="font-size:9px;font-weight:700;color:#3a5a8a;text-transform:uppercase;">${palabra} Aprob.</div>
-          <div style="font-size:22px;font-weight:800;color:${VD};">${res.rutas.filter(r=>r.resGrupo>=0.7).length}</div>
-          <div style="font-size:9px;color:#3a5a8a;">de ${res.rutas.length}</div>
-        </div>
-        <div style="background:#fff;border:1px solid #dce6f5;border-radius:8px;padding:10px;text-align:center;">
-          <div style="font-size:9px;font-weight:700;color:#3a5a8a;text-transform:uppercase;">Refuerzo</div>
-          <div style="font-size:22px;font-weight:800;color:${RJ};">${res.rutas.filter(r=>r.resGrupo<0.7).length}</div>
-          <div style="font-size:9px;color:#3a5a8a;">< 70%</div>
-        </div>
-        <div style="background:#fff;border:1px solid #dce6f5;border-radius:8px;padding:10px;text-align:center;">
-          <div style="font-size:9px;font-weight:700;color:#3a5a8a;text-transform:uppercase;">Evaluados</div>
-          <div style="font-size:22px;font-weight:800;color:#003087;">${res.rutas.reduce((a,r)=>a+r.ne,0)}</div>
-          <div style="font-size:9px;color:#3a5a8a;">personas</div>
+      <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#003087;padding:22px 28px;margin-bottom:0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+          <div>
+            <div style="color:#ff9999;font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px;">Sistema ETI · Evaluación de Conocimiento · Verfrut / RAPEL SAC</div>
+            <div style="color:#fff;font-size:20px;font-weight:800;">Reporte de Evaluación ETI</div>
+            <div style="color:rgba(255,255,255,.65);font-size:10px;margin-top:3px;">Coordinación de Relaciones Laborales · Joel Timoteo Gonza</div>
+          </div>
+          <div style="text-align:center;background:${ok?VD:RJ};padding:10px 16px;border-radius:8px;">
+            <div style="color:#fff;font-size:26px;font-weight:800;line-height:1;">${pg}%</div>
+            <div style="color:rgba(255,255,255,.9);font-size:9px;font-weight:700;margin-top:3px;">${ok?'APROBADO':'REQUIERE REFUERZO'}</div>
+          </div>
         </div>
       </div>
 
-      <!-- GRÁFICO BARRAS POR TEMA -->
-      <div style="margin-bottom:20px;">
-        <div style="font-size:12px;font-weight:800;color:#003087;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;padding-bottom:5px;border-bottom:2px solid #cc0000;">Promedio por Tema</div>
-        ${promSecs.map(s=>{
-          const pct=(s.pct*100).toFixed(1);
-          const ok2=s.pct>=0.7;
-          return `<div style="margin-bottom:8px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
-              <span style="font-size:11px;font-weight:700;color:#0a1f5c;">${s.nom}</span>
-              <span style="font-size:12px;font-weight:800;color:${ok2?VD:RJ};">${pct}% ${ok2?'✓':'✗'}</span>
-            </div>
-            <div style="background:#dce6f5;border-radius:20px;height:14px;overflow:hidden;">
-              <div style="width:${Math.min(100,parseFloat(pct))}%;height:100%;background:${ok2?VD:RJ};border-radius:20px;display:flex;align-items:center;padding-left:6px;">
-                ${parseFloat(pct)>15?`<span style="font-size:9px;color:#fff;font-weight:700;">${pct}%</span>`:''}
-              </div>
-            </div>
-          </div>`;
-        }).join('')}
-        <div style="margin-top:6px;font-size:9px;color:#3a5a8a;">Semáforo: VERDE = 70% o más (Aprobado) · ROJO = menos de 70% (Requiere refuerzo)</div>
+      <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#f0f4fb;padding:14px 28px;border-bottom:2px solid #b0c4e0;">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+          ${[
+            ['Fecha', fmtF(res.fecha)],
+            ['Empresa', res.emp],
+            ['Sector', res.sector||'—'],
+            ['Supervisor', supLabel],
+            ['Tipo Personal', tR],
+            [palabra+' Evaluadas', res.rutas.length]
+          ].map(([l,v])=>`<div>
+            <div style="font-size:8px;font-weight:700;color:#3a5a8a;text-transform:uppercase;letter-spacing:.06em;">${l}</div>
+            <div style="font-size:12px;font-weight:700;color:#0a1f5c;margin-top:2px;">${v}</div>
+          </div>`).join('')}
+        </div>
       </div>
 
-      <!-- TABLA POR RUTA/ÁREA -->
-      <div style="margin-bottom:20px;">
-        <div style="font-size:12px;font-weight:800;color:#003087;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;padding-bottom:5px;border-bottom:2px solid #cc0000;">Resultado por ${palabra}</div>
-        <table style="width:100%;border-collapse:collapse;font-size:10px;">
-          <thead>
-            <tr style="background:#003087;color:#fff;">
-              <th style="padding:7px 8px;text-align:left;border-radius:4px 0 0 0;">Cód.</th>
-              <th style="padding:7px 8px;text-align:left;">${res.tipo==='obrero'?'Ruta':'Área'}</th>
-              <th style="padding:7px 8px;text-align:center;">Eval.</th>
-              <th style="padding:7px 8px;text-align:center;">Legis.</th>
-              <th style="padding:7px 8px;text-align:center;">Bienest.</th>
-              <th style="padding:7px 8px;text-align:center;">Sustent.</th>
-              <th style="padding:7px 8px;text-align:center;">Ética</th>
-              <th style="padding:7px 8px;text-align:center;">SST</th>
-              <th style="padding:7px 8px;text-align:center;">Medio.</th>
-              <th style="padding:7px 8px;text-align:center;">Resultado</th>
-              <th style="padding:7px 8px;text-align:center;border-radius:0 4px 0 0;">Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${res.rutas.map((r,i)=>{
-              const rp=(r.resGrupo*100).toFixed(1), rok=r.resGrupo>=0.7;
-              const bg=i%2===0?'#f8faff':'#fff';
-              return `<tr style="background:${bg};">
-                <td style="padding:6px 8px;font-weight:700;color:#003087;">${r.cod||'—'}</td>
-                <td style="padding:6px 8px;font-weight:700;">${r.nom}</td>
-                <td style="padding:6px 8px;text-align:center;">${r.ne}</td>
-                ${r.secs.map(s=>{
-                  const sp=(s.cum*100).toFixed(0);
-                  return `<td style="padding:6px 8px;text-align:center;color:${s.cum>=0.7?VD:RJ};font-weight:700;">${sp}%</td>`;
-                }).join('')}
-                <td style="padding:6px 8px;text-align:center;font-weight:800;color:${rok?VD:RJ};">${rp}%</td>
-                <td style="padding:6px 8px;text-align:center;">
-                  <span style="background:${rok?'#e0f2e9':'#fde8e8'};color:${rok?VD:RJ};padding:2px 7px;border-radius:10px;font-size:9px;font-weight:700;">${rok?'APROBADO':'REFUERZO'}</span>
-                </td>
-              </tr>`;
+      <div style="padding:18px 28px 0;">
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;">
+          ${[
+            ['Resultado General', pg+'%', ok?VD:RJ, ok?'APROBADO':'REFUERZO'],
+            [palabra+' Aprobadas', res.rutas.filter(r=>r.resGrupo>=0.7).length+' / '+res.rutas.length, VD, '≥ 70%'],
+            ['En Refuerzo', res.rutas.filter(r=>r.resGrupo<0.7).length+' / '+res.rutas.length, RJ, '< 70%'],
+            ['Total Evaluados', res.rutas.reduce((a,r)=>a+r.ne,0)+' personas', AZ, res.rutas.length+' grupos']
+          ].map(([l,v,c,s])=>`
+            <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#fff;border:2px solid ${c};border-radius:8px;padding:10px;text-align:center;">
+              <div style="font-size:8px;font-weight:700;color:#3a5a8a;text-transform:uppercase;">${l}</div>
+              <div style="font-size:18px;font-weight:800;color:${c};margin:3px 0;">${v}</div>
+              <div style="font-size:8px;color:${c};font-weight:600;">${s}</div>
+            </div>`).join('')}
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:11px;font-weight:800;color:#fff;background:#003087;padding:6px 10px;border-radius:4px 4px 0 0;text-transform:uppercase;letter-spacing:.06em;">Promedio por Tema</div>
+          <div style="border:1px solid #b0c4e0;border-top:none;padding:12px;border-radius:0 0 6px 6px;">
+            ${promSecs.map(s=>{
+              const pct=(s.pct*100).toFixed(1);
+              const ok2=s.pct>=0.7;
+              const w=Math.min(100,parseFloat(pct));
+              return `<div style="margin-bottom:9px;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+                  <span style="font-size:11px;font-weight:700;color:#0a1f5c;">${s.nom}</span>
+                  <span style="font-size:11px;font-weight:800;color:${ok2?VD:RJ};">${pct}% &nbsp;${ok2?'✓ APROBADO':'✗ REFUERZO'}</span>
+                </div>
+                <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#dce6f5;border-radius:20px;height:16px;overflow:hidden;">
+                  <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;width:${w}%;height:16px;background:${ok2?VD:RJ};border-radius:20px;display:flex;align-items:center;padding:0 8px;">
+                    <span style="font-size:9px;color:#fff;font-weight:700;">${pct}%</span>
+                  </div>
+                </div>
+              </div>`;
             }).join('')}
-          </tbody>
-        </table>
-      </div>
-
-      <!-- GRÁFICO BARRAS POR RUTA -->
-      <div style="margin-bottom:20px;">
-        <div style="font-size:12px;font-weight:800;color:#003087;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;padding-bottom:5px;border-bottom:2px solid #cc0000;">Resultado por ${palabra} (visual)</div>
-        ${res.rutas.map(r=>{
-          const rp=(r.resGrupo*100).toFixed(1), rok=r.resGrupo>=0.7;
-          return `<div style="margin-bottom:7px;display:flex;align-items:center;gap:10px;">
-            <div style="font-size:10px;font-weight:700;color:#0a1f5c;min-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.nom}</div>
-            <div style="flex:1;background:#dce6f5;border-radius:20px;height:18px;overflow:hidden;">
-              <div style="width:${Math.min(100,parseFloat(rp))}%;height:100%;background:${rok?VD:RJ};border-radius:20px;display:flex;align-items:center;padding:0 8px;">
-                <span style="font-size:9px;color:#fff;font-weight:700;">${rp}%</span>
-              </div>
-            </div>
-            <span style="font-size:10px;font-weight:800;color:${rok?VD:RJ};min-width:38px;text-align:right;">${rp}%</span>
-          </div>`;
-        }).join('')}
-        <!-- Línea de meta 70% -->
-        <div style="margin-top:6px;display:flex;align-items:center;gap:8px;font-size:9px;color:#3a5a8a;">
-          <div style="width:20px;height:2px;background:#003087;border-top:2px dashed #003087;"></div>
-          <span>Meta mínima: 70%</span>
+          </div>
         </div>
-      </div>
 
-      <!-- PIE DEL REPORTE -->
-      <div style="border-top:1px solid #dce6f5;padding-top:12px;margin-top:4px;display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          <div style="font-size:9px;color:#3a5a8a;">Sistema ETI · Verfrut / RAPEL SAC</div>
-          <div style="font-size:9px;color:#3a5a8a;">Creado por Joel Timoteo Gonza – Coordinador de Relaciones Laborales</div>
+        <div style="margin-bottom:20px;page-break-inside:avoid;">
+          <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:11px;font-weight:800;color:#fff;background:#003087;padding:6px 10px;border-radius:4px 4px 0 0;text-transform:uppercase;letter-spacing:.06em;">Resultado por ${palabra}</div>
+          <table style="width:100%;border-collapse:collapse;font-size:9px;border:1px solid #b0c4e0;border-top:none;">
+            <thead>
+              <tr style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#dce6f5;">
+                <th style="padding:6px 8px;text-align:left;border-bottom:1px solid #b0c4e0;">Cód.</th>
+                <th style="padding:6px 8px;text-align:left;border-bottom:1px solid #b0c4e0;">${res.tipo==='obrero'?'Ruta':'Área'}</th>
+                <th style="padding:6px 8px;text-align:center;border-bottom:1px solid #b0c4e0;">Eval.</th>
+                ${SECS.map(s=>`<th style="padding:6px 4px;text-align:center;border-bottom:1px solid #b0c4e0;">${s.nom.split(' ')[0]}</th>`).join('')}
+                <th style="padding:6px 8px;text-align:center;border-bottom:1px solid #b0c4e0;font-weight:800;">Total</th>
+                <th style="padding:6px 8px;text-align:center;border-bottom:1px solid #b0c4e0;">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${res.rutas.map((r,i)=>{
+                const rp=(r.resGrupo*100).toFixed(1), rok=r.resGrupo>=0.7;
+                const bg=i%2===0?'#f8faff':'#ffffff';
+                return `<tr style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:${bg};">
+                  <td style="padding:5px 8px;font-weight:700;color:${AZ};border-bottom:1px solid #e8eef8;">${r.cod||'—'}</td>
+                  <td style="padding:5px 8px;font-weight:600;border-bottom:1px solid #e8eef8;">${r.nom}</td>
+                  <td style="padding:5px 8px;text-align:center;border-bottom:1px solid #e8eef8;">${r.ne}</td>
+                  ${r.secs.map(s=>`<td style="padding:5px 4px;text-align:center;font-weight:700;color:${s.cum>=0.7?VD:RJ};border-bottom:1px solid #e8eef8;">${(s.cum*100).toFixed(0)}%</td>`).join('')}
+                  <td style="padding:5px 8px;text-align:center;font-weight:800;color:${rok?VD:RJ};border-bottom:1px solid #e8eef8;">${rp}%</td>
+                  <td style="padding:5px 8px;text-align:center;border-bottom:1px solid #e8eef8;">
+                    <span style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:${rok?'#e0f2e9':'#fde8e8'};color:${rok?VD:RJ};padding:2px 6px;border-radius:8px;font-size:8px;font-weight:700;">${rok?'APROBADO':'REFUERZO'}</span>
+                  </td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
         </div>
-        <div style="font-size:9px;color:#3a5a8a;text-align:right;">
-          Generado: ${new Date().toLocaleString('es-PE')}
+
+        <div style="margin-bottom:16px;">
+          <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:11px;font-weight:800;color:#fff;background:#003087;padding:6px 10px;border-radius:4px 4px 0 0;text-transform:uppercase;letter-spacing:.06em;">Resultado por ${palabra} (Gráfico)</div>
+          <div style="border:1px solid #b0c4e0;border-top:none;padding:12px;border-radius:0 0 6px 6px;">
+            ${res.rutas.map(r=>{
+              const rp=(r.resGrupo*100).toFixed(1), rok=r.resGrupo>=0.7;
+              const w=Math.min(100,parseFloat(rp));
+              return `<div style="margin-bottom:8px;display:flex;align-items:center;gap:10px;">
+                <div style="font-size:10px;font-weight:700;color:#0a1f5c;min-width:150px;overflow:hidden;">${r.nom||'—'}</div>
+                <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;flex:1;background:#dce6f5;border-radius:20px;height:18px;overflow:hidden;">
+                  <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;width:${w}%;height:18px;background:${rok?VD:RJ};border-radius:20px;display:flex;align-items:center;padding:0 8px;">
+                    <span style="font-size:9px;color:#fff;font-weight:700;">${rp}%</span>
+                  </div>
+                </div>
+                <span style="font-size:10px;font-weight:800;color:${rok?VD:RJ};min-width:40px;text-align:right;">${rp}%</span>
+              </div>`;
+            }).join('')}
+            <div style="margin-top:8px;font-size:9px;color:#3a5a8a;">Meta minima aprobacion: 70% &nbsp;|&nbsp; Verde = Aprobado &nbsp;|&nbsp; Rojo = Requiere refuerzo</div>
+          </div>
         </div>
+
+        <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#f0f4fb;border:1px solid #b0c4e0;border-radius:6px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <div>
+            <div style="font-size:9px;color:#3a5a8a;">Sistema ETI · Verfrut / RAPEL SAC · Coordinacion de Relaciones Laborales</div>
+            <div style="font-size:9px;color:#3a5a8a;font-weight:700;">Creado por Joel Timoteo Gonza – Coordinador de Relaciones Laborales</div>
+          </div>
+          <div style="font-size:9px;color:#3a5a8a;text-align:right;">Generado: ${new Date().toLocaleString('es-PE')}</div>
+        </div>
+
       </div>
-    </div>
-  </div>`;
+    </div>`;
 
-  // Crear elemento temporal y generar PDF
-  const el = document.createElement('div');
-  el.innerHTML = html;
-  el.style.position = 'absolute';
-  el.style.left = '-9999px';
-  el.style.top = '0';
-  document.body.appendChild(el);
-
-  const nombre = `Reporte-ETI-${res.emp}-${res.sector||'sector'}-${res.fecha||'hoy'}.pdf`
-    .replace(/\s+/g,'-').replace(/[^\w\-\.]/g,'');
-
-  const opciones = {
-    margin:       [8, 8, 8, 8],
-    filename:     nombre,
-    image:        {type:'jpeg', quality:0.97},
-    html2canvas:  {scale:2, useCORS:true, logging:false},
-    jsPDF:        {unit:'mm', format:'a4', orientation:'portrait'}
+  // Abrir ventana de impresión
+  const win = window.open('','_blank','width=900,height=700');
+  win.document.write(`<!DOCTYPE html><html><head>
+    <meta charset="UTF-8">
+    <title>Reporte ETI - ${res.emp} - ${fmtF(res.fecha)}</title>
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0;}
+      body{font-family:Tahoma,Arial,sans-serif;background:#fff;padding:0;margin:0;}
+      @media print{
+        body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+        @page{margin:10mm;size:A4 portrait;}
+      }
+    </style>
+  </head><body>${contenido}</body></html>`);
+  win.document.close();
+  win.onload = function(){
+    setTimeout(()=>{
+      win.focus();
+      win.print();
+    }, 600);
   };
-
-  html2pdf().set(opciones).from(el).save().then(()=>{
-    document.body.removeChild(el);
-    toast('PDF exportado correctamente','s');
-  }).catch(err=>{
-    document.body.removeChild(el);
-    toast('Error al generar PDF','e');
-    console.error(err);
-  });
+  toast('Abriendo reporte para imprimir/guardar como PDF','s');
 }
+
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
 
 // ══════════════════════════════════════════
 // HELPERS
@@ -1810,4 +2587,3 @@ document.getElementById('mdate').textContent=new Date().toLocaleDateString('es-P
 </script>
 </body>
 </html>
-
