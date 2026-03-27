@@ -324,9 +324,11 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
 
     <!-- TABS ADMIN -->
     <div style="display:flex;gap:.5rem;margin-bottom:1.2rem;flex-wrap:wrap;">
-      <button class="btn bpri bsm" id="atab1" onclick="adminTab('stats')">📊 Estadísticas Globales</button>
-      <button class="btn bout bsm" id="atab2" onclick="adminTab('users')">👥 Gestión de Usuarios</button>
-      <button class="btn bout bsm" id="atab3" onclick="adminTab('registros')">📋 Todos los Registros</button>
+      <button class="btn bpri bsm" id="atab1" onclick="adminTab('stats')">📊 Estadísticas</button>
+      <button class="btn bout bsm" id="atab2" onclick="adminTab('users')">👥 Usuarios</button>
+      <button class="btn bout bsm" id="atab3" onclick="adminTab('registros')">📋 Registros</button>
+      <button class="btn bout bsm" id="atab4" onclick="adminTab('eval')">📝 Nueva Evaluación</button>
+      <button class="btn bout bsm" id="atab5" onclick="adminTab('dash')">📈 Mi Dashboard</button>
     </div>
 
     <!-- TAB ESTADÍSTICAS -->
@@ -334,12 +336,8 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
       <div class="ptit" style="margin-bottom:.8rem;">Estadísticas Globales del Sistema</div>
       <div class="kstrip" id="admin-kpis"></div>
       <div style="margin-top:1rem;">
-        <div class="ptit" style="font-size:.95rem;margin-bottom:.6rem;">Registros por Supervisor</div>
+        <div class="ptit" style="font-size:.95rem;margin-bottom:.6rem;">Rendimiento por Supervisor</div>
         <div id="admin-por-sup"></div>
-      </div>
-      <div style="margin-top:1rem;">
-        <div class="ptit" style="font-size:.95rem;margin-bottom:.6rem;">Todos los Registros Generados</div>
-        <div id="admin-tabla-global"></div>
       </div>
     </div>
 
@@ -371,7 +369,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
     <div id="admin-registros" style="display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem;flex-wrap:wrap;gap:.5rem;">
         <div class="ptit">Todos los Registros del Sistema</div>
-        <div style="display:flex;gap:.5rem;">
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
           <select class="fc" id="filtro-sup" onchange="renderAdminRegistros()" style="font-size:.8rem;padding:.4rem .7rem;">
             <option value="">Todos los supervisores</option>
           </select>
@@ -379,6 +377,49 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
         </div>
       </div>
       <div id="admin-registros-tabla"></div>
+    </div>
+
+    <!-- TAB NUEVA EVALUACIÓN -->
+    <div id="admin-eval" style="display:none;">
+      <div style="background:rgba(0,48,135,.06);border:1.5px solid rgba(0,48,135,.18);border-radius:12px;padding:1.2rem;margin-bottom:1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+        <div style="font-size:2rem;">📋</div>
+        <div>
+          <div style="font-size:.95rem;font-weight:800;color:#003087;">Registrar Nueva Evaluación</div>
+          <div style="font-size:.82rem;color:var(--text2);margin-top:.2rem;">Como administrador puedes registrar evaluaciones de cualquier sector</div>
+        </div>
+        <button class="btn bpri" onclick="iniciarComoAdmin()" style="margin-left:auto;padding:.7rem 1.4rem;font-size:.9rem;">
+          📋 Iniciar Evaluación →
+        </button>
+      </div>
+      <!-- Panel último reporte del admin -->
+      <div id="admin-ult-reporte" style="display:none;">
+        <div class="ptit" style="font-size:.95rem;margin-bottom:.6rem;">Último Reporte Registrado</div>
+        <div style="background:#003087;border-radius:10px;padding:1rem 1.2rem;">
+          <div style="font-size:.72rem;font-weight:700;color:#ff9999;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem;">Último reporte</div>
+          <div style="font-size:.9rem;font-weight:700;color:#fff;" id="admin-rpt-meta">—</div>
+          <div style="display:flex;gap:.5rem;margin-top:.8rem;flex-wrap:wrap;">
+            <button class="btn bpri bsm" onclick="verUlt()">👁 Ver Reporte</button>
+            <button class="btn bsm" style="background:#cc0000;color:#fff;border:none;" onclick="enviarCorreoDirecto()">📤 Correo</button>
+            <button class="btn bsm" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);" onclick="copiarDirecto()">📋 Copiar</button>
+            <button class="btn bsm" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);" onclick="exportarExcel()">📊 Excel</button>
+            <button class="btn bsm" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);" onclick="exportarPDF()">📄 PDF</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB MI DASHBOARD -->
+    <div id="admin-dash" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem;flex-wrap:wrap;gap:.5rem;">
+        <div class="ptit">Mi Dashboard (mis evaluaciones registradas)</div>
+        <div style="display:flex;gap:.5rem;">
+          <button class="btn bout bsm" onclick="exportDashTxt()">📄 .txt</button>
+          <button class="btn bout bsm" onclick="exportDashCsv()">📊 .csv</button>
+          <button class="btn bpri bsm" onclick="exportarExcelCompleto()">📊 Excel</button>
+        </div>
+      </div>
+      <div class="kstrip" id="admin-dash-kpis"></div>
+      <div style="margin-top:1rem;" id="admin-dash-lista"></div>
     </div>
 
     <div style="text-align:center;padding:.8rem 0 .2rem;border-top:1px solid var(--bdr);margin-top:1rem;">
@@ -635,7 +676,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
 <div class="screen" id="sres">
   <header class="hdr">
     <div class="logo">ETI<span>·</span>EVAL <span style="color:rgba(255,255,255,.22);margin:0 .3rem">›</span><span style="font-weight:400;font-size:.82rem;color:rgba(255,255,255,.48)">Resultados</span></div>
-    <button class="btn bgho bsm" onclick="go('sm')">← Menú</button>
+    <button class="btn bgho bsm" onclick="volverAdmin()">← Menú</button>
   </header>
   <div class="rlayout">
     <div class="rhdr">
@@ -1026,14 +1067,83 @@ function guardarHistorialUsuario(nuevosRegistros){
 
 // ── PANEL ADMINISTRADOR ──
 function adminTab(tab){
-  document.getElementById('admin-stats').style.display    = tab==='stats'    ?'block':'none';
-  document.getElementById('admin-users').style.display    = tab==='users'    ?'block':'none';
-  document.getElementById('admin-registros').style.display= tab==='registros'?'block':'none';
-  ['atab1','atab2','atab3'].forEach((id,i)=>{
-    const tabs=['stats','users','registros'];
-    const el=document.getElementById(id);
-    el.className=tab===tabs[i]?'btn bpri bsm':'btn bout bsm';
+  ['admin-stats','admin-users','admin-registros','admin-eval','admin-dash']
+    .forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
+  const el=document.getElementById('admin-'+tab);
+  if(el) el.style.display='block';
+
+  const tabs=['stats','users','registros','eval','dash'];
+  ['atab1','atab2','atab3','atab4','atab5'].forEach((id,i)=>{
+    const btn=document.getElementById(id);
+    if(btn) btn.className=tab===tabs[i]?'btn bpri bsm':'btn bout bsm';
   });
+
+  if(tab==='dash') renderAdminDash();
+  if(tab==='eval') updAdminUltReporte();
+}
+
+function iniciarComoAdmin(){
+  // El admin inicia evaluación y vuelve al panel admin al terminar
+  iniciar();
+  // Sobreescribir botón volver del menú para regresar al admin
+  go('sp1');
+}
+
+function updAdminUltReporte(){
+  const panel=document.getElementById('admin-ult-reporte');
+  const meta=document.getElementById('admin-rpt-meta');
+  if(!panel||!meta) return;
+  if(!window._res||!window._rpt){ panel.style.display='none'; return; }
+  panel.style.display='block';
+  const res=window._res;
+  const pg=(res.resGen*100).toFixed(1), ok=res.resGen>=0.7;
+  meta.innerHTML=`<span style="color:${ok?'#3ecf8e':'#ff6666'};font-size:1.1rem;font-weight:800;">${pg}%</span>
+    &nbsp;${ok?'✅':'⚠️'} ${ok?'APROBADO':'REFUERZO'}
+    &nbsp;·&nbsp; ${res.emp} &nbsp;·&nbsp; ${res.sup}
+    &nbsp;·&nbsp; 📍${res.sector||'—'} &nbsp;·&nbsp; ${fmtF(res.fecha)}`;
+}
+
+function renderAdminDash(){
+  // Mostrar dashboard del admin (sus propios registros)
+  const kpis=document.getElementById('admin-dash-kpis');
+  const lista=document.getElementById('admin-dash-lista');
+  if(!kpis||!lista) return;
+
+  if(!hist.length){
+    kpis.innerHTML='';
+    lista.innerHTML='<div style="color:var(--text2);font-size:.85rem;padding:1rem;">Aún no has registrado evaluaciones.</div>';
+    return;
+  }
+
+  const total=hist.length;
+  const aprobados=hist.filter(r=>r.resGrupo>=0.7).length;
+  const prom=hist.reduce((a,r)=>a+r.resGrupo,0)/total;
+  const ordenados=[...hist].sort((a,b)=>b.resGrupo-a.resGrupo);
+
+  kpis.innerHTML=`
+    <div class="kcard kg"><div class="klbl">Total Registros</div><div class="kval">${total}</div><div class="ksub">mis evaluaciones</div></div>
+    <div class="kcard kg"><div class="klbl">Aprobados</div><div class="kval">${aprobados}</div><div class="ksub">${((aprobados/total)*100).toFixed(0)}%</div></div>
+    <div class="kcard kr"><div class="klbl">Refuerzo</div><div class="kval">${total-aprobados}</div><div class="ksub">${(((total-aprobados)/total)*100).toFixed(0)}%</div></div>
+    <div class="kcard"><div class="klbl">Promedio</div><div class="kval">${(prom*100).toFixed(1)}%</div><div class="ksub">${prom>=0.7?'✅ Aprobado':'⚠ Refuerzo'}</div></div>`;
+
+  lista.innerHTML=`<div style="overflow-x:auto;"><table class="rtbl">
+    <thead><tr><th>#</th><th>Ruta/Área</th><th>Empresa</th><th>Sector</th><th>Tipo</th><th>Fecha</th><th>Resultado</th><th>Estado</th></tr></thead>
+    <tbody>
+      ${ordenados.map((r,i)=>{
+        const rp=(r.resGrupo*100).toFixed(1), rok=r.resGrupo>=0.7;
+        return `<tr>
+          <td>${i+1}</td>
+          <td style="font-weight:700;">${r.nom||'—'}</td>
+          <td>${r.emp||'—'}</td>
+          <td>${r.sector||'—'}</td>
+          <td style="font-size:.75rem;">${r.tipo==='obrero'?'👷 Campo':'💼 Agrario'}</td>
+          <td style="font-size:.78rem;">${fmtF(r.fecha)}</td>
+          <td style="font-weight:800;color:${rok?'var(--gdim)':'var(--red)'};">${rp}%</td>
+          <td><span class="bdg ${rok?'bg':'br'}">${rok?'APROBADO':'REFUERZO'}</span></td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table></div>`;
 }
 
 function renderAdmin(){
@@ -1245,7 +1355,6 @@ let hist = [];
 // NAVEGACIÓN
 // ══════════════════════════════════════════
 function go(id){
-  // Protección: si no hay sesión, redirigir a login
   if(!SESSION && id!=='slogin'){
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     document.getElementById('slogin').classList.add('active');
@@ -1259,7 +1368,17 @@ function go(id){
     const lbl=document.getElementById('menu-user-lbl');
     if(lbl && SESSION) lbl.textContent=SESSION.nom;
   }
-  if(id==='sadmin') renderAdmin();
+  if(id==='sadmin'){
+    renderAdmin();
+    updAdminUltReporte();
+    document.getElementById('admin-user-lbl').textContent=(SESSION?.nom||'')+' (Admin)';
+  }
+}
+
+// Botón de volver al panel admin desde cualquier pantalla
+function volverAdmin(){
+  if(SESSION?.rol==='admin') go('sadmin');
+  else go('sm');
 }
 
 function stpr(eid, act){
@@ -1971,9 +2090,10 @@ function updMenuReporte(){
     &nbsp;·&nbsp; ${res.emp} &nbsp;·&nbsp; ${supLabel}
     &nbsp;·&nbsp; 📍${res.sector||'—'}
     &nbsp;·&nbsp; ${fmtF(res.fecha)}`;
-  // Preview primeras líneas del reporte
   const lineas=window._rpt.split('\n').slice(0,18).join('\n');
   preview.textContent=lineas+'...';
+  // Actualizar panel admin si está activo
+  updAdminUltReporte();
 }
 
 function enviarCorreo(){
