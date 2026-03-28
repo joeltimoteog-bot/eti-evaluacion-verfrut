@@ -1495,7 +1495,11 @@ function p2next(){
 // ══════════════════════════════════════════
 // PASO 3 — ACORDEÓN
 // ══════════════════════════════════════════
-function maxEv(t){return Math.min(10,Math.max(1,Math.ceil(t*0.1)));}
+// maxEv: obrero = 10% del total (max 10), empleado = puede ser hasta el total del área
+function maxEv(t){
+  if(S.tipo==='empleado') return Math.min(250, Math.max(1, t||5));
+  return Math.min(10,Math.max(1,Math.ceil(t*0.1)));
+}
 function hoy(){return new Date().toISOString().split('T')[0];}
 
 function renderP3(){
@@ -1515,12 +1519,29 @@ function renderP3(){
 }
 
 function buildEvOpts(neAct, tot){
-  const minReq=Math.max(1,Math.ceil((tot||50)*0.1));
-  const maxPerm=Math.min(10, minReq+4); // permite hasta 4 más del mínimo
   let o='';
-  for(let v=1;v<=Math.min(10,maxPerm);v++){
-    const isMin=v===minReq;
-    o+=`<option value="${v}" ${v===neAct?'selected':''}>${v} evaluado${v>1?'s':''}${isMin?' (10% req.)':''}</option>`;
+  if(S.tipo==='empleado'){
+    // Empleado: input numérico libre de 1 a 250
+    // Se renderiza como select con rangos para no saturar
+    const maxPerm=Math.min(250, tot||250);
+    const grupos=[
+      ...Array.from({length:Math.min(20,maxPerm)},(_,i)=>i+1),
+      ...[25,30,35,40,45,50,60,70,80,90,100,120,150,180,200,220,250]
+        .filter(v=>v>20&&v<=maxPerm)
+    ];
+    // Eliminar duplicados y ordenar
+    const vals=[...new Set(grupos)].sort((a,b)=>a-b);
+    vals.forEach(v=>{
+      o+=`<option value="${v}" ${v===neAct?'selected':''}>${v} evaluado${v>1?'s':''}</option>`;
+    });
+  } else {
+    // Obrero: 10% del total, máximo 10
+    const minReq=Math.max(1,Math.ceil((tot||50)*0.1));
+    const maxPerm=Math.min(10, minReq+4);
+    for(let v=1;v<=maxPerm;v++){
+      const isMin=v===minReq;
+      o+=`<option value="${v}" ${v===neAct?'selected':''}>${v} evaluado${v>1?'s':''}${isMin?' (mín 10%)':''}</option>`;
+    }
   }
   return o;
 }
@@ -1563,13 +1584,20 @@ function mkAc(i){
         </div>
         <div class="fg" style="margin:0">
           <label class="fl" style="font-size:.7rem">${totLabel}</label>
-          <input class="fc" type="number" style="padding:.45rem .78rem;font-size:.82rem" id="rt${i}" placeholder="50" min="1" max="500" value="${r.tot||''}" oninput="rfch(${i})">
+          <input class="fc" type="number" style="padding:.45rem .78rem;font-size:.82rem" id="rt${i}"
+            placeholder="${esEmp?'Ej: 80':'50'}" min="1" max="${esEmp?'250':'500'}"
+            value="${r.tot||''}" oninput="rfch(${i})">
         </div>
         <div class="fg" style="margin:0">
-          <label class="fl" style="font-size:.7rem">N° evaluados <span style="color:var(--text2);font-weight:400">(mín 10% · máx 10)</span></label>
-          <select class="fc" style="padding:.45rem .78rem;font-size:.82rem" id="rev${i}" onchange="rfchEv(${i})">
-            ${buildEvOpts(ne, r.tot||50)}
-          </select>
+          <label class="fl" style="font-size:.7rem">N° evaluados <span style="color:var(--text2);font-weight:400">${esEmp?'(1 al total del área)':'(mín 10% · máx 10)'}</span></label>
+          ${esEmp
+            ? `<input class="fc" type="number" style="padding:.45rem .78rem;font-size:.82rem" id="rev${i}"
+                placeholder="Ej: 80" min="1" max="250"
+                value="${ne}" oninput="rfchEvEmp(${i})">`
+            : `<select class="fc" style="padding:.45rem .78rem;font-size:.82rem" id="rev${i}" onchange="rfchEv(${i})">
+                ${buildEvOpts(ne, r.tot||50)}
+              </select>`
+          }
         </div>
       </div>
       <div class="cqwrap" id="cq${i}">${mkCuest(i)}</div>
@@ -1577,8 +1605,20 @@ function mkAc(i){
   </div>`;
 }
 
+function rfchEvEmp(i){
+  const inp=document.getElementById(`rev${i}`);
+  if(!inp) return;
+  let ne=parseInt(inp.value)||1;
+  ne=Math.max(1,Math.min(250,ne));
+  if(ne!==parseInt(inp.value)) inp.value=ne;
+  S.rutas[i].nev=ne;
+  document.getElementById(`acm${i}`).textContent=
+    `${S.rutas[i].cod?S.rutas[i].cod+' · ':''}${S.rutas[i].tot||0} empl. · ${ne} eval. · ${calcPct(i).toFixed(0)}% completado`;
+  document.getElementById(`cq${i}`).innerHTML=mkCuest(i);
+  updAc(i); updP3();
+}
+
 function rfchArea(i){
-  // Para empleado: cuando cambia el select de área
   const sel=document.getElementById(`rn${i}`);
   if(!sel) return;
   S.rutas[i].nom=sel.value;
@@ -1588,9 +1628,10 @@ function rfchArea(i){
 
 function mkCuest(ri){
   const r=S.rutas[ri], ne=r.nev||maxEv(r.tot||50);
-  // Cabecera de evaluados
-  let evHdrs='';
-  for(let ei=0;ei<ne;ei++) evHdrs+=`<div style="text-align:center;font-size:.65rem;color:var(--text2);font-weight:600;min-width:88px">Eval. ${ei+1}</div>`;
+  const esEmp=S.tipo==='empleado';
+  // Ancho de cada columna evaluado - más compacto cuando hay muchos
+  const colW = ne<=5?'88px': ne<=10?'78px': ne<=20?'68px': ne<=50?'60px':'54px';
+  const pselW= ne<=5?'88px': ne<=10?'78px': ne<=20?'68px': ne<=50?'60px':'54px';
 
   let html='';
   SECS.forEach(sec=>{
@@ -1602,22 +1643,28 @@ function mkCuest(ri){
       </div>
       <div class="sbody">`;
 
+    // Wrapper con scroll horizontal
+    html+=`<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+      <div style="min-width:${400+ne*parseInt(colW)}px;">`;
+
     // Fila encabezado evaluados
-    html+=`<div style="display:flex;align-items:center;gap:.5rem;padding:.38rem .8rem;background:var(--surf2);border-bottom:1px solid var(--bdr);">
-      <div style="flex:1;font-size:.67rem;font-weight:600;color:var(--text2)">Pregunta</div>
-      ${Array.from({length:ne},(_,ei)=>`<div style="text-align:center;font-size:.65rem;color:var(--text2);font-weight:600;min-width:88px;flex-shrink:0">Eval. ${ei+1}</div>`).join('')}
+    html+=`<div style="display:flex;align-items:center;gap:.3rem;padding:.38rem .8rem;background:var(--surf2);border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:2;">
+      <div style="min-width:260px;flex:1;font-size:.67rem;font-weight:600;color:var(--text2);">Pregunta</div>
+      ${Array.from({length:ne},(_,ei)=>`
+        <div style="text-align:center;font-size:.63rem;color:var(--text2);font-weight:700;min-width:${colW};flex-shrink:0;background:var(--navy);color:#fff;padding:3px 2px;border-radius:4px;">
+          Eval.<br>${ei+1}
+        </div>`).join('')}
     </div>`;
 
     sec.pregs.forEach(preg=>{
       const savedVals=Array.from({length:ne},(_,ei)=>r.sc?.[sec.id]?.[preg.n]?.[ei]??'');
-      html+=`<div class="prow">
-        <span class="pnum">${preg.n}</span>
-        <div class="ptxt">${preg.t}<span class="pmx">Máx ${preg.max} pt${preg.max>1?'s':''}</span></div>`;
-      // Un select por evaluado
+      html+=`<div class="prow" style="flex-wrap:nowrap;">
+        <span class="pnum" style="flex-shrink:0;">${preg.n}</span>
+        <div class="ptxt" style="min-width:200px;flex:1;">${preg.t}<span class="pmx">Máx ${preg.max} pt${preg.max>1?'s':''}</span></div>`;
       for(let ei=0;ei<ne;ei++){
         const v=savedVals[ei];
         const cls='psel'+(v?' scored'+(parseInt(v)===preg.max?' smax':''):'');
-        html+=`<select class="${cls}" style="flex-shrink:0"
+        html+=`<select class="${cls}" style="flex-shrink:0;width:${pselW};font-size:.75rem;padding:.28rem .2rem;text-align:center;"
           id="s${ri}_${sec.id}_${preg.n}_${ei}"
           data-ri="${ri}" data-sid="${sec.id}" data-pn="${preg.n}" data-ei="${ei}" data-max="${preg.max}"
           onchange="onSel(this)">
@@ -1627,9 +1674,11 @@ function mkCuest(ri){
       html+=`</div>`;
     });
 
+    html+=`</div></div>`; // cierre scroll wrapper
+
     // Fila subtotal
     html+=`<div class="strow">
-      <span class="stlbl">Promedio sección (todos los evaluados)</span>
+      <span class="stlbl">Promedio sección</span>
       <span><span class="stval" id="stv${ri}_${sec.id}">—</span>
       <span style="font-size:.7rem;color:var(--text2)" id="stp${ri}_${sec.id}"></span></span>
     </div>`;
