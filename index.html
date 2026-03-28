@@ -1017,6 +1017,19 @@ function doLogin(){
   document.getElementById('linput').value='';
   document.getElementById('lpwd').value='';
 
+  // Mensaje de bienvenida personalizado
+  const hora=new Date().getHours();
+  const saludo=hora<12?'Buenos días':hora<18?'Buenas tardes':'Buenas noches';
+  const esAdmin=usr.rol==='admin';
+  setTimeout(()=>{
+    toast(`${hora<12?'Buenos días':hora<18?'Buenas tardes':'Buenas noches'}, ${usr.nom.split(' ')[0]} 👋`,'s');
+    if(!esAdmin){
+      setTimeout(()=>{
+        toast('Hola, te saluda Joel Timoteo. Si tienes alguna duda del proceso de registro, no dudes en comunicarte al 960853224','i');
+      },1800);
+    }
+  },300);
+
   if(usr.rol==='admin'){
     document.getElementById('admin-user-lbl').textContent=usr.nom+' (Admin)';
     renderAdmin();
@@ -1629,9 +1642,11 @@ function rfchArea(i){
 function mkCuest(ri){
   const r=S.rutas[ri], ne=r.nev||maxEv(r.tot||50);
   const esEmp=S.tipo==='empleado';
-  // Ancho de cada columna evaluado - más compacto cuando hay muchos
-  const colW = ne<=5?'88px': ne<=10?'78px': ne<=20?'68px': ne<=50?'60px':'54px';
-  const pselW= ne<=5?'88px': ne<=10?'78px': ne<=20?'68px': ne<=50?'60px':'54px';
+  // Ancho fijo por columna según cantidad de evaluados
+  const colW = ne<=5?86: ne<=10?76: ne<=20?66: ne<=50?58:52;
+  const txtW = 240; // ancho fijo del texto pregunta
+  const numW = 24;  // ancho del número
+  const totalW = numW + txtW + ne*colW + 40; // ancho total mínimo
 
   let html='';
   SECS.forEach(sec=>{
@@ -1641,40 +1656,47 @@ function mkCuest(ri){
         <span class="sbt">📌 ${sec.nom}</span>
         <span class="sbm">Peso: ${(sec.peso*100).toFixed(0)}% · Máx: ${maxSec} pts</span>
       </div>
-      <div class="sbody">`;
-
-    // Wrapper con scroll horizontal
-    html+=`<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
-      <div style="min-width:${400+ne*parseInt(colW)}px;">`;
-
-    // Fila encabezado evaluados
-    html+=`<div style="display:flex;align-items:center;gap:.3rem;padding:.38rem .8rem;background:var(--surf2);border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:2;">
-      <div style="min-width:260px;flex:1;font-size:.67rem;font-weight:600;color:var(--text2);">Pregunta</div>
-      ${Array.from({length:ne},(_,ei)=>`
-        <div style="text-align:center;font-size:.63rem;color:var(--text2);font-weight:700;min-width:${colW};flex-shrink:0;background:var(--navy);color:#fff;padding:3px 2px;border-radius:4px;">
-          Eval.<br>${ei+1}
-        </div>`).join('')}
-    </div>`;
+      <div class="sbody">
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+        <table style="border-collapse:collapse;width:100%;min-width:${totalW}px;">
+          <thead>
+            <tr style="background:var(--navy);">
+              <th style="width:${numW}px;padding:5px 4px;"></th>
+              <th style="width:${txtW}px;min-width:${txtW}px;padding:5px 8px;text-align:left;font-size:.68rem;color:rgba(255,255,255,.7);font-weight:600;">Pregunta</th>
+              ${Array.from({length:ne},(_,ei)=>`
+                <th style="width:${colW}px;min-width:${colW}px;padding:5px 2px;text-align:center;font-size:.62rem;color:#fff;font-weight:700;border-left:1px solid rgba(255,255,255,.1);">
+                  Eval.<br>${ei+1}
+                </th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>`;
 
     sec.pregs.forEach(preg=>{
       const savedVals=Array.from({length:ne},(_,ei)=>r.sc?.[sec.id]?.[preg.n]?.[ei]??'');
-      html+=`<div class="prow" style="flex-wrap:nowrap;">
-        <span class="pnum" style="flex-shrink:0;">${preg.n}</span>
-        <div class="ptxt" style="min-width:200px;flex:1;">${preg.t}<span class="pmx">Máx ${preg.max} pt${preg.max>1?'s':''}</span></div>`;
+      html+=`<tr style="border-bottom:1px solid var(--surf2);">
+        <td style="width:${numW}px;padding:6px 4px;vertical-align:top;text-align:center;">
+          <span class="pnum">${preg.n}</span>
+        </td>
+        <td style="width:${txtW}px;min-width:${txtW}px;padding:6px 8px;vertical-align:middle;">
+          <span class="ptxt" style="display:block;">${preg.t}</span>
+          <span class="pmx">Máx ${preg.max} pt${preg.max>1?'s':''}</span>
+        </td>`;
       for(let ei=0;ei<ne;ei++){
         const v=savedVals[ei];
         const cls='psel'+(v?' scored'+(parseInt(v)===preg.max?' smax':''):'');
-        html+=`<select class="${cls}" style="flex-shrink:0;width:${pselW};font-size:.75rem;padding:.28rem .2rem;text-align:center;"
-          id="s${ri}_${sec.id}_${preg.n}_${ei}"
-          data-ri="${ri}" data-sid="${sec.id}" data-pn="${preg.n}" data-ei="${ei}" data-max="${preg.max}"
-          onchange="onSel(this)">
-          ${mkOpts(preg.max,v)}
-        </select>`;
+        html+=`<td style="width:${colW}px;min-width:${colW}px;padding:4px 3px;vertical-align:middle;text-align:center;border-left:1px solid var(--surf2);">
+          <select class="${cls}" style="width:${colW-6}px;font-size:.73rem;padding:.25rem .15rem;text-align:center;"
+            id="s${ri}_${sec.id}_${preg.n}_${ei}"
+            data-ri="${ri}" data-sid="${sec.id}" data-pn="${preg.n}" data-ei="${ei}" data-max="${preg.max}"
+            onchange="onSel(this)">
+            ${mkOpts(preg.max,v)}
+          </select>
+        </td>`;
       }
-      html+=`</div>`;
+      html+=`</tr>`;
     });
 
-    html+=`</div></div>`; // cierre scroll wrapper
+    html+=`</tbody></table></div>`;
 
     // Fila subtotal
     html+=`<div class="strow">
@@ -2747,7 +2769,15 @@ function exportarPDF(){
 // HELPERS
 // ══════════════════════════════════════════
 function fmtF(iso){if(!iso)return'—';const d=new Date(iso+'T12:00:00');return d.toLocaleDateString('es-PE',{weekday:'short',year:'numeric',month:'short',day:'numeric'});}
-function toast(msg,t='i'){const d=document.createElement('div');d.className=`tst ${t}`;d.textContent=msg;document.getElementById('tc').appendChild(d);setTimeout(()=>d.remove(),4000);}
+function toast(msg,t='i'){
+  const d=document.createElement('div');
+  d.className=`tst ${t}`;
+  d.textContent=msg;
+  document.getElementById('tc').appendChild(d);
+  // Mensajes largos (>60 chars) duran 8 segundos
+  const dur=msg.length>60?8000:4000;
+  setTimeout(()=>d.remove(),dur);
+}
 let _cb=null;
 function confMod(t,b,cb){document.getElementById('mtit').textContent=t;document.getElementById('mbdy').textContent=b;_cb=cb;document.getElementById('mov').classList.add('open');}
 document.getElementById('mbtn').addEventListener('click',()=>{if(_cb)_cb();closeMod();});
