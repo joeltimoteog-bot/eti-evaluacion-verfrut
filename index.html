@@ -2172,43 +2172,89 @@ function enviarCorreo(){
   const res=window._res;
   if(!res){return;}
   const pct=(res.resGen*100).toFixed(1);
+  const ok=res.resGen>=0.7;
   const tl=res.tipo==='obrero'?'Obrero Campo':'Empleado Agrario';
   const palabra=res.tipo==='obrero'?'rutas':'áreas';
+  const sup3=SUPERVISORES.find(sv=>sv.nom===res.sup);
+  const esRemp=sup3?.reemplazante;
+  const supLabel=esRemp?`${res.sup} (Reemplazante — cubre: ${res.sector})`:res.sup;
+
+  // Saludo según hora
+  const hora=new Date().getHours();
+  const saludo=hora<12?'Buenos días':hora<18?'Buenas tardes':'Buenas noches';
+
+  // Fecha de emisión del reporte
+  const fechaEmision=new Date().toLocaleDateString('es-PE',{
+    weekday:'long', year:'numeric', month:'long', day:'numeric'
+  });
+  const horaEmision=new Date().toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'});
+
+  // Usuario que ejecuta
+  const usuarioEjecutor=SESSION?.nom||res.sup||'—';
+
+  // ── Asunto ──
   const asunto=encodeURIComponent(
-    `Reporte ETI – ${res.emp} – ${res.sup} – ${fmtF(res.fecha)} – ${pct}%`
+    `Reporte ETI – ${res.emp} – Sector ${res.sector||'—'} – ${fmtF(res.fecha)} – Resultado: ${pct}%`
   );
-  // Cuerpo del correo: resumen general + detalle por grupo
-  let cuerpo=`REPORTE DE EVALUACIÓN ETI – CAPACITACIÓN\n\n`;
-  cuerpo+=`Fecha       : ${fmtF(res.fecha)}\n`;
-  cuerpo+=`Empresa     : ${res.emp}\n`;
-  cuerpo+=`Supervisor  : ${res.sup}\n`;
-  cuerpo+=`Sector      : ${res.sector||'—'}\n`;
-  cuerpo+=`Personal    : ${tl}\n`;
-  cuerpo+=`${palabra.charAt(0).toUpperCase()+palabra.slice(1)} evaluadas: ${res.rutas.length}\n\n`;
-  cuerpo+=`RESULTADO GENERAL: ${pct}%  ${res.resGen>=0.7?'APROBADO':'REQUIERE REFUERZO'}\n\n`;
-  cuerpo+=`─────────────────────────────────────\n`;
-  cuerpo+=`PROMEDIO POR TEMA (todos los grupos)\n`;
-  cuerpo+=`─────────────────────────────────────\n`;
+
+  // ── Cuerpo formal ──
   const promSecs=SECS.map((sec,si)=>({
     nom:sec.nom,
     prom:res.rutas.reduce((a,r)=>a+(r.secs[si]?.cum||0),0)/res.rutas.length
   }));
+
+  let cuerpo='';
+  cuerpo+=`Estimados,\n\n`;
+  cuerpo+=`${saludo}.\n\n`;
+  cuerpo+=`El presente correo es para comunicarles que se adjunta el archivo del resumen de las Evaluaciones ETI (Evaluación de Conocimiento) correspondiente a la siguiente evaluación:\n\n`;
+  cuerpo+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  cuerpo+=`DATOS DE LA EVALUACIÓN\n`;
+  cuerpo+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  cuerpo+=`Empresa          : ${res.emp}\n`;
+  cuerpo+=`Sector           : ${res.sector||'—'}\n`;
+  cuerpo+=`Supervisor       : ${supLabel}\n`;
+  cuerpo+=`Tipo de personal : ${tl}\n`;
+  cuerpo+=`Fecha evaluación : ${fmtF(res.fecha)}\n`;
+  cuerpo+=`${palabra.charAt(0).toUpperCase()+palabra.slice(1)} evaluadas: ${res.rutas.length}\n\n`;
+  cuerpo+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  cuerpo+=`RESULTADO GENERAL: ${pct}%  —  ${ok?'✓ APROBADO':'✗ REQUIERE REFUERZO'}\n`;
+  cuerpo+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+  cuerpo+=`PROMEDIO POR TEMA:\n`;
+  cuerpo+=`─────────────────────────────────────\n`;
   promSecs.forEach(s=>{
-    cuerpo+=`${s.nom.padEnd(38)} ${(s.prom*100).toFixed(1)}%  ${s.prom>=0.7?'APROBADO':'REFUERZO'}\n`;
+    const p=(s.prom*100).toFixed(1);
+    cuerpo+=`  ${s.nom.padEnd(36)} ${p.padStart(5)}%   ${s.prom>=0.7?'APROBADO':'REFUERZO'}\n`;
   });
-  cuerpo+=`\n─────────────────────────────────────\n`;
-  cuerpo+=`RESULTADO POR ${palabra.toUpperCase()}\n`;
+  cuerpo+=`\nRESULTADO POR ${palabra.toUpperCase()}:\n`;
   cuerpo+=`─────────────────────────────────────\n`;
   res.rutas.forEach(r=>{
     const rp=(r.resGrupo*100).toFixed(1);
-    cuerpo+=`[${r.cod}] ${r.nom.padEnd(28)} ${rp}%  ${r.resGrupo>=0.7?'APROBADO':'REFUERZO'}  (${r.ne} eval.)\n`;
+    cuerpo+=`  [${r.cod||'—'}] ${(r.nom||'—').padEnd(26)} ${rp.padStart(5)}%   ${r.resGrupo>=0.7?'APROBADO':'REFUERZO'}   (${r.ne} eval.)\n`;
   });
-  cuerpo+=`\nGenerado por Sistema ETI · ${res.emp}\n`;
-  cuerpo+=`Coordinado por Joel Timoteo Gonza – Coordinador de Relaciones Laborales`;
+  cuerpo+=`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  cuerpo+=`INFORMACIÓN DE EMISIÓN\n`;
+  cuerpo+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  cuerpo+=`Fecha de emisión : ${fechaEmision}\n`;
+  cuerpo+=`Hora de emisión  : ${horaEmision} hrs\n`;
+  cuerpo+=`Ejecutado por    : ${usuarioEjecutor}\n\n`;
+  cuerpo+=`Nota: El archivo PDF del reporte detallado se adjunta por separado.\n`;
+  cuerpo+=`Si tiene alguna duda sobre los resultados, por favor no dude en comunicarse.\n\n`;
+  cuerpo+=`Atentamente,\n\n`;
+  cuerpo+=`Joel Timoteo Gonza\n`;
+  cuerpo+=`Coordinador de Relaciones Laborales\n`;
+  cuerpo+=`Verfrut / RAPEL SAC — Unifrutti Group\n`;
+  cuerpo+=`Cel: 960853224\n\n`;
+  cuerpo+=`─────────────────────────────────────\n`;
+  cuerpo+=`Sistema ETI · Evaluación de Conocimiento v4\n`;
+  cuerpo+=`Creado por Joel Timoteo Gonza`;
 
   const mailto=`mailto:?subject=${asunto}&body=${encodeURIComponent(cuerpo)}`;
   window.location.href=mailto;
-  toast('Abriendo cliente de correo...','s');
+
+  toast('✅ Abriendo Outlook con el correo formal preparado','s');
+  setTimeout(()=>{
+    toast('💡 Recuerda adjuntar el PDF descargado antes de enviar','i');
+  },2500);
 }
 
 function descargar(contenido, nombre, tipo){
@@ -2737,28 +2783,42 @@ function exportarPDF(){
       </div>
     </div>`;
 
-  // Abrir ventana de impresión
-  const win = window.open('','_blank','width=900,height=700');
-  win.document.write(`<!DOCTYPE html><html><head>
+  // ── DESCARGAR PDF DIRECTAMENTE (sin diálogo de impresión) ──
+  const nombre = `Reporte-ETI-${(res.emp||'').replace(/\s+/g,'-')}-${res.fecha||'hoy'}.pdf`;
+
+  const el = document.createElement('div');
+  el.style.cssText='position:absolute;left:-9999px;top:0;width:210mm;';
+  el.innerHTML = `<!DOCTYPE html><html><head>
     <meta charset="UTF-8">
-    <title>Reporte ETI - ${res.emp} - ${fmtF(res.fecha)}</title>
     <style>
       *{box-sizing:border-box;margin:0;padding:0;}
-      body{font-family:Tahoma,Arial,sans-serif;background:#fff;padding:0;margin:0;}
-      @media print{
-        body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-        @page{margin:10mm;size:A4 portrait;}
-      }
+      body{font-family:Tahoma,Arial,sans-serif;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     </style>
-  </head><body>${contenido}</body></html>`);
-  win.document.close();
-  win.onload = function(){
-    setTimeout(()=>{
-      win.focus();
-      win.print();
-    }, 600);
-  };
-  toast('Abriendo reporte para imprimir/guardar como PDF','s');
+  </head><body>${contenido}</body></html>`;
+  document.body.appendChild(el);
+
+  toast('Generando PDF... espera un momento','i');
+
+  html2pdf()
+    .set({
+      margin:       [8,8,8,8],
+      filename:     nombre,
+      image:        {type:'jpeg',quality:0.95},
+      html2canvas:  {scale:2, useCORS:true, logging:false, allowTaint:true},
+      jsPDF:        {unit:'mm', format:'a4', orientation:'portrait'},
+      pagebreak:    {mode:['avoid-all','css']}
+    })
+    .from(el.querySelector('body'))
+    .save()
+    .then(()=>{
+      document.body.removeChild(el);
+      toast('✅ PDF descargado: '+nombre,'s');
+    })
+    .catch(err=>{
+      document.body.removeChild(el);
+      console.error(err);
+      toast('Error al generar PDF — intenta de nuevo','e');
+    });
 }
 
 // ══════════════════════════════════════════
