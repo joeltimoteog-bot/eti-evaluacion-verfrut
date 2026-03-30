@@ -1014,6 +1014,16 @@ function doLogin(){
   const key=usr.rol==='admin'?'eti_v4':'eti_v4_'+usr.user;
   hist=JSON.parse(localStorage.getItem(key)||'[]');
 
+  // ── Restaurar último reporte guardado ──
+  try{
+    const rKey='eti_last_res_'+usr.user;
+    const tKey='eti_last_rpt_'+usr.user;
+    const savedRes=localStorage.getItem(rKey);
+    const savedRpt=localStorage.getItem(tKey);
+    if(savedRes) window._res=JSON.parse(savedRes);
+    if(savedRpt) window._rpt=savedRpt;
+  }catch(e){}
+
   document.getElementById('linput').value='';
   document.getElementById('lpwd').value='';
 
@@ -1903,6 +1913,11 @@ function calcular(){
 
   window._res=res;
   renderRes(res);
+  // Persistir último reporte en localStorage
+  try{
+    const rKey='eti_last_res_'+(SESSION?.user||'anon');
+    localStorage.setItem(rKey, JSON.stringify(res));
+  }catch(e){}
   updMenuReporte();
   go('sres');
   toast(`✅ ${S.rutas.length} ${palabra}(s) calculadas correctamente`,'s');
@@ -2040,6 +2055,11 @@ ${new Date().toLocaleString('es-PE')}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
   document.getElementById('rrpt').textContent=rpt;
   window._rpt=rpt;
+  // Persistir texto del reporte
+  try{
+    const rKey='eti_last_rpt_'+(SESSION?.user||'anon');
+    localStorage.setItem(rKey, rpt);
+  }catch(e){}
 }
 
 // ══════════════════════════════════════════
@@ -2117,31 +2137,50 @@ function exportDashCsv(){
 // ══════════════════════════════════════════
 // ACCIONES
 // ══════════════════════════════════════════
+function restaurarUltReporte(){
+  if(window._res && window._rpt) return true; // ya está en memoria
+  if(!SESSION) return false;
+  try{
+    const rKey='eti_last_res_'+SESSION.user;
+    const tKey='eti_last_rpt_'+SESSION.user;
+    const savedRes=localStorage.getItem(rKey);
+    const savedRpt=localStorage.getItem(tKey);
+    if(savedRes) window._res=JSON.parse(savedRes);
+    if(savedRpt) window._rpt=savedRpt;
+    return !!(window._res && window._rpt);
+  }catch(e){ return false; }
+}
+
 function verUlt(){
-  if(!window._res){toast('Sin resultados calculados aún. Haga una evaluación primero.','i');return;}
+  if(!restaurarUltReporte()){
+    toast('No hay reporte guardado aún. Registra una evaluación primero.','i');
+    return;
+  }
   renderRes(window._res);
   go('sres');
 }
 
 function copiar(){
-  if(!window._rpt)return;
+  if(!restaurarUltReporte()){toast('Sin reporte aún','i');return;}
   navigator.clipboard.writeText(window._rpt).then(()=>toast('Reporte copiado al portapapeles','s'));
 }
 
-// Copiar desde el menú directamente
 function copiarDirecto(){
-  if(!window._rpt){toast('Sin reporte aún','i');return;}
+  if(!restaurarUltReporte()){toast('Sin reporte aún','i');return;}
   navigator.clipboard.writeText(window._rpt).then(()=>toast('Reporte copiado al portapapeles','s'));
 }
 
 // Enviar correo desde el menú directamente
 function enviarCorreoDirecto(){
-  if(!window._res){toast('Sin reporte calculado aún','i');return;}
+  if(!restaurarUltReporte()){toast('Sin reporte calculado aún','i');return;}
   enviarCorreo();
 }
 
 // Actualizar panel del menú con el último reporte
 function updMenuReporte(){
+  // Intentar restaurar desde localStorage
+  restaurarUltReporte();
+
   const panel   = document.getElementById('menu-reporte-panel');
   const meta    = document.getElementById('menu-rpt-meta');
   const preview = document.getElementById('menu-rpt-preview');
@@ -2168,7 +2207,7 @@ function updMenuReporte(){
 }
 
 function enviarCorreo(){
-  if(!window._rpt){toast('Sin reporte calculado aún','e');return;}
+  if(!restaurarUltReporte()){toast('Sin reporte calculado aún','e');return;}
   const res=window._res;
   if(!res){return;}
   const pct=(res.resGen*100).toFixed(1);
@@ -2270,8 +2309,8 @@ function descargar(contenido, nombre, tipo){
 }
 
 function exportar(){
-  if(!window._rpt){toast('Sin reporte calculado aún','e');return;}
-  descargar(window._rpt, `reporte-eti-${S.fecha||'hoy'}.txt`, 'text/plain');
+  if(!restaurarUltReporte()){toast('Sin reporte calculado aún','e');return;}
+  descargar(window._rpt, `reporte-eti-${S.fecha||window._res?.fecha||'hoy'}.txt`, 'text/plain');
   toast('Reporte .txt descargado','s');
 }
 
@@ -2279,7 +2318,7 @@ function exportar(){
 // EXPORTAR EXCEL — REPORTE ACTUAL
 // ══════════════════════════════════════════
 function exportarExcel(){
-  if(!window._res){toast('Sin resultados calculados aún','e');return;}
+  if(!restaurarUltReporte()){toast('Sin resultados calculados aún','e');return;}
   if(typeof XLSX==='undefined'){toast('Librería Excel cargando, intenta de nuevo','e');return;}
 
   const res=window._res;
@@ -2634,7 +2673,7 @@ function exportarExcelCompleto(){
 }
 
 function exportarPDF(){
-  if(!window._res){toast('Sin resultados calculados aún','e');return;}
+  if(!restaurarUltReporte()){toast('Sin resultados calculados aún','e');return;}
   const res=window._res;
   const pg=(res.resGen*100).toFixed(1), ok=res.resGen>=0.7;
   const tR=res.tipo==='obrero'?'Obrero Campo':'Empleado Agrario';
@@ -2783,42 +2822,69 @@ function exportarPDF(){
       </div>
     </div>`;
 
-  // ── DESCARGAR PDF DIRECTAMENTE (sin diálogo de impresión) ──
-  const nombre = `Reporte-ETI-${(res.emp||'').replace(/\s+/g,'-')}-${res.fecha||'hoy'}.pdf`;
+  // ── DESCARGAR PDF usando ventana de impresión con instrucción clara ──
+  const nombrePDF = `Reporte-ETI-${(res.emp||'').replace(/\s+/g,'-')}-${res.fecha||'hoy'}.pdf`;
 
-  const el = document.createElement('div');
-  el.style.cssText='position:absolute;left:-9999px;top:0;width:210mm;';
-  el.innerHTML = `<!DOCTYPE html><html><head>
-    <meta charset="UTF-8">
-    <style>
-      *{box-sizing:border-box;margin:0;padding:0;}
-      body{font-family:Tahoma,Arial,sans-serif;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-    </style>
-  </head><body>${contenido}</body></html>`;
-  document.body.appendChild(el);
+  const win = window.open('','_blank');
+  if(!win){
+    toast('Activa los pop-ups para este sitio y vuelve a intentar','e');
+    return;
+  }
 
-  toast('Generando PDF... espera un momento','i');
+  win.document.write(`<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>${nombrePDF}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:Tahoma,Arial,sans-serif;background:#fff;}
+  @media screen{
+    .instruccion{
+      position:fixed;top:0;left:0;right:0;z-index:9999;
+      background:#003087;color:#fff;
+      padding:12px 20px;
+      display:flex;align-items:center;justify-content:space-between;
+      font-size:14px;font-family:Tahoma,Arial,sans-serif;
+      box-shadow:0 2px 10px rgba(0,0,0,.3);
+      flex-wrap:wrap;gap:8px;
+    }
+    .instruccion strong{font-size:15px;}
+    .instruccion .pasos{font-size:12px;opacity:.85;margin-top:2px;}
+    .btn-imprimir{
+      background:#cc0000;color:#fff;border:none;
+      padding:8px 20px;border-radius:6px;font-size:14px;
+      font-weight:700;cursor:pointer;font-family:Tahoma,Arial,sans-serif;
+      white-space:nowrap;
+    }
+    .btn-imprimir:hover{background:#a80000;}
+    body{padding-top:70px;}
+  }
+  @media print{
+    .instruccion{display:none !important;}
+    body{padding-top:0 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    @page{margin:10mm;size:A4 portrait;}
+  }
+</style>
+</head>
+<body>
+<div class="instruccion">
+  <div>
+    <strong>📄 Guardar como PDF</strong>
+    <div class="pasos">
+      1. Haz clic en "Guardar como PDF" &nbsp;→&nbsp;
+      2. En el diálogo: <strong>Destino = "Guardar como PDF"</strong> &nbsp;→&nbsp;
+      3. Clic en <strong>Guardar</strong>
+    </div>
+  </div>
+  <button class="btn-imprimir" onclick="window.print()">🖨️ Guardar como PDF</button>
+</div>
+${contenido}
+</body>
+</html>`);
 
-  html2pdf()
-    .set({
-      margin:       [8,8,8,8],
-      filename:     nombre,
-      image:        {type:'jpeg',quality:0.95},
-      html2canvas:  {scale:2, useCORS:true, logging:false, allowTaint:true},
-      jsPDF:        {unit:'mm', format:'a4', orientation:'portrait'},
-      pagebreak:    {mode:['avoid-all','css']}
-    })
-    .from(el.querySelector('body'))
-    .save()
-    .then(()=>{
-      document.body.removeChild(el);
-      toast('✅ PDF descargado: '+nombre,'s');
-    })
-    .catch(err=>{
-      document.body.removeChild(el);
-      console.error(err);
-      toast('Error al generar PDF — intenta de nuevo','e');
-    });
+  win.document.close();
+  toast('✅ Se abrió el reporte — sigue las instrucciones para guardar el PDF','s');
 }
 
 // ══════════════════════════════════════════
@@ -2846,3 +2912,4 @@ document.getElementById('mdate').textContent=new Date().toLocaleDateString('es-P
 </script>
 </body>
 </html>
+
