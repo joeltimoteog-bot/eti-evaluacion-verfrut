@@ -9,23 +9,23 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
-  /* ── PALETA AZUL / ROJO / BLANCO ── */
-  --navy:  #003087;   /* azul oscuro principal */
-  --navy2: #00418f;   /* azul medio header */
-  --navy3: #0052a5;   /* azul secciones */
-  --accent:#cc0000;   /* rojo corporativo */
-  --acdim: #a80000;   /* rojo oscuro hover */
-  --red:   #cc0000;   /* rojo (alertas = mismo rojo) */
-  --green: #007a3d;   /* verde aprobado */
-  --gdim:  #006030;   /* verde oscuro */
-  --surf:  #f0f4fb;   /* fondo azul muy claro */
-  --surf2: #dce6f5;   /* fondo azul claro secundario */
-  --text:  #0a1f5c;   /* texto azul muy oscuro */
-  --text2: #3a5a8a;   /* texto azul medio */
-  --bdr:   #b0c4e0;   /* borde azul claro */
-  --white: #ffffff;
-  --sh:    0 4px 24px rgba(0,48,135,.12);
-  --shlg:  0 12px 48px rgba(0,48,135,.20);
+  /* ── PALETA OFICIAL UNIFRUTTI GROUP ── */
+  --navy:  #003DA5;   /* azul Unifrutti del logo */
+  --navy2: #002B7A;   /* azul oscuro hover/dark */
+  --navy3: #0050C8;   /* azul medio secundario */
+  --accent:#C8102E;   /* rojo Unifrutti del logo */
+  --acdim: #A00D24;   /* rojo oscuro hover/dark */
+  --red:   #C8102E;   /* rojo corporativo (alertas) */
+  --green: #007A3D;   /* verde aprobado (semáforo) */
+  --gdim:  #005C2E;   /* verde oscuro (semáforo) */
+  --surf:  #F5F7FA;   /* fondo claro suave */
+  --surf2: #E8EEF8;   /* fondo azul muy suave */
+  --text:  #1A2340;   /* texto principal — azul muy oscuro */
+  --text2: #4A5A80;   /* texto secundario — azul medio */
+  --bdr:   #C0CEEA;   /* borde azul claro */
+  --white: #FFFFFF;
+  --sh:    0 4px 24px rgba(0,61,165,.12);
+  --shlg:  0 12px 48px rgba(0,61,165,.20);
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 /* ── TAHOMA como fuente base en todo el sistema ── */
@@ -36,7 +36,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
 /* HEADER */
 .hdr{background:var(--navy);padding:0 1.5rem;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 14px rgba(0,0,0,.3);}
 .logo{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-size:1.05rem;font-weight:800;color:#fff;letter-spacing:.07em;}
-.logo span{color:#ff4444;}
+.logo span{color:#C8102E;}
 .hbadge{font-size:.68rem;background:var(--accent);color:#fff;font-weight:700;padding:2px 9px;border-radius:20px;}
 
 /* STEPPER */
@@ -46,22 +46,22 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
 .sd.done{background:var(--gdim);color:#fff;}
 .sd.active{background:var(--accent);color:#fff;}
 .sl{font-size:.72rem;color:rgba(255,255,255,.28);font-weight:500;}
-.sl.active{color:#ffaaaa;font-weight:700;}
+.sl.active{color:#FFAEBA;font-weight:700;}
 .sl.done{color:rgba(255,255,255,.48);}
 .ssep{color:rgba(255,255,255,.13);font-size:.85rem;flex-shrink:0;}
 
 /* MENÚ */
 #sm{background:var(--navy);}
 .mhero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 2rem;text-align:center;position:relative;overflow:hidden;}
-.mhero::before{content:'';position:absolute;width:600px;height:600px;background:radial-gradient(circle,rgba(0,48,135,.07) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;}
-.mey{font-size:.72rem;font-weight:500;letter-spacing:.2em;color:#ff8888;text-transform:uppercase;margin-bottom:1rem;}
+.mhero::before{content:'';position:absolute;width:600px;height:600px;background:radial-gradient(circle,rgba(0,61,165,.07) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;}
+.mey{font-size:.72rem;font-weight:500;letter-spacing:.2em;color:#FF8C9C;text-transform:uppercase;margin-bottom:1rem;}
 .mt{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-size:clamp(1.9rem,5vw,3rem);font-weight:800;color:#fff;line-height:1.1;margin-bottom:.7rem;}
-.mt span{color:#ff6666;}
+.mt span{color:#FF7080;}
 .ms{color:rgba(255,255,255,.42);font-size:.9rem;margin-bottom:2.5rem;max-width:400px;}
 .mgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:.85rem;width:100%;max-width:820px;}
 .mc{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:1.7rem 1.3rem;cursor:pointer;transition:all .22s;text-align:left;position:relative;overflow:hidden;}
-.mc::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,48,135,.08),transparent);opacity:0;transition:opacity .22s;}
-.mc:hover{transform:translateY(-3px);border-color:rgba(0,48,135,.28);}
+.mc::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,61,165,.08),transparent);opacity:0;transition:opacity .22s;}
+.mc:hover{transform:translateY(-3px);border-color:rgba(0,61,165,.28);}
 .mc:hover::before{opacity:1;}
 .mci{font-size:1.8rem;margin-bottom:.8rem;display:block;}
 .mct{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-size:.95rem;font-weight:700;color:#fff;margin-bottom:.3rem;}
@@ -76,7 +76,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
 .wwrap{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:2rem 1.2rem;overflow-y:auto;}
 .wcard{background:#fff;border-radius:18px;box-shadow:var(--shlg);width:100%;max-width:660px;overflow:hidden;}
 .whdr{background:var(--navy);padding:1.6rem 2rem;}
-.wstep{font-size:.68rem;font-weight:700;letter-spacing:.15em;color:#ff8888;text-transform:uppercase;margin-bottom:.3rem;}
+.wstep{font-size:.68rem;font-weight:700;letter-spacing:.15em;color:#FF8C9C;text-transform:uppercase;margin-bottom:.3rem;}
 .wtit{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-size:1.35rem;font-weight:800;color:#fff;}
 .wsub{font-size:.82rem;color:rgba(255,255,255,.42);margin-top:.25rem;}
 .wbody{padding:1.7rem 2rem;}
@@ -85,8 +85,8 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
 /* TIPO PERSONAL */
 .tgrid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:1.1rem;}
 .tbtn{border:2px solid var(--bdr);border-radius:12px;padding:.9rem;cursor:pointer;text-align:center;transition:all .2s;background:var(--surf);}
-.tbtn:hover{border-color:var(--accent);background:rgba(204,0,0,.05);}
-.tbtn.sel{border-color:var(--accent);background:rgba(204,0,0,.08);}
+.tbtn:hover{border-color:var(--accent);background:rgba(200,16,46,.05);}
+.tbtn.sel{border-color:var(--accent);background:rgba(200,16,46,.08);}
 .tbtn-ico{font-size:1.5rem;display:block;margin-bottom:.35rem;}
 .tbtn-lbl{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-size:.82rem;font-weight:700;color:var(--navy);}
 .tbtn-sub{font-size:.71rem;color:var(--text2) !important;margin-top:.18rem;}
@@ -98,21 +98,21 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
 .fl{font-size:.77rem;font-weight:600;color:var(--text2);letter-spacing:.04em;}
 .req{color:var(--red);}
 .fc{background:var(--surf);border:1.5px solid var(--bdr);border-radius:9px;padding:.62rem .88rem;color:var(--text);font-size:.87rem;font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;transition:border-color .18s,box-shadow .18s;width:100%;}
-.fc:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,48,135,.13);}
+.fc:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,61,165,.13);}
 .fc optgroup{background:var(--navy);color:var(--accent);font-size:.7rem;}
 .fh{font-size:.72rem;color:var(--text2);}
-.ibox{background:rgba(0,48,135,.07);border:1px solid rgba(0,48,135,.22);border-radius:10px;padding:.85rem 1.05rem;margin-bottom:1rem;}
+.ibox{background:rgba(0,61,165,.07);border:1px solid rgba(0,61,165,.22);border-radius:10px;padding:.85rem 1.05rem;margin-bottom:1rem;}
 .ibt{font-size:.7rem;font-weight:700;color:var(--acdim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.25rem;}
 .ibv{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-size:1.5rem;font-weight:800;color:var(--text);}
 .ibs{font-size:.72rem;color:var(--text2);margin-top:.1rem;}
 
 /* ACORDEÓN */
 .aclist{display:flex;flex-direction:column;gap:.65rem;}
-.ac{border:1.5px solid var(--bdr);border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 2px 10px rgba(13,27,42,.06);}
+.ac{border:1.5px solid var(--bdr);border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 2px 10px rgba(26,35,64,.06);}
 .ac.open{border-color:var(--accent);}
 .ac.done{border-color:var(--gdim);}
 .achdr{display:grid;grid-template-columns:36px 1fr auto auto;align-items:center;gap:.65rem;padding:.8rem 1rem;cursor:pointer;background:var(--surf);transition:background .18s;}
-.ac.open .achdr{background:rgba(204,0,0,.05);}
+.ac.open .achdr{background:rgba(200,16,46,.05);}
 .ac.done .achdr{background:rgba(62,207,142,.05);}
 .acnum{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-weight:800;font-size:.78rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .ac.done .acnum{background:var(--gdim);color:#fff;}
@@ -132,7 +132,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
 .total-eval-banner{background:var(--navy);border-radius:10px;padding:.65rem 1rem;margin-bottom:.75rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;}
 .teb-item{text-align:center;}
 .teb-label{font-size:.62rem;color:rgba(255,255,255,.45);font-weight:600;text-transform:uppercase;letter-spacing:.06em;}
-.teb-val{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-size:1.3rem;font-weight:800;color:#ff9999;}
+.teb-val{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-size:1.3rem;font-weight:800;color:#FF99A8;}
 .teb-sep{color:rgba(255,255,255,.2);font-size:1.2rem;}
 .teb-eq{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-size:.8rem;font-weight:700;color:rgba(255,255,255,.55);}
 
@@ -149,7 +149,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
 .prow:last-child{border-bottom:none;}
 .pnum{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-weight:800;font-size:.72rem;color:var(--navy3);min-width:20px;padding-top:.15rem;flex-shrink:0;}
 .ptxt{font-size:.78rem;color:var(--text2);line-height:1.45;flex:1;}
-.pmx{display:inline-block;margin-left:.3rem;background:rgba(13,27,42,.07);border-radius:5px;padding:1px 5px;font-size:.64rem;font-weight:700;color:var(--navy3);}
+.pmx{display:inline-block;margin-left:.3rem;background:rgba(26,35,64,.07);border-radius:5px;padding:1px 5px;font-size:.64rem;font-weight:700;color:var(--navy3);}
 .psel-wrap{display:flex;flex-direction:column;gap:.28rem;flex-shrink:0;}
 
 /* SELECT PUNTAJE */
@@ -190,7 +190,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
 .scdmeta{display:flex;justify-content:space-between;font-size:.69rem;color:var(--text2);}
 .bdg{display:inline-block;font-size:.65rem;font-weight:700;letter-spacing:.05em;padding:2px 8px;border-radius:20px;text-transform:uppercase;}
 .bg{background:rgba(62,207,142,.12);color:var(--gdim);}
-.br{background:rgba(224,82,82,.12);color:var(--red);}
+.br{background:rgba(200,16,46,.12);color:var(--red);}
 .rhrow{display:flex;justify-content:space-between;flex-wrap:wrap;gap:.8rem;}
 
 /* TABLA RUTAS */
@@ -202,8 +202,8 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
 
 /* REPORTE */
 .rbox{background:var(--navy);border-radius:14px;padding:1.7rem;color:#fff;position:relative;overflow:hidden;}
-.rbox::before{content:'';position:absolute;top:-50px;right:-50px;width:170px;height:170px;background:radial-gradient(circle,rgba(204,0,0,.08),transparent 70%);pointer-events:none;}
-.rtit{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-size:.88rem;font-weight:800;color:#ff9999;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.9rem;}
+.rbox::before{content:'';position:absolute;top:-50px;right:-50px;width:170px;height:170px;background:radial-gradient(circle,rgba(200,16,46,.08),transparent 70%);pointer-events:none;}
+.rtit{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;font-size:.88rem;font-weight:800;color:#FF99A8;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.9rem;}
 .rcont{font-family:Tahoma,'Courier New',monospace;font-size:10pt;line-height:1.6;color:rgba(255,255,255,.78);white-space:pre-wrap;}
 .ract{display:flex;gap:.65rem;margin-top:1.2rem;flex-wrap:wrap;}
 
@@ -237,13 +237,13 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
 .bsec-dark{background:rgba(255,255,255,.12);color:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.2);}
 .bsec-dark:hover{background:rgba(255,255,255,.2);color:#fff;}
 /* Peligro */
-.bdng{background:rgba(224,82,82,.1);color:var(--red);border:1.5px solid rgba(224,82,82,.28);}
-.bdng:hover{background:rgba(224,82,82,.2);}
+.bdng{background:rgba(200,16,46,.1);color:var(--red);border:1.5px solid rgba(200,16,46,.28);}
+.bdng:hover{background:rgba(200,16,46,.2);}
 .bsm{padding:.38rem .8rem;font-size:.72rem;border-radius:7px;}
 .bbl{width:100%;}
 
 /* MODAL */
-.mov{position:fixed;inset:0;background:rgba(13,27,42,.72);display:none;align-items:center;justify-content:center;z-index:999;backdrop-filter:blur(4px);}
+.mov{position:fixed;inset:0;background:rgba(26,35,64,.72);display:none;align-items:center;justify-content:center;z-index:999;backdrop-filter:blur(4px);}
 .mov.open{display:flex;}
 .mdl{background:#fff;border-radius:17px;padding:1.7rem;max-width:430px;width:90%;box-shadow:var(--shlg);animation:mIn .22s ease;}
 @keyframes mIn{from{transform:scale(.95) translateY(8px);opacity:0;}to{transform:scale(1) translateY(0);opacity:1;}}
@@ -285,16 +285,16 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
 
 <!-- ══ LOGIN ══ -->
 <div class="screen active" id="slogin">
-  <div style="min-height:100vh;background:#003087;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;">
+  <div style="min-height:100vh;background:#003DA5;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;">
     <div style="text-align:center;margin-bottom:2rem;">
       <img src="https://unifruttigroup.com/sito/wp-content/themes/unifrutti/img/unifrutti-pittogramma.png" alt="Unifrutti" style="height:48px;filter:brightness(0) invert(1);margin-bottom:.9rem;" onerror="this.style.display='none'">
-      <div style="color:#ff9999;font-size:.72rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;margin-bottom:.5rem;">Sistema de Evaluación</div>
-      <div style="color:#fff;font-size:2.2rem;font-weight:800;line-height:1.1;">ETI<span style="color:#cc0000;">·</span>EVAL</div>
+      <div style="color:#FF99A8;font-size:.72rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;margin-bottom:.5rem;">Sistema de Evaluación</div>
+      <div style="color:#fff;font-size:2.2rem;font-weight:800;line-height:1.1;">ETI<span style="color:#C8102E;">·</span>EVAL</div>
       <div style="color:rgba(255,255,255,.5);font-size:.82rem;margin-top:.4rem;">Verfrut / RAPEL SAC · Unifrutti Group</div>
     </div>
     <div style="background:#fff;border-radius:16px;padding:2rem;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,.3);">
-      <div style="font-size:1rem;font-weight:800;color:#003087;margin-bottom:1rem;text-align:center;">Iniciar Sesión</div>
-      <div style="background:#f0f4fb;border-left:3px solid #003087;border-radius:0 6px 6px 0;padding:.7rem .85rem;font-size:.78rem;color:#0a1f5c;line-height:1.45;margin-bottom:1.2rem;font-family:Tahoma,Arial,sans-serif;">
+      <div style="font-size:1rem;font-weight:800;color:#003DA5;margin-bottom:1rem;text-align:center;">Iniciar Sesión</div>
+      <div style="background:#F5F7FA;border-left:3px solid #003DA5;border-radius:0 6px 6px 0;padding:.7rem .85rem;font-size:.78rem;color:#1A2340;line-height:1.45;margin-bottom:1.2rem;font-family:Tahoma,Arial,sans-serif;">
         Estás ingresando al sistema de evaluaciones de Ética Social, el cual genera reportes en base a la información registrada.
       </div>
       <div class="fg">
@@ -305,12 +305,12 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
         <label class="fl">Contraseña</label>
         <div style="position:relative;">
           <input class="fc" type="password" id="lpwd" placeholder="Ingrese su contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:2.5rem;">
-          <span onclick="togglePwd()" style="position:absolute;right:.75rem;top:50%;transform:translateY(-50%);cursor:pointer;font-size:.9rem;color:#3a5a8a;" id="lpwdico">👁</span>
+          <span onclick="togglePwd()" style="position:absolute;right:.75rem;top:50%;transform:translateY(-50%);cursor:pointer;font-size:.9rem;color:#4A5A80;" id="lpwdico">👁</span>
         </div>
       </div>
-      <div id="lerr" style="display:none;background:#fde8e8;border-left:3px solid #cc0000;border-radius:0 6px 6px 0;padding:.6rem .9rem;font-size:.8rem;color:#cc0000;margin-bottom:.8rem;">Usuario o contraseña incorrectos</div>
+      <div id="lerr" style="display:none;background:#FCE4E7;border-left:3px solid #C8102E;border-radius:0 6px 6px 0;padding:.6rem .9rem;font-size:.8rem;color:#C8102E;margin-bottom:.8rem;">Usuario o contraseña incorrectos</div>
       <button class="btn bpri" style="width:100%;padding:.8rem;font-size:.95rem;font-weight:800;" onclick="doLogin()">Ingresar →</button>
-      <div style="text-align:center;margin-top:1.2rem;font-size:.72rem;color:#b0c4e0;">Sistema – Departamento de Gestión Humana – Área de Relaciones Laborales</div>
+      <div style="text-align:center;margin-top:1.2rem;font-size:.72rem;color:#C0CEEA;">Sistema – Departamento de Gestión Humana – Área de Relaciones Laborales</div>
     </div>
   </div>
 </div>
@@ -350,7 +350,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
     <div id="admin-users" style="display:none;">
       <div class="ptit" style="margin-bottom:.8rem;">Gestión de Usuarios</div>
       <div style="background:#fff;border-radius:12px;padding:1.2rem;border:1px solid var(--bdr);margin-bottom:1rem;">
-        <div style="font-size:.85rem;font-weight:700;color:#003087;margin-bottom:.8rem;">➕ Agregar Nuevo Usuario</div>
+        <div style="font-size:.85rem;font-weight:700;color:#003DA5;margin-bottom:.8rem;">➕ Agregar Nuevo Usuario</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:.6rem;align-items:end;">
           <div class="fg" style="margin:0;">
             <label class="fl">Usuario</label>
@@ -386,10 +386,10 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
 
     <!-- TAB NUEVA EVALUACIÓN -->
     <div id="admin-eval" style="display:none;">
-      <div style="background:rgba(0,48,135,.06);border:1.5px solid rgba(0,48,135,.18);border-radius:12px;padding:1.2rem;margin-bottom:1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+      <div style="background:rgba(0,61,165,.06);border:1.5px solid rgba(0,61,165,.18);border-radius:12px;padding:1.2rem;margin-bottom:1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
         <div style="font-size:2rem;">📋</div>
         <div>
-          <div style="font-size:.95rem;font-weight:800;color:#003087;">Registrar Nueva Evaluación</div>
+          <div style="font-size:.95rem;font-weight:800;color:#003DA5;">Registrar Nueva Evaluación</div>
           <div style="font-size:.82rem;color:var(--text2);margin-top:.2rem;">Como administrador puedes registrar evaluaciones de cualquier sector</div>
         </div>
         <button class="btn bpri" onclick="iniciarComoAdmin()" style="margin-left:auto;padding:.7rem 1.4rem;font-size:.9rem;">
@@ -399,12 +399,12 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
       <!-- Panel último reporte del admin -->
       <div id="admin-ult-reporte" style="display:none;">
         <div class="ptit" style="font-size:.95rem;margin-bottom:.6rem;">Último Reporte Registrado</div>
-        <div style="background:#003087;border-radius:10px;padding:1rem 1.2rem;">
-          <div style="font-size:.72rem;font-weight:700;color:#ff9999;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem;">Último reporte</div>
+        <div style="background:#003DA5;border-radius:10px;padding:1rem 1.2rem;">
+          <div style="font-size:.72rem;font-weight:700;color:#FF99A8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem;">Último reporte</div>
           <div style="font-size:.9rem;font-weight:700;color:#fff;" id="admin-rpt-meta">—</div>
           <div style="display:flex;gap:.5rem;margin-top:.8rem;flex-wrap:wrap;">
             <button class="btn bpri bsm" onclick="verUlt()">👁 Ver Reporte</button>
-            <button class="btn bsm" style="background:#cc0000;color:#fff;border:none;" onclick="enviarCorreoDirecto()">📤 Correo</button>
+            <button class="btn bsm" style="background:#C8102E;color:#fff;border:none;" onclick="enviarCorreoDirecto()">📤 Correo</button>
             <button class="btn bsm" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);" onclick="copiarDirecto()">📋 Copiar</button>
             <button class="btn bsm" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);" onclick="exportarExcel()">📊 Excel</button>
             <button class="btn bsm" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);" onclick="exportarPDF()">📄 PDF</button>
@@ -471,12 +471,12 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
       <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:1.2rem 1.4rem;">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.6rem;margin-bottom:.8rem;">
           <div>
-            <div style="font-size:.72rem;font-weight:700;color:#ff9999;text-transform:uppercase;letter-spacing:.1em;">Último reporte calculado</div>
+            <div style="font-size:.72rem;font-weight:700;color:#FF99A8;text-transform:uppercase;letter-spacing:.1em;">Último reporte calculado</div>
             <div style="font-size:.88rem;font-weight:700;color:#fff;margin-top:.2rem;" id="menu-rpt-meta">—</div>
           </div>
           <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
             <button class="btn bpri bsm" onclick="verUlt()">👁 Ver Reporte</button>
-            <button class="btn bsm" style="background:#cc0000;color:#fff;border:none;" onclick="enviarCorreoDirecto()">📤 Enviar Correo</button>
+            <button class="btn bsm" style="background:#C8102E;color:#fff;border:none;" onclick="enviarCorreoDirecto()">📤 Enviar Correo</button>
             <button class="btn bsm" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.18);" onclick="copiarDirecto()">📋 Copiar</button>
           </div>
         </div>
@@ -541,7 +541,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
         <div class="fg" id="sector-autobox" style="display:none;">
           <label class="fl" id="p1sector-lbl">📍 Sector asignado (automático)</label>
           <!-- Sector fijo (supervisores normales) -->
-          <div style="background:rgba(0,78,152,.08);border:1.5px solid rgba(0,78,152,.28);border-radius:9px;padding:.62rem .88rem;font-weight:700;font-size:.88rem;color:#003087"
+          <div style="background:rgba(0,80,200,.08);border:1.5px solid rgba(0,80,200,.28);border-radius:9px;padding:.62rem .88rem;font-weight:700;font-size:.88rem;color:#003DA5"
                id="p1sector"></div>
           <!-- Sector editable (reemplazantes) -->
           <select class="fc" id="p1sector-inp" style="display:none;" onchange="p1sectorInpChange()">
@@ -557,7 +557,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
             <option>Aproa</option>
             <option>Santa Rosa</option>
           </select>
-          <div class="fh" id="p1sector-hint" style="display:none;color:#cc0000;">
+          <div class="fh" id="p1sector-hint" style="display:none;color:#C8102E;">
             Seleccione el sector del supervisor al que está reemplazando
           </div>
         </div>
@@ -1127,7 +1127,7 @@ function updAdminUltReporte(){
   panel.style.display='block';
   const res=window._res;
   const pg=(res.resGen*100).toFixed(1), ok=res.resGen>=0.7;
-  meta.innerHTML=`<span style="color:${ok?'#3ecf8e':'#ff6666'};font-size:1.1rem;font-weight:800;">${pg}%</span>
+  meta.innerHTML=`<span style="color:${ok?'#3ecf8e':'#FF7080'};font-size:1.1rem;font-weight:800;">${pg}%</span>
     &nbsp;${ok?'✅':'⚠️'} ${ok?'APROBADO':'REFUERZO'}
     &nbsp;·&nbsp; ${res.emp} &nbsp;·&nbsp; ${res.sup}
     &nbsp;·&nbsp; 📍${res.sector||'—'} &nbsp;·&nbsp; ${fmtF(res.fecha)}`;
@@ -1365,7 +1365,7 @@ function exportAdminExcel(){
 
   const ws=XLSX.utils.aoa_to_sheet(rows);
   ws['!cols']=[{wch:5},{wch:28},{wch:14},{wch:12},{wch:14},{wch:16},{wch:28},{wch:9},{wch:12},{wch:14},{wch:18}];
-  if(ws['A1']) ws['A1'].s={font:{bold:true,sz:13,color:{rgb:'003087'}}};
+  if(ws['A1']) ws['A1'].s={font:{bold:true,sz:13,color:{rgb:'003DA5'}}};
   XLSX.utils.book_append_sheet(wb, ws, 'Registros Globales');
   XLSX.writeFile(wb, `ETI-Global-${new Date().toISOString().split('T')[0]}.xlsx`);
   toast('Excel global exportado','s');
@@ -2202,7 +2202,7 @@ function updMenuReporte(){
   const sup3=SUPERVISORES.find(sv=>sv.nom===res.sup);
   const esR3=sup3?.reemplazante;
   const supLabel=esR3?`${res.sup} (Reemplaz.)`:`${res.sup}`;
-  meta.innerHTML=`<span style="color:${ok?'#3ecf8e':'#ff6666'};font-size:1.05rem;font-weight:800;">${pg}%</span>
+  meta.innerHTML=`<span style="color:${ok?'#3ecf8e':'#FF7080'};font-size:1.05rem;font-weight:800;">${pg}%</span>
     &nbsp;${ok?'✅ APROBADO':'⚠️ REFUERZO'}
     &nbsp;·&nbsp; ${res.emp} &nbsp;·&nbsp; ${supLabel}
     &nbsp;·&nbsp; 📍${res.sector||'—'}
@@ -2327,7 +2327,7 @@ function exportarExcel(){
 
   const res=window._res;
   const wb=XLSX.utils.book_new();
-  const AZ='003087', RJ='CC0000', VD='007A3D', AM='FFC000';
+  const AZ='003DA5', RJ='C8102E', VD='007A3D', AM='FFC000';
 
   // ── HOJA 1: RESUMEN GENERAL ──
   const tR=res.tipo==='obrero'?'Obrero Campo':'Empleado Agrario';
@@ -2387,7 +2387,7 @@ function exportarExcel(){
   ['A1','A2','A3'].forEach(cell=>{
     if(ws1[cell]) ws1[cell].s={
       font:{bold:true,color:{rgb:cell==='A1'?AZ:'555555'},sz:cell==='A1'?13:10},
-      fill:{fgColor:{rgb:'F0F4FB'}}
+      fill:{fgColor:{rgb:'F5F7FA'}}
     };
   });
 
@@ -2462,9 +2462,9 @@ function exportarExcel(){
       const addr=XLSX.utils.encode_cell({r:row,c:ci});
       if(ws2[addr]){
         ws2[addr].s={
-          fill:{fgColor:{rgb:ri%2===0?'F8FAFF':'FFFFFF'}},
+          fill:{fgColor:{rgb:ri%2===0?'F5F7FA':'FFFFFF'}},
           font:{sz:10,
-            color:ci>=8&&ci<8+SECS.length?{rgb:res.rutas[ri].secs[ci-8]?.cum>=0.7?VD:RJ}:{rgb:'0A1F5C'},
+            color:ci>=8&&ci<8+SECS.length?{rgb:res.rutas[ri].secs[ci-8]?.cum>=0.7?VD:RJ}:{rgb:'1A2340'},
             bold:ci===8+SECS.length||ci===8+SECS.length+1
           },
           alignment:{horizontal:ci>=7?'center':'left'}
@@ -2521,7 +2521,7 @@ function exportarExcel(){
       const addr=XLSX.utils.encode_cell({r:0,c:ci});
       if(ws3[addr]) ws3[addr].s={
         font:{bold:true,color:{rgb:'FFFFFF'},sz:10},
-        fill:{fgColor:{rgb:'CC0000'}},
+        fill:{fgColor:{rgb:'C8102E'}},
         alignment:{horizontal:'center'}
       };
     });
@@ -2546,7 +2546,7 @@ function exportarExcelCompleto(){
   if(typeof XLSX==='undefined'){toast('Librería Excel cargando, intenta de nuevo','e');return;}
 
   const wb=XLSX.utils.book_new();
-  const AZ='003087', RJ='CC0000', VD='007A3D';
+  const AZ='003DA5', RJ='C8102E', VD='007A3D';
 
   // Ordenar historial por fecha descendente
   const hSort=[...hist].sort((a,b)=>new Date(b.fecha||0)-new Date(a.fecha||0));
@@ -2589,7 +2589,7 @@ function exportarExcelCompleto(){
   ws1['!cols']=[{wch:5},{wch:9},{wch:30},{wch:16},{wch:12},{wch:28},{wch:16},{wch:12},{wch:14},{wch:20}];
 
   // Estilo título
-  if(ws1['A1']) ws1['A1'].s={font:{bold:true,sz:13,color:{rgb:AZ}},fill:{fgColor:{rgb:'F0F4FB'}}};
+  if(ws1['A1']) ws1['A1'].s={font:{bold:true,sz:13,color:{rgb:AZ}},fill:{fgColor:{rgb:'F5F7FA'}}};
 
   // Estilo encabezado tabla (fila 13 = índice 12)
   ['N','Codigo','Nombre Ruta/Area','Tipo','Empresa','Supervisor','Sector','Fecha','Resultado (%)','Estado']
@@ -2610,7 +2610,7 @@ function exportarExcelCompleto(){
       const addr=XLSX.utils.encode_cell({r:row,c:ci});
       if(ws1[addr]){
         ws1[addr].s={
-          fill:{fgColor:{rgb:ri%2===0?'F0F4FB':'FFFFFF'}},
+          fill:{fgColor:{rgb:ri%2===0?'F5F7FA':'FFFFFF'}},
           font:{sz:10, color:{rgb:ci===9?(rok?VD:RJ):'0A1F5C'}, bold:ci===8||ci===9},
           alignment:{horizontal:ci>=7?'center':'left'}
         };
@@ -2661,7 +2661,7 @@ function exportarExcelCompleto(){
     for(let ci=0;ci<9;ci++){
       const addr=XLSX.utils.encode_cell({r:row,c:ci});
       if(ws2[addr]) ws2[addr].s={
-        fill:{fgColor:{rgb:ri%2===0?'FFF5F5':'FFFFFF'}},
+        fill:{fgColor:{rgb:ri%2===0?'FCEDEF':'FFFFFF'}},
         font:{sz:10,color:{rgb:ci===8?(rok?VD:RJ):'0A1F5C'},bold:ci===7||ci===8},
         alignment:{horizontal:ci>=6?'center':'left'}
       };
@@ -2685,7 +2685,7 @@ function exportarPDF(){
   const sup3=SUPERVISORES.find(sv=>sv.nom===res.sup);
   const esR3=sup3?.reemplazante;
   const supLabel=esR3?`${res.sup} (Reemplazante — cubre: ${res.sector})`:res.sup;
-  const AZ='#003087', RJ='#cc0000', VD='#007a3d';
+  const AZ='#003DA5', RJ='#C8102E', VD='#007a3d';
 
   const promSecs=SECS.map((sec,si)=>({
     nom:sec.nom,
@@ -2693,14 +2693,14 @@ function exportarPDF(){
   }));
 
   const contenido=`
-    <div style="font-family:Tahoma,Arial,sans-serif;font-size:10pt;color:#0a1f5c;max-width:900px;margin:0 auto;">
+    <div style="font-family:Tahoma,Arial,sans-serif;font-size:10pt;color:#1A2340;max-width:900px;margin:0 auto;">
 
-      <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#003087;padding:22px 28px;margin-bottom:0;">
+      <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#003DA5;padding:22px 28px;margin-bottom:0;">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
           <div>
-            <div style="color:#ff9999;font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px;">Verfrut / RAPEL SAC · Unifrutti Group</div>
+            <div style="color:#FF99A8;font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px;">Verfrut / RAPEL SAC · Unifrutti Group</div>
             <div style="color:#fff;font-size:18px;font-weight:800;line-height:1.2;">Sistema ETI – Evaluación de Conocimiento de Buenas Prácticas Sociales y Laborales</div>
-            <div style="color:#ff9999;font-size:13px;font-weight:700;margin-top:4px;">Reporte de Evaluación ETI</div>
+            <div style="color:#FF99A8;font-size:13px;font-weight:700;margin-top:4px;">Reporte de Evaluación ETI</div>
           </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
             <img src="https://unifruttigroup.com/sito/wp-content/themes/unifrutti/img/unifrutti-pittogramma.png" alt="Unifrutti" style="height:32px;filter:brightness(0) invert(1);" onerror="this.style.display='none'">
@@ -2712,7 +2712,7 @@ function exportarPDF(){
         </div>
       </div>
 
-      <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#f0f4fb;padding:14px 28px;border-bottom:2px solid #b0c4e0;">
+      <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#F5F7FA;padding:14px 28px;border-bottom:2px solid #C0CEEA;">
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
           ${[
             ['Fecha', fmtF(res.fecha)],
@@ -2722,8 +2722,8 @@ function exportarPDF(){
             ['Tipo Personal', tR],
             [palabra+' Evaluadas', res.rutas.length]
           ].map(([l,v])=>`<div>
-            <div style="font-size:8px;font-weight:700;color:#3a5a8a;text-transform:uppercase;letter-spacing:.06em;">${l}</div>
-            <div style="font-size:12px;font-weight:700;color:#0a1f5c;margin-top:2px;">${v}</div>
+            <div style="font-size:8px;font-weight:700;color:#4A5A80;text-transform:uppercase;letter-spacing:.06em;">${l}</div>
+            <div style="font-size:12px;font-weight:700;color:#1A2340;margin-top:2px;">${v}</div>
           </div>`).join('')}
         </div>
       </div>
@@ -2738,25 +2738,25 @@ function exportarPDF(){
             ['Total Evaluados', res.rutas.reduce((a,r)=>a+r.ne,0)+' personas', AZ, res.rutas.length+' grupos']
           ].map(([l,v,c,s])=>`
             <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#fff;border:2px solid ${c};border-radius:8px;padding:10px;text-align:center;">
-              <div style="font-size:8px;font-weight:700;color:#3a5a8a;text-transform:uppercase;">${l}</div>
+              <div style="font-size:8px;font-weight:700;color:#4A5A80;text-transform:uppercase;">${l}</div>
               <div style="font-size:18px;font-weight:800;color:${c};margin:3px 0;">${v}</div>
               <div style="font-size:8px;color:${c};font-weight:600;">${s}</div>
             </div>`).join('')}
         </div>
 
         <div style="margin-bottom:20px;">
-          <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:11px;font-weight:800;color:#fff;background:#003087;padding:6px 10px;border-radius:4px 4px 0 0;text-transform:uppercase;letter-spacing:.06em;">Promedio por Tema</div>
-          <div style="border:1px solid #b0c4e0;border-top:none;padding:12px;border-radius:0 0 6px 6px;">
+          <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:11px;font-weight:800;color:#fff;background:#003DA5;padding:6px 10px;border-radius:4px 4px 0 0;text-transform:uppercase;letter-spacing:.06em;">Promedio por Tema</div>
+          <div style="border:1px solid #C0CEEA;border-top:none;padding:12px;border-radius:0 0 6px 6px;">
             ${promSecs.map(s=>{
               const pct=(s.pct*100).toFixed(1);
               const ok2=s.pct>=0.7;
               const w=Math.min(100,parseFloat(pct));
               return `<div style="margin-bottom:9px;">
                 <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
-                  <span style="font-size:11px;font-weight:700;color:#0a1f5c;">${s.nom}</span>
+                  <span style="font-size:11px;font-weight:700;color:#1A2340;">${s.nom}</span>
                   <span style="font-size:11px;font-weight:800;color:${ok2?VD:RJ};">${pct}% &nbsp;${ok2?'✓ APROBADO':'✗ REFUERZO'}</span>
                 </div>
-                <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#dce6f5;border-radius:20px;height:16px;overflow:hidden;">
+                <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#E8EEF8;border-radius:20px;height:16px;overflow:hidden;">
                   <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;width:${w}%;height:16px;background:${ok2?VD:RJ};border-radius:20px;display:flex;align-items:center;padding:0 8px;">
                     <span style="font-size:9px;color:#fff;font-weight:700;">${pct}%</span>
                   </div>
@@ -2767,22 +2767,22 @@ function exportarPDF(){
         </div>
 
         <div style="margin-bottom:20px;page-break-inside:avoid;">
-          <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:11px;font-weight:800;color:#fff;background:#003087;padding:6px 10px;border-radius:4px 4px 0 0;text-transform:uppercase;letter-spacing:.06em;">Resultado por ${palabra}</div>
-          <table style="width:100%;border-collapse:collapse;font-size:9px;border:1px solid #b0c4e0;border-top:none;">
+          <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:11px;font-weight:800;color:#fff;background:#003DA5;padding:6px 10px;border-radius:4px 4px 0 0;text-transform:uppercase;letter-spacing:.06em;">Resultado por ${palabra}</div>
+          <table style="width:100%;border-collapse:collapse;font-size:9px;border:1px solid #C0CEEA;border-top:none;">
             <thead>
-              <tr style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#dce6f5;">
-                <th style="padding:6px 8px;text-align:left;border-bottom:1px solid #b0c4e0;">Cód.</th>
-                <th style="padding:6px 8px;text-align:left;border-bottom:1px solid #b0c4e0;">${res.tipo==='obrero'?'Ruta':'Área'}</th>
-                <th style="padding:6px 8px;text-align:center;border-bottom:1px solid #b0c4e0;">Eval.</th>
-                ${SECS.map(s=>`<th style="padding:6px 4px;text-align:center;border-bottom:1px solid #b0c4e0;">${s.nom.split(' ')[0]}</th>`).join('')}
-                <th style="padding:6px 8px;text-align:center;border-bottom:1px solid #b0c4e0;font-weight:800;">Total</th>
-                <th style="padding:6px 8px;text-align:center;border-bottom:1px solid #b0c4e0;">Estado</th>
+              <tr style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#E8EEF8;">
+                <th style="padding:6px 8px;text-align:left;border-bottom:1px solid #C0CEEA;">Cód.</th>
+                <th style="padding:6px 8px;text-align:left;border-bottom:1px solid #C0CEEA;">${res.tipo==='obrero'?'Ruta':'Área'}</th>
+                <th style="padding:6px 8px;text-align:center;border-bottom:1px solid #C0CEEA;">Eval.</th>
+                ${SECS.map(s=>`<th style="padding:6px 4px;text-align:center;border-bottom:1px solid #C0CEEA;">${s.nom.split(' ')[0]}</th>`).join('')}
+                <th style="padding:6px 8px;text-align:center;border-bottom:1px solid #C0CEEA;font-weight:800;">Total</th>
+                <th style="padding:6px 8px;text-align:center;border-bottom:1px solid #C0CEEA;">Estado</th>
               </tr>
             </thead>
             <tbody>
               ${res.rutas.map((r,i)=>{
                 const rp=(r.resGrupo*100).toFixed(1), rok=r.resGrupo>=0.7;
-                const bg=i%2===0?'#f8faff':'#ffffff';
+                const bg=i%2===0?'#F5F7FA':'#ffffff';
                 return `<tr style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:${bg};">
                   <td style="padding:5px 8px;font-weight:700;color:${AZ};border-bottom:1px solid #e8eef8;">${r.cod||'—'}</td>
                   <td style="padding:5px 8px;font-weight:600;border-bottom:1px solid #e8eef8;">${r.nom}</td>
@@ -2790,7 +2790,7 @@ function exportarPDF(){
                   ${r.secs.map(s=>`<td style="padding:5px 4px;text-align:center;font-weight:700;color:${s.cum>=0.7?VD:RJ};border-bottom:1px solid #e8eef8;">${(s.cum*100).toFixed(0)}%</td>`).join('')}
                   <td style="padding:5px 8px;text-align:center;font-weight:800;color:${rok?VD:RJ};border-bottom:1px solid #e8eef8;">${rp}%</td>
                   <td style="padding:5px 8px;text-align:center;border-bottom:1px solid #e8eef8;">
-                    <span style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:${rok?'#e0f2e9':'#fde8e8'};color:${rok?VD:RJ};padding:2px 6px;border-radius:8px;font-size:8px;font-weight:700;">${rok?'APROBADO':'REFUERZO'}</span>
+                    <span style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:${rok?'#e0f2e9':'#FCE4E7'};color:${rok?VD:RJ};padding:2px 6px;border-radius:8px;font-size:8px;font-weight:700;">${rok?'APROBADO':'REFUERZO'}</span>
                   </td>
                 </tr>`;
               }).join('')}
@@ -2799,14 +2799,14 @@ function exportarPDF(){
         </div>
 
         <div style="margin-bottom:16px;">
-          <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:11px;font-weight:800;color:#fff;background:#003087;padding:6px 10px;border-radius:4px 4px 0 0;text-transform:uppercase;letter-spacing:.06em;">Resultado por ${palabra} (Gráfico)</div>
-          <div style="border:1px solid #b0c4e0;border-top:none;padding:12px;border-radius:0 0 6px 6px;">
+          <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:11px;font-weight:800;color:#fff;background:#003DA5;padding:6px 10px;border-radius:4px 4px 0 0;text-transform:uppercase;letter-spacing:.06em;">Resultado por ${palabra} (Gráfico)</div>
+          <div style="border:1px solid #C0CEEA;border-top:none;padding:12px;border-radius:0 0 6px 6px;">
             ${res.rutas.map(r=>{
               const rp=(r.resGrupo*100).toFixed(1), rok=r.resGrupo>=0.7;
               const w=Math.min(100,parseFloat(rp));
               return `<div style="margin-bottom:8px;display:flex;align-items:center;gap:10px;">
-                <div style="font-size:10px;font-weight:700;color:#0a1f5c;min-width:150px;overflow:hidden;">${r.nom||'—'}</div>
-                <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;flex:1;background:#dce6f5;border-radius:20px;height:18px;overflow:hidden;">
+                <div style="font-size:10px;font-weight:700;color:#1A2340;min-width:150px;overflow:hidden;">${r.nom||'—'}</div>
+                <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;flex:1;background:#E8EEF8;border-radius:20px;height:18px;overflow:hidden;">
                   <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;width:${w}%;height:18px;background:${rok?VD:RJ};border-radius:20px;display:flex;align-items:center;padding:0 8px;">
                     <span style="font-size:9px;color:#fff;font-weight:700;">${rp}%</span>
                   </div>
@@ -2814,15 +2814,15 @@ function exportarPDF(){
                 <span style="font-size:10px;font-weight:800;color:${rok?VD:RJ};min-width:40px;text-align:right;">${rp}%</span>
               </div>`;
             }).join('')}
-            <div style="margin-top:8px;font-size:9px;color:#3a5a8a;">Meta minima aprobacion: 70% &nbsp;|&nbsp; Verde = Aprobado &nbsp;|&nbsp; Rojo = Requiere refuerzo</div>
+            <div style="margin-top:8px;font-size:9px;color:#4A5A80;">Meta minima aprobacion: 70% &nbsp;|&nbsp; Verde = Aprobado &nbsp;|&nbsp; Rojo = Requiere refuerzo</div>
           </div>
         </div>
 
-        <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#f0f4fb;border:1px solid #b0c4e0;border-radius:6px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#C8102E;border-radius:6px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
           <div>
-            <div style="font-size:9px;color:#3a5a8a;font-weight:700;">Sistema – Departamento de Gestión Humana – Área de Relaciones Laborales</div>
+            <div style="font-size:9px;color:#fff;font-weight:700;">Sistema – Departamento de Gestión Humana – Área de Relaciones Laborales</div>
           </div>
-          <div style="font-size:9px;color:#3a5a8a;text-align:right;">Generado: ${new Date().toLocaleString('es-PE')}</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.85);text-align:right;">Generado: ${new Date().toLocaleString('es-PE')}</div>
         </div>
 
       </div>
@@ -2848,7 +2848,7 @@ function exportarPDF(){
   @media screen{
     .instruccion{
       position:fixed;top:0;left:0;right:0;z-index:9999;
-      background:#003087;color:#fff;
+      background:#003DA5;color:#fff;
       padding:12px 20px;
       display:flex;align-items:center;justify-content:space-between;
       font-size:14px;font-family:Tahoma,Arial,sans-serif;
@@ -2858,12 +2858,12 @@ function exportarPDF(){
     .instruccion strong{font-size:15px;}
     .instruccion .pasos{font-size:12px;opacity:.85;margin-top:2px;}
     .btn-imprimir{
-      background:#cc0000;color:#fff;border:none;
+      background:#C8102E;color:#fff;border:none;
       padding:8px 20px;border-radius:6px;font-size:14px;
       font-weight:700;cursor:pointer;font-family:Tahoma,Arial,sans-serif;
       white-space:nowrap;
     }
-    .btn-imprimir:hover{background:#a80000;}
+    .btn-imprimir:hover{background:#A00D24;}
     body{padding-top:70px;}
   }
   @media print{
