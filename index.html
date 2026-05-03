@@ -97,9 +97,32 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
 .fg{display:flex;flex-direction:column;gap:.35rem;margin-bottom:1rem;}
 .fl{font-size:.77rem;font-weight:600;color:var(--text2);letter-spacing:.04em;}
 .req{color:var(--red);}
-.fc{background:var(--surf);border:1.5px solid var(--bdr);border-radius:9px;padding:.62rem .88rem;color:var(--text);font-size:.87rem;font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;transition:border-color .18s,box-shadow .18s;width:100%;}
+.fc{background:#ffffff;border:1.5px solid var(--bdr);border-radius:9px;padding:.62rem .88rem;color:#1a1a1a;font-size:10pt;font-family:Tahoma,Arial,sans-serif;transition:border-color .18s,box-shadow .18s;width:100%;}
 .fc:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,61,165,.13);}
-.fc optgroup{background:var(--navy);color:var(--accent);font-size:.7rem;}
+/* ── Estilos globales para selects nativos ── */
+select{
+  background-color:#ffffff !important;
+  color:#1a1a1a !important;
+  font-family:Tahoma,Arial,sans-serif !important;
+  font-size:10pt !important;
+}
+select option{
+  background-color:#ffffff !important;
+  color:#1a1a1a !important;
+  font-family:Tahoma,Arial,sans-serif !important;
+  font-size:10pt !important;
+}
+select optgroup{
+  background-color:#f0f0f0 !important;
+  color:#003DA5 !important;
+  font-family:Tahoma,Arial,sans-serif !important;
+  font-size:10pt !important;
+  font-weight:bold !important;
+}
+select:focus{
+  outline:2px solid #003DA5 !important;
+  background-color:#ffffff !important;
+}
 .fh{font-size:.72rem;color:var(--text2);}
 .ibox{background:rgba(0,61,165,.07);border:1px solid rgba(0,61,165,.22);border-radius:10px;padding:.85rem 1.05rem;margin-bottom:1rem;}
 .ibt{font-size:.7rem;font-weight:700;color:var(--acdim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.25rem;}
@@ -155,8 +178,8 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
 /* SELECT PUNTAJE */
 .psel{border:1.5px solid var(--bdr);border-radius:7px;padding:.32rem .45rem;font-size:.8rem;font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;color:#333333;background:#ffffff;cursor:pointer;transition:border-color .15s,background .15s,color .15s;width:88px;text-align:center;}
 .psel:focus{outline:none;border-color:var(--navy3);background:#ffffff;color:var(--navy);}
-.psel.scored{background:#ffffff;border-color:var(--navy3);color:var(--navy);font-weight:600;}
-.psel.smax{background:rgba(0,122,61,.08);border-color:var(--gdim);color:var(--gdim);font-weight:700;}
+.psel.scored{background:#ffffff !important;border-color:var(--navy3);color:var(--navy) !important;font-weight:600;}
+.psel.smax{background:rgba(0,122,61,.08) !important;border-color:var(--gdim);color:var(--gdim) !important;font-weight:700;}
 /* Forzar color de texto en option del select nativo */
 .psel option{color:#333333;background:#ffffff;}
 
@@ -521,8 +544,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
               <option value="Sergio Viera Giron">Sergio Viera Giron — Algarrobos</option>
               <option value="Alexander Martinez Juarez">Alexander Martinez Juarez — Punta Arenas</option>
               <option value="Roberto Molero Abad">Roberto Molero Abad — Planta Rapel</option>
-              <option value="Pool Tamayo Rodriguez">Pool Tamayo Rodriguez — El Papayo</option>
-              <option value="Pool Tamayo Rodriguez (Limones)">Pool Tamayo Rodriguez — Limones</option>
+              <option value="Pool Tamayo Rodriguez">Pool Tamayo Rodriguez — El Papayo / Limones</option>
               <option value="Alex Tineo Ramos">Alex Tineo Ramos — Olivares Bajo</option>
               <option value="Flor Pulache Viera">Flor Pulache Viera — Los Olivares</option>
               <option value="Alex Zapata Suarez">Alex Zapata Suarez — Aproa</option>
@@ -854,8 +876,7 @@ const SUPERVISORES = [
   {nom:'Sergio Viera Giron',              sector:'Algarrobos',    rol:'Supervisor', reemplazante:false},
   {nom:'Alexander Martinez Juarez',       sector:'Punta Arenas',  rol:'Supervisor', reemplazante:false},
   {nom:'Roberto Molero Abad',             sector:'Planta Rapel',  rol:'Supervisor', reemplazante:false},
-  {nom:'Pool Tamayo Rodriguez',           sector:'El Papayo',     rol:'Supervisor', reemplazante:false},
-  {nom:'Pool Tamayo Rodriguez (Limones)', sector:'Limones',       rol:'Supervisor', reemplazante:false},
+  {nom:'Pool Tamayo Rodriguez',           sector:'',              rol:'Supervisor', reemplazante:false, multiSector:true, sectores:['El Papayo','Limones']},
   {nom:'Alex Tineo Ramos',               sector:'Olivares Bajo', rol:'Supervisor', reemplazante:false},
   {nom:'Flor Pulache Viera',             sector:'Los Olivares',  rol:'Supervisor', reemplazante:false},
   {nom:'Alex Zapata Suarez',             sector:'Aproa',         rol:'Supervisor', reemplazante:false},
@@ -882,11 +903,11 @@ function supSector(nombre){
 }
 
 function getSectorActual(){
-  // Devuelve el sector real considerando si es reemplazante
+  // Devuelve el sector real considerando si es reemplazante o multi-sector
   const sel     = document.getElementById('p1s').value;
   const supData = SUPERVISORES.find(s=>s.nom===sel);
-  if(!supData || supData.reemplazante){
-    // Reemplazante: leer del select editable
+  if(!supData || supData.reemplazante || supData.multiSector){
+    // Reemplazante o multi-sector: leer del select editable
     return document.getElementById('p1sector-inp')?.value || '';
   }
   return supData.sector || '';
@@ -903,17 +924,26 @@ function renderSupSelect(){
   const adm  = SUPERVISORES.filter(s=>s.rol==='Administrador');
   const fijo = SUPERVISORES.filter(s=>s.rol==='Supervisor');
   const remp = SUPERVISORES.filter(s=>s.rol==='Reemplazante');
+  const supLabel = s => s.multiSector
+    ? `${s.nom} — ${s.sectores.join(' / ')}`
+    : `${s.nom} — ${s.sector}`;
   return `<option value="">— Seleccionar supervisor —</option>
     <optgroup label="── Administradores ──">
       ${adm.map(s=>`<option value="${s.nom}">${s.nom}</option>`).join('')}
     </optgroup>
     <optgroup label="── Supervisores de Sector ──">
-      ${fijo.map(s=>`<option value="${s.nom}">${s.nom} — ${s.sector}</option>`).join('')}
+      ${fijo.map(s=>`<option value="${s.nom}">${supLabel(s)}</option>`).join('')}
     </optgroup>
     <optgroup label="── Supervisores Reemplazantes ──">
       ${remp.map(s=>`<option value="${s.nom}">${s.nom} (reemplazante)</option>`).join('')}
     </optgroup>`;
 }
+
+// Sectores disponibles para reemplazantes (lista global de fundos)
+const SECTORES_TODOS = [
+  'San Vicente','Algarrobos','Punta Arenas','Planta Rapel',
+  'El Papayo','Limones','Olivares Bajo','Los Olivares','Aproa','Santa Rosa'
+];
 
 function onSupChange(){
   const sel    = document.getElementById('p1s').value;
@@ -921,17 +951,34 @@ function onSupChange(){
   const secEl  = document.getElementById('p1sector');
   const secInp = document.getElementById('p1sector-inp');
   const secLbl = document.getElementById('p1sector-lbl');
+  const secHint= document.getElementById('p1sector-hint');
   if(!sel){ secBox.style.display='none'; return; }
 
   const supData = SUPERVISORES.find(s=>s.nom===sel);
   secBox.style.display = 'block';
 
   if(!supData || supData.reemplazante){
-    // REEMPLAZANTE: mostrar selector de sector a cubrir
+    // REEMPLAZANTE: mostrar selector con todos los sectores
     if(secEl)  secEl.style.display  = 'none';
-    if(secInp) secInp.style.display = 'block';
-    if(secLbl) secLbl.textContent   = '📍 Sector que está cubriendo (reemplazante)';
-    if(secInp) secInp.value = '';
+    if(secInp){
+      secInp.style.display = 'block';
+      secInp.innerHTML = `<option value="">— ¿Qué sector está cubriendo? —</option>`
+        + SECTORES_TODOS.map(s=>`<option value="${s}">${s}</option>`).join('');
+      secInp.value = '';
+    }
+    if(secLbl) secLbl.textContent = '📍 Sector que está cubriendo (reemplazante)';
+    if(secHint) secHint.textContent = 'Seleccione el sector del supervisor al que está reemplazando';
+  } else if(supData.multiSector){
+    // MULTI-SECTOR: mostrar selector restringido a sus sectores
+    if(secEl)  secEl.style.display  = 'none';
+    if(secInp){
+      secInp.style.display = 'block';
+      secInp.innerHTML = `<option value="">— ¿En qué sector evaluará? —</option>`
+        + supData.sectores.map(s=>`<option value="${s}">${s}</option>`).join('');
+      secInp.value = '';
+    }
+    if(secLbl) secLbl.textContent = '📍 ¿En qué fundo o sector realizará la evaluación?';
+    if(secHint) secHint.textContent = `Seleccione el sector — ${supData.nom} cubre: ${supData.sectores.join(' / ')}`;
   } else {
     // SUPERVISOR FIJO: mostrar sector automático
     if(secEl)  secEl.style.display  = 'block';
@@ -969,20 +1016,21 @@ function agregarArea(){
 
 // Usuarios base del sistema
 const USUARIOS_BASE = [
-  {user:'jtimoteo',  pwd:'kevin2025.',  nom:'Joel Timoteo Gonza',       rol:'admin'},
-  {user:'ecastro',   pwd:'ecastro-2026',  nom:'Elberth Castro Bayona',    rol:'supervisor'},
-  {user:'yluzon',    pwd:'yluzon-2026',   nom:'Yhanelly Iluzon Venegas',  rol:'supervisor'},
-  {user:'almartinez',pwd:'almartinez-2026',nom:'Alexander Martinez Juarez',rol:'supervisor'},
-  {user:'sviera',    pwd:'sviera-2026',   nom:'Sergio Viera Giron',       rol:'supervisor'},
-  {user:'rmolero',   pwd:'rmolero-2026',  nom:'Roberto Molero Abad',      rol:'supervisor'},
-  {user:'fzapata',   pwd:'fzapata-2026',  nom:'Alex Zapata Suarez',       rol:'supervisor'},
-  {user:'javendano', pwd:'javendano-2026',nom:'Jhonny Avendaño Granda',   rol:'supervisor'},
-  {user:'mmechato',  pwd:'mmechato-2026', nom:'Muriel Mechato Navarro',   rol:'supervisor'},
-  {user:'fpulache',  pwd:'fpulache-2026', nom:'Flor Pulache Viera',       rol:'supervisor'},
-  {user:'atineo',    pwd:'atineo-2026',   nom:'Alex Tineo Ramos',         rol:'supervisor'},
-  {user:'glucia',    pwd:'glucia-2026',   nom:'Lucia (Asistente)',        rol:'supervisor'},
-  {user:'ovilela',   pwd:'ovilela-2026',  nom:'Olga Vilela Ludeña',       rol:'supervisor'},
-  {user:'jchavez',   pwd:'jchavez-2026',  nom:'Jorge Chavez Coordova',    rol:'supervisor'},
+  {user:'jtimoteo',  pwd:'jtimoteo2026',  nom:'Joel Timoteo Gonza',       rol:'admin'},
+  {user:'ecastro',   pwd:'ecastro2026',  nom:'Elberth Castro Bayona',    rol:'supervisor'},
+  {user:'yluzon',    pwd:'yluzon2026',   nom:'Yhanelly Iluzon Venegas',  rol:'supervisor'},
+  {user:'almartinez',pwd:'almartinez2026',nom:'Alexander Martinez Juarez',rol:'supervisor'},
+  {user:'sviera',    pwd:'sviera2026',   nom:'Sergio Viera Giron',       rol:'supervisor'},
+  {user:'rmolero',   pwd:'rmolero2026',  nom:'Roberto Molero Abad',      rol:'supervisor'},
+  {user:'fzapata',   pwd:'fzapata2026',  nom:'Alex Zapata Suarez',       rol:'supervisor'},
+  {user:'javendano', pwd:'javendano2026',nom:'Jhonny Avendaño Granda',   rol:'supervisor'},
+  {user:'mmechato',  pwd:'mmechato2026', nom:'Muriel Mechato Navarro',   rol:'supervisor'},
+  {user:'fpulache',  pwd:'fpulache2026', nom:'Flor Pulache Viera',       rol:'supervisor'},
+  {user:'atineo',    pwd:'atineo2026',   nom:'Alex Tineo Ramos',         rol:'supervisor'},
+  {user:'glucia',    pwd:'glucia2026',   nom:'Lucia (Asistente)',        rol:'supervisor'},
+  {user:'ovilela',   pwd:'ovilela2026',  nom:'Olga Vilela Ludeña',       rol:'supervisor'},
+  {user:'jchavez',   pwd:'jchavez2026',  nom:'Jorge Chavez Coordova',    rol:'supervisor'},
+  {user:'ptamayo',   pwd:'ptamayo2026',  nom:'Pool Tamayo Rodriguez',    rol:'supervisor'},
 ];
 
 // Cargar usuarios extras agregados por admin
@@ -1459,11 +1507,15 @@ function p1next(){
   if(supData && supData.reemplazante && !sector){
     toast('Seleccione el sector que está cubriendo','e'); return;
   }
+  if(supData && supData.multiSector && !sector){
+    toast('Seleccione el fundo o sector donde realizará la evaluación','e'); return;
+  }
   S.emp=e; S.sup=s; S.sector=sector; S.tipo=tipo;
   S.fecha=document.getElementById('p1f').value||hoy();
   const supData2 = SUPERVISORES.find(sv=>sv.nom===s);
   const esRemp   = supData2?.reemplazante;
-  const sectorLbl= esRemp ? `📍 ${sector} (Reemplazante)` : `📍 ${sector}`;
+  const esMulti  = supData2?.multiSector;
+  const sectorLbl= esRemp ? `📍 ${sector} (Reemplazante)` : esMulti ? `📍 ${sector} (Multi-sector)` : `📍 ${sector}`;
   const tl=tipo==='obrero'?'👷 Obrero':'💼 Empleado';
   document.getElementById('p2cfg').innerHTML=`<div class="ibt">Sesión configurada</div>
     <div style="margin-top:.4rem;display:flex;gap:.32rem;flex-wrap:wrap;">
