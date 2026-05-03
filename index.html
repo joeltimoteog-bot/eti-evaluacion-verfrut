@@ -285,9 +285,9 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
 
 <!-- ══ LOGIN ══ -->
 <div class="screen active" id="slogin">
-  <div style="min-height:100vh;background:#003DA5;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;">
+  <div style="min-height:100vh;background:#003DA5;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;position:relative;">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Unifrutti_logo.svg/320px-Unifrutti_logo.svg.png" alt="Unifrutti" style="position:absolute;top:20px;right:20px;height:60px;" onerror="this.style.display='none'">
     <div style="text-align:center;margin-bottom:2rem;">
-      <img src="https://unifruttigroup.com/sito/wp-content/themes/unifrutti/img/unifrutti-pittogramma.png" alt="Unifrutti" style="height:48px;filter:brightness(0) invert(1);margin-bottom:.9rem;" onerror="this.style.display='none'">
       <div style="color:#FF99A8;font-size:.72rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;margin-bottom:.5rem;">Sistema de Evaluación</div>
       <div style="color:#fff;font-size:2.2rem;font-weight:800;line-height:1.1;">ETI<span style="color:#C8102E;">·</span>EVAL</div>
       <div style="color:rgba(255,255,255,.5);font-size:.82rem;margin-top:.4rem;">Verfrut / RAPEL SAC · Unifrutti Group</div>
@@ -322,7 +322,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
     <div style="display:flex;gap:.5rem;align-items:center;">
       <span style="font-size:.75rem;color:rgba(255,255,255,.5);" id="admin-user-lbl"></span>
       <button class="btn bgho bsm" onclick="doLogout()">Cerrar Sesión</button>
-      <img src="https://unifruttigroup.com/sito/wp-content/themes/unifrutti/img/unifrutti-pittogramma.png" alt="Unifrutti" style="height:28px;filter:brightness(0) invert(1);" onerror="this.style.display='none'">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Unifrutti_logo.svg/320px-Unifrutti_logo.svg.png" alt="Unifrutti" style="height:36px;" onerror="this.style.display='none'">
     </div>
   </header>
   <div class="dlayout">
@@ -441,7 +441,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
       <span style="font-size:.72rem;color:rgba(255,255,255,.45);" id="menu-user-lbl"></span>
       <div class="hbadge">UNIFRUTTI GROUP</div>
       <button class="btn bgho bsm" onclick="doLogout()" style="font-size:.72rem;">Salir</button>
-      <img src="https://unifruttigroup.com/sito/wp-content/themes/unifrutti/img/unifrutti-pittogramma.png" alt="Unifrutti" style="height:28px;filter:brightness(0) invert(1);" onerror="this.style.display='none'">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Unifrutti_logo.svg/320px-Unifrutti_logo.svg.png" alt="Unifrutti" style="height:36px;" onerror="this.style.display='none'">
     </div>
   </header>
   <div class="mhero">
@@ -493,7 +493,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
 
 <!-- ══ PASO 1 ══ -->
 <div class="screen" id="sp1">
-  <header class="hdr"><div class="logo">ETI<span>·</span>EVAL</div><div style="display:flex;align-items:center;gap:.6rem;"><button class="btn bgho bsm" onclick="go('sm')">← Menú</button><img src="https://unifruttigroup.com/sito/wp-content/themes/unifrutti/img/unifrutti-pittogramma.png" alt="Unifrutti" style="height:28px;filter:brightness(0) invert(1);" onerror="this.style.display='none'"></div></header>
+  <header class="hdr"><div class="logo">ETI<span>·</span>EVAL</div><div style="display:flex;align-items:center;gap:.6rem;"><button class="btn bgho bsm" onclick="go('sm')">← Menú</button><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Unifrutti_logo.svg/320px-Unifrutti_logo.svg.png" alt="Unifrutti" style="height:36px;" onerror="this.style.display='none'"></div></header>
   <div class="stbar" id="stb1"></div>
   <div class="wwrap">
     <div class="wcard">
@@ -505,7 +505,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
       <div class="wbody">
         <div class="fg">
           <label class="fl">Empresa / Sector <span class="req">*</span></label>
-          <select class="fc" id="p1e"><option value="">— Seleccionar —</option><option>VERFRUT</option><option>RAPEL SAC</option></select>
+          <select class="fc" id="p1e"><option value="">— Seleccionar —</option><option value="VERFRUT S.A.C.">VERFRUT S.A.C.</option><option value="RAPEL S.A.C.">RAPEL S.A.C.</option></select>
         </div>
         <div class="fg">
           <label class="fl">Supervisor responsable <span class="req">*</span></label>
@@ -566,12 +566,12 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
           <div class="tgrid">
             <div class="tbtn" id="bt1" onclick="selT('obrero')">
               <span class="tbtn-ico">👷</span>
-              <div class="tbtn-lbl">Obrero Campo</div>
+              <div class="tbtn-lbl">Obrero</div>
               <div class="tbtn-sub">Personal de campo / cosecha</div>
             </div>
             <div class="tbtn" id="bt2" onclick="selT('empleado')">
               <span class="tbtn-ico">💼</span>
-              <div class="tbtn-lbl">Empleado Agrario</div>
+              <div class="tbtn-lbl">Empleado</div>
               <div class="tbtn-sub">Administrativo / técnico</div>
             </div>
           </div>
@@ -591,7 +591,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
 
 <!-- ══ PASO 2 ══ -->
 <div class="screen" id="sp2">
-  <header class="hdr"><div class="logo">ETI<span>·</span>EVAL</div><div style="display:flex;align-items:center;gap:.6rem;"><button class="btn bgho bsm" onclick="go('sp1')">← Atrás</button><img src="https://unifruttigroup.com/sito/wp-content/themes/unifrutti/img/unifrutti-pittogramma.png" alt="Unifrutti" style="height:28px;filter:brightness(0) invert(1);" onerror="this.style.display='none'"></div></header>
+  <header class="hdr"><div class="logo">ETI<span>·</span>EVAL</div><div style="display:flex;align-items:center;gap:.6rem;"><button class="btn bgho bsm" onclick="go('sp1')">← Atrás</button><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Unifrutti_logo.svg/320px-Unifrutti_logo.svg.png" alt="Unifrutti" style="height:36px;" onerror="this.style.display='none'"></div></header>
   <div class="stbar" id="stb2"></div>
   <div class="wwrap">
     <div class="wcard">
@@ -647,7 +647,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
 
 <!-- ══ PASO 3: ACORDEÓN + CUESTIONARIO ══ -->
 <div class="screen" id="sp3">
-  <header class="hdr"><div class="logo">ETI<span>·</span>EVAL</div><div style="display:flex;align-items:center;gap:.6rem;"><button class="btn bgho bsm" onclick="go('sp2')">← Atrás</button><img src="https://unifruttigroup.com/sito/wp-content/themes/unifrutti/img/unifrutti-pittogramma.png" alt="Unifrutti" style="height:28px;filter:brightness(0) invert(1);" onerror="this.style.display='none'"></div></header>
+  <header class="hdr"><div class="logo">ETI<span>·</span>EVAL</div><div style="display:flex;align-items:center;gap:.6rem;"><button class="btn bgho bsm" onclick="go('sp2')">← Atrás</button><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Unifrutti_logo.svg/320px-Unifrutti_logo.svg.png" alt="Unifrutti" style="height:36px;" onerror="this.style.display='none'"></div></header>
   <div class="stbar" id="stb3"></div>
   <div class="wwrap" style="align-items:flex-start;padding-top:1.6rem;">
     <div class="wcard" style="max-width:800px;">
@@ -681,7 +681,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
     <div class="logo">ETI<span>·</span>EVAL <span style="color:rgba(255,255,255,.22);margin:0 .3rem">›</span><span style="font-weight:400;font-size:.82rem;color:rgba(255,255,255,.48)">Resultados</span></div>
     <div style="display:flex;align-items:center;gap:.6rem;">
       <button class="btn bgho bsm" onclick="volverAdmin()">← Menú</button>
-      <img src="https://unifruttigroup.com/sito/wp-content/themes/unifrutti/img/unifrutti-pittogramma.png" alt="Unifrutti" style="height:28px;filter:brightness(0) invert(1);" onerror="this.style.display='none'">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Unifrutti_logo.svg/320px-Unifrutti_logo.svg.png" alt="Unifrutti" style="height:36px;" onerror="this.style.display='none'">
     </div>
   </header>
   <div class="rlayout">
@@ -737,7 +737,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
     <div class="logo">ETI<span>·</span>EVAL <span style="color:rgba(255,255,255,.22);margin:0 .3rem">›</span><span style="font-weight:400;font-size:.82rem;color:rgba(255,255,255,.48)">Dashboard</span></div>
     <div style="display:flex;align-items:center;gap:.6rem;">
       <button class="btn bgho bsm" onclick="go('sm')">← Menú</button>
-      <img src="https://unifruttigroup.com/sito/wp-content/themes/unifrutti/img/unifrutti-pittogramma.png" alt="Unifrutti" style="height:28px;filter:brightness(0) invert(1);" onerror="this.style.display='none'">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Unifrutti_logo.svg/320px-Unifrutti_logo.svg.png" alt="Unifrutti" style="height:36px;" onerror="this.style.display='none'">
     </div>
   </header>
   <div class="dlayout">
@@ -868,7 +868,7 @@ const SUPERVISORES = [
   {nom:'Deysi Quispe Juarez',             sector:'', rol:'Reemplazante', reemplazante:true},
 ];
 
-// ÁREAS para Empleado Agrario (editables en sesión)
+// ÁREAS para Empleado (editables en sesión)
 let AREAS = [
   'Riego','Sanidad','Administración','Operaciones',
   'Departamento Técnico','Gestión Humana',
@@ -1166,7 +1166,7 @@ function renderAdminDash(){
           <td style="font-weight:700;">${r.nom||'—'}</td>
           <td>${r.emp||'—'}</td>
           <td>${r.sector||'—'}</td>
-          <td style="font-size:.75rem;">${r.tipo==='obrero'?'👷 Campo':'💼 Agrario'}</td>
+          <td style="font-size:.75rem;">${r.tipo==='obrero'?'Obrero':'Empleado'}</td>
           <td style="font-size:.78rem;">${fmtF(r.fecha)}</td>
           <td style="font-weight:800;color:${rok?'var(--gdim)':'var(--red)'};">${rp}%</td>
           <td><span class="bdg ${rok?'bg':'br'}">${rok?'APROBADO':'REFUERZO'}</span></td>
@@ -1321,7 +1321,7 @@ function renderAdminRegistros(){
             <td style="font-weight:700;">${r.nomUsuario||r.usuario||'—'}</td>
             <td>${r.emp||'—'}</td>
             <td>${r.sector||'—'}</td>
-            <td style="font-size:.75rem;">${r.tipo==='obrero'?'👷 Campo':'💼 Agrario'}</td>
+            <td style="font-size:.75rem;">${r.tipo==='obrero'?'Obrero':'Empleado'}</td>
             <td style="font-weight:600;">${r.nom||'—'}</td>
             <td><span class="cpill">${r.cod||'—'}</span></td>
             <td style="font-size:.78rem;">${fmtF(r.fecha)}</td>
@@ -1354,7 +1354,7 @@ function exportAdminExcel(){
       r.usuario||'—',
       r.emp||'—',
       r.sector||'—',
-      r.tipo==='obrero'?'Obrero Campo':'Empleado Agrario',
+      r.tipo==='obrero'?'Obrero':'Empleado',
       r.nom||'—',
       r.cod||'—',
       r.fecha||'—',
@@ -1464,7 +1464,7 @@ function p1next(){
   const supData2 = SUPERVISORES.find(sv=>sv.nom===s);
   const esRemp   = supData2?.reemplazante;
   const sectorLbl= esRemp ? `📍 ${sector} (Reemplazante)` : `📍 ${sector}`;
-  const tl=tipo==='obrero'?'👷 Obrero Campo':'💼 Empleado Agrario';
+  const tl=tipo==='obrero'?'👷 Obrero':'💼 Empleado';
   document.getElementById('p2cfg').innerHTML=`<div class="ibt">Sesión configurada</div>
     <div style="margin-top:.4rem;display:flex;gap:.32rem;flex-wrap:wrap;">
       <span class="chip">🏢 ${e}</span>
@@ -1533,7 +1533,7 @@ function maxEv(t){
 function hoy(){return new Date().toISOString().split('T')[0];}
 
 function renderP3(){
-  const tl=S.tipo==='obrero'?'👷 Obrero Campo':'💼 Empleado Agrario';
+  const tl=S.tipo==='obrero'?'👷 Obrero':'💼 Empleado';
   const palabra=S.tipo==='obrero'?'rutas':'áreas';
   document.getElementById('p3banner').innerHTML=`<div class="ibt">Tipo de personal · Sector</div>
     <div style="font-weight:800;font-size:1rem;color:var(--text);margin-top:.2rem">${tl} &nbsp;·&nbsp; 📍 ${S.sector}</div>
@@ -1935,11 +1935,11 @@ function calcular(){
 // ══════════════════════════════════════════
 function renderRes(res){
   const pg=(res.resGen*100).toFixed(1), ok=res.resGen>=0.7;
-  const tl=res.tipo==='obrero'?'👷 Obrero Campo':'💼 Empleado Agrario';
+  const tl=res.tipo==='obrero'?'👷 Obrero':'💼 Empleado';
   const palabraP=res.tipo==='obrero'?'ruta(s)':'área(s)';
   const palabraS=res.tipo==='obrero'?'Ruta / Grupo':'Área Evaluada';
   const palabraR=res.tipo==='obrero'?'Rutas':'Áreas';
-  const tR=res.tipo==='obrero'?'Obrero Campo':'Empleado Agrario';
+  const tR=res.tipo==='obrero'?'Obrero':'Empleado';
   const pal=res.tipo==='obrero'?'rutas':'áreas';
 
   document.getElementById('rmeta').textContent=
@@ -1985,7 +1985,7 @@ function renderRes(res){
     return `<tr>
       <td><span class="cpill">${r.cod||'—'}</span></td>
       <td style="font-weight:600">${r.nom}</td>
-      <td style="font-size:.7rem">${res.tipo==='obrero'?'👷 Campo':'💼 Agrario'}</td>
+      <td style="font-size:.7rem">${res.tipo==='obrero'?'Obrero':'Empleado'}</td>
       <td style="text-align:center">${r.ne}</td>
       ${r.secs.map(s=>`<td style="text-align:center;font-size:.74rem;color:${s.cum>=0.7?'var(--gdim)':'var(--red)'}">${(s.cum*100).toFixed(1)}%</td>`).join('')}
       <td style="text-align:center;font-weight:800;color:${rok?'var(--gdim)':'var(--red)'}">${rp}%</td>
@@ -2116,7 +2116,7 @@ N   Codigo   Ruta                           Tipo           Supervisor           
 `;
   h.forEach((r,i)=>{
     const p=(r.resGrupo*100).toFixed(1), ok=r.resGrupo>=0.7;
-    const tipo=r.tipo==='obrero'?'Obrero Campo  ':'Empl. Agrario ';
+    const tipo=r.tipo==='obrero'?'Obrero  ':'Empleado';
     txt+=`${String(i+1).padStart(2,'0')}  ${(r.cod||'-').padEnd(8)} ${(r.nom||'-').padEnd(30)} ${tipo} ${(r.sup||'-').padEnd(22)} ${(r.emp||'-').padEnd(11)} ${(r.fecha||'-').padEnd(12)} ${p.padStart(6)}%   ${ok?'APROBADO':'REFUERZO'}\n`;
   });
   txt+=`
@@ -2134,7 +2134,7 @@ function exportDashCsv(){
   let csv='N,Codigo,Ruta / Grupo,Tipo Personal,Supervisor,Empresa,Fecha,Resultado (%),Estado\n';
   h.forEach((r,i)=>{
     const p=(r.resGrupo*100).toFixed(1), ok=r.resGrupo>=0.7;
-    const tipo=r.tipo==='obrero'?'Obrero Campo':'Empleado Agrario';
+    const tipo=r.tipo==='obrero'?'Obrero':'Empleado';
     csv+=`${i+1},${enc(r.cod)},${enc(r.nom)},${enc(tipo)},${enc(r.sup)},${enc(r.emp)},${enc(r.fecha)},${p},${ok?'APROBADO':'REFUERZO'}\n`;
   });
   descargar('\uFEFF'+csv, `dashboard-eti-${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
@@ -2219,7 +2219,7 @@ function enviarCorreo(){
   if(!res){return;}
   const pct=(res.resGen*100).toFixed(1);
   const ok=res.resGen>=0.7;
-  const tl=res.tipo==='obrero'?'Obrero Campo':'Empleado Agrario';
+  const tl=res.tipo==='obrero'?'Obrero':'Empleado';
   const palabra=res.tipo==='obrero'?'rutas':'áreas';
   const sup3=SUPERVISORES.find(sv=>sv.nom===res.sup);
   const esRemp=sup3?.reemplazante;
@@ -2330,7 +2330,7 @@ function exportarExcel(){
   const AZ='003DA5', RJ='C8102E', VD='007A3D', AM='FFC000';
 
   // ── HOJA 1: RESUMEN GENERAL ──
-  const tR=res.tipo==='obrero'?'Obrero Campo':'Empleado Agrario';
+  const tR=res.tipo==='obrero'?'Obrero':'Empleado';
   const palabra=res.tipo==='obrero'?'Rutas':'Áreas';
   const pg=(res.resGen*100).toFixed(1);
   const ok=res.resGen>=0.7;
@@ -2491,7 +2491,7 @@ function exportarExcel(){
         i+1,
         r.cod||'—',
         r.nom||'—',
-        r.tipo==='obrero'?'Obrero Campo':'Empleado Agrario',
+        r.tipo==='obrero'?'Obrero':'Empleado',
         r.emp||'—',
         r.sup||'—',
         r.sector||'—',
@@ -2575,7 +2575,7 @@ function exportarExcelCompleto(){
       i+1,
       r.cod||'—',
       r.nom||'—',
-      r.tipo==='obrero'?'Obrero Campo':'Empleado Agrario',
+      r.tipo==='obrero'?'Obrero':'Empleado',
       r.emp||'—',
       r.sup||'—',
       r.sector||'—',
@@ -2632,7 +2632,7 @@ function exportarExcelCompleto(){
       i+1,
       r.cod||'—',
       r.nom||'—',
-      r.tipo==='obrero'?'Obrero Campo':'Empleado Agrario',
+      r.tipo==='obrero'?'Obrero':'Empleado',
       r.emp||'—',
       r.sector||'—',
       r.fecha||'—',
@@ -2680,7 +2680,7 @@ function exportarPDF(){
   if(!restaurarUltReporte()){toast('Sin resultados calculados aún','e');return;}
   const res=window._res;
   const pg=(res.resGen*100).toFixed(1), ok=res.resGen>=0.7;
-  const tR=res.tipo==='obrero'?'Obrero Campo':'Empleado Agrario';
+  const tR=res.tipo==='obrero'?'Obrero':'Empleado';
   const palabra=res.tipo==='obrero'?'Rutas':'Áreas';
   const sup3=SUPERVISORES.find(sv=>sv.nom===res.sup);
   const esR3=sup3?.reemplazante;
@@ -2695,19 +2695,17 @@ function exportarPDF(){
   const contenido=`
     <div style="font-family:Tahoma,Arial,sans-serif;font-size:10pt;color:#1A2340;max-width:900px;margin:0 auto;">
 
-      <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#003DA5;padding:22px 28px;margin-bottom:0;">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+      <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#003DA5;padding:22px 28px;margin-bottom:0;position:relative;">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Unifrutti_logo.svg/320px-Unifrutti_logo.svg.png" alt="Unifrutti" style="position:absolute;top:15px;right:20px;height:50px;" onerror="this.style.display='none'">
+        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:14px;padding-right:120px;">
           <div>
             <div style="color:#FF99A8;font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px;">Verfrut / RAPEL SAC · Unifrutti Group</div>
             <div style="color:#fff;font-size:18px;font-weight:800;line-height:1.2;">Sistema ETI – Evaluación de Conocimiento de Buenas Prácticas Sociales y Laborales</div>
             <div style="color:#FF99A8;font-size:13px;font-weight:700;margin-top:4px;">Reporte de Evaluación ETI</div>
           </div>
-          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
-            <img src="https://unifruttigroup.com/sito/wp-content/themes/unifrutti/img/unifrutti-pittogramma.png" alt="Unifrutti" style="height:32px;filter:brightness(0) invert(1);" onerror="this.style.display='none'">
-            <div style="text-align:center;background:${ok?VD:RJ};padding:10px 16px;border-radius:8px;">
-              <div style="color:#fff;font-size:26px;font-weight:800;line-height:1;">${pg}%</div>
-              <div style="color:rgba(255,255,255,.9);font-size:9px;font-weight:700;margin-top:3px;">${ok?'APROBADO':'REQUIERE REFUERZO'}</div>
-            </div>
+          <div style="text-align:center;background:${ok?VD:RJ};padding:10px 18px;border-radius:8px;min-width:120px;">
+            <div style="color:#fff;font-size:26px;font-weight:800;line-height:1;">${pg}%</div>
+            <div style="color:rgba(255,255,255,.9);font-size:9px;font-weight:700;margin-top:3px;">${ok?'APROBADO':'REQUIERE REFUERZO'}</div>
           </div>
         </div>
       </div>
