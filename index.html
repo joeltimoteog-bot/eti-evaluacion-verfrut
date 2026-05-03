@@ -287,6 +287,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
 <div class="screen active" id="slogin">
   <div style="min-height:100vh;background:#003087;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;">
     <div style="text-align:center;margin-bottom:2rem;">
+      <img src="https://unifruttigroup.com/sito/wp-content/themes/unifrutti/img/unifrutti-pittogramma.png" alt="Unifrutti" style="height:48px;filter:brightness(0) invert(1);margin-bottom:.9rem;" onerror="this.style.display='none'">
       <div style="color:#ff9999;font-size:.72rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;margin-bottom:.5rem;">Sistema de Evaluación</div>
       <div style="color:#fff;font-size:2.2rem;font-weight:800;line-height:1.1;">ETI<span style="color:#cc0000;">·</span>EVAL</div>
       <div style="color:rgba(255,255,255,.5);font-size:.82rem;margin-top:.4rem;">Verfrut / RAPEL SAC · Unifrutti Group</div>
@@ -321,6 +322,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
     <div style="display:flex;gap:.5rem;align-items:center;">
       <span style="font-size:.75rem;color:rgba(255,255,255,.5);" id="admin-user-lbl"></span>
       <button class="btn bgho bsm" onclick="doLogout()">Cerrar Sesión</button>
+      <img src="https://unifruttigroup.com/sito/wp-content/themes/unifrutti/img/unifrutti-pittogramma.png" alt="Unifrutti" style="height:28px;filter:brightness(0) invert(1);" onerror="this.style.display='none'">
     </div>
   </header>
   <div class="dlayout">
@@ -439,6 +441,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
       <span style="font-size:.72rem;color:rgba(255,255,255,.45);" id="menu-user-lbl"></span>
       <div class="hbadge">UNIFRUTTI GROUP</div>
       <button class="btn bgho bsm" onclick="doLogout()" style="font-size:.72rem;">Salir</button>
+      <img src="https://unifruttigroup.com/sito/wp-content/themes/unifrutti/img/unifrutti-pittogramma.png" alt="Unifrutti" style="height:28px;filter:brightness(0) invert(1);" onerror="this.style.display='none'">
     </div>
   </header>
   <div class="mhero">
@@ -490,7 +493,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
 
 <!-- ══ PASO 1 ══ -->
 <div class="screen" id="sp1">
-  <header class="hdr"><div class="logo">ETI<span>·</span>EVAL</div><button class="btn bgho bsm" onclick="go('sm')">← Menú</button></header>
+  <header class="hdr"><div class="logo">ETI<span>·</span>EVAL</div><div style="display:flex;align-items:center;gap:.6rem;"><button class="btn bgho bsm" onclick="go('sm')">← Menú</button><img src="https://unifruttigroup.com/sito/wp-content/themes/unifrutti/img/unifrutti-pittogramma.png" alt="Unifrutti" style="height:28px;filter:brightness(0) invert(1);" onerror="this.style.display='none'"></div></header>
   <div class="stbar" id="stb1"></div>
   <div class="wwrap">
     <div class="wcard">
@@ -588,7 +591,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
 
 <!-- ══ PASO 2 ══ -->
 <div class="screen" id="sp2">
-  <header class="hdr"><div class="logo">ETI<span>·</span>EVAL</div><button class="btn bgho bsm" onclick="go('sp1')">← Atrás</button></header>
+  <header class="hdr"><div class="logo">ETI<span>·</span>EVAL</div><div style="display:flex;align-items:center;gap:.6rem;"><button class="btn bgho bsm" onclick="go('sp1')">← Atrás</button><img src="https://unifruttigroup.com/sito/wp-content/themes/unifrutti/img/unifrutti-pittogramma.png" alt="Unifrutti" style="height:28px;filter:brightness(0) invert(1);" onerror="this.style.display='none'"></div></header>
   <div class="stbar" id="stb2"></div>
   <div class="wwrap">
     <div class="wcard">
@@ -644,7 +647,7 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
 
 <!-- ══ PASO 3: ACORDEÓN + CUESTIONARIO ══ -->
 <div class="screen" id="sp3">
-  <header class="hdr"><div class="logo">ETI<span>·</span>EVAL</div><button class="btn bgho bsm" onclick="go('sp2')">← Atrás</button></header>
+  <header class="hdr"><div class="logo">ETI<span>·</span>EVAL</div><div style="display:flex;align-items:center;gap:.6rem;"><button class="btn bgho bsm" onclick="go('sp2')">← Atrás</button><img src="https://unifruttigroup.com/sito/wp-content/themes/unifrutti/img/unifrutti-pittogramma.png" alt="Unifrutti" style="height:28px;filter:brightness(0) invert(1);" onerror="this.style.display='none'"></div></header>
   <div class="stbar" id="stb3"></div>
   <div class="wwrap" style="align-items:flex-start;padding-top:1.6rem;">
     <div class="wcard" style="max-width:800px;">
@@ -676,7 +679,10 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
 <div class="screen" id="sres">
   <header class="hdr">
     <div class="logo">ETI<span>·</span>EVAL <span style="color:rgba(255,255,255,.22);margin:0 .3rem">›</span><span style="font-weight:400;font-size:.82rem;color:rgba(255,255,255,.48)">Resultados</span></div>
-    <button class="btn bgho bsm" onclick="volverAdmin()">← Menú</button>
+    <div style="display:flex;align-items:center;gap:.6rem;">
+      <button class="btn bgho bsm" onclick="volverAdmin()">← Menú</button>
+      <img src="https://unifruttigroup.com/sito/wp-content/themes/unifrutti/img/unifrutti-pittogramma.png" alt="Unifrutti" style="height:28px;filter:brightness(0) invert(1);" onerror="this.style.display='none'">
+    </div>
   </header>
   <div class="rlayout">
     <div class="rhdr">
@@ -729,7 +735,10 @@ body{font-family:Tahoma,'Trebuchet MS',Arial,sans-serif;background:var(--surf);c
 <div class="screen" id="sdash">
   <header class="hdr">
     <div class="logo">ETI<span>·</span>EVAL <span style="color:rgba(255,255,255,.22);margin:0 .3rem">›</span><span style="font-weight:400;font-size:.82rem;color:rgba(255,255,255,.48)">Dashboard</span></div>
-    <button class="btn bgho bsm" onclick="go('sm')">← Menú</button>
+    <div style="display:flex;align-items:center;gap:.6rem;">
+      <button class="btn bgho bsm" onclick="go('sm')">← Menú</button>
+      <img src="https://unifruttigroup.com/sito/wp-content/themes/unifrutti/img/unifrutti-pittogramma.png" alt="Unifrutti" style="height:28px;filter:brightness(0) invert(1);" onerror="this.style.display='none'">
+    </div>
   </header>
   <div class="dlayout">
     <div class="rhdr">
@@ -2693,9 +2702,12 @@ function exportarPDF(){
             <div style="color:#fff;font-size:18px;font-weight:800;line-height:1.2;">Sistema ETI – Evaluación de Conocimiento de Buenas Prácticas Sociales y Laborales</div>
             <div style="color:#ff9999;font-size:13px;font-weight:700;margin-top:4px;">Reporte de Evaluación ETI</div>
           </div>
-          <div style="text-align:center;background:${ok?VD:RJ};padding:10px 16px;border-radius:8px;">
-            <div style="color:#fff;font-size:26px;font-weight:800;line-height:1;">${pg}%</div>
-            <div style="color:rgba(255,255,255,.9);font-size:9px;font-weight:700;margin-top:3px;">${ok?'APROBADO':'REQUIERE REFUERZO'}</div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+            <img src="https://unifruttigroup.com/sito/wp-content/themes/unifrutti/img/unifrutti-pittogramma.png" alt="Unifrutti" style="height:32px;filter:brightness(0) invert(1);" onerror="this.style.display='none'">
+            <div style="text-align:center;background:${ok?VD:RJ};padding:10px 16px;border-radius:8px;">
+              <div style="color:#fff;font-size:26px;font-weight:800;line-height:1;">${pg}%</div>
+              <div style="color:rgba(255,255,255,.9);font-size:9px;font-weight:700;margin-top:3px;">${ok?'APROBADO':'REQUIERE REFUERZO'}</div>
+            </div>
           </div>
         </div>
       </div>
