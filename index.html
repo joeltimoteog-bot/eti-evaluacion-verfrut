@@ -404,6 +404,12 @@ select:focus{
           <select class="fc" id="filtro-sup" onchange="renderAdminRegistros()" style="font-size:.8rem;padding:.4rem .7rem;">
             <option value="">Todos los supervisores</option>
           </select>
+          <select class="fc" id="filtro-est" onchange="renderAdminRegistros()" style="font-size:.8rem;padding:.4rem .7rem;">
+            <option value="">Todos los estados</option>
+            <option value="aprobado">✅ Aprobados</option>
+            <option value="refuerzo">⚠️ En Refuerzo</option>
+            <option value="destiempo">⏰ A Destiempo</option>
+          </select>
           <button class="btn bout bsm" onclick="exportAdminExcel()">📊 Excel Global</button>
         </div>
       </div>
@@ -1426,6 +1432,7 @@ function renderAdminStats(){
     <div class="kcard kg"><div class="klbl">Aprobados</div><div class="kval">${aprobados}</div><div class="ksub">${total?((aprobados/total)*100).toFixed(0)+'%':0} del total</div></div>
     <div class="kcard kr"><div class="klbl">En Refuerzo</div><div class="kval">${total-aprobados}</div><div class="ksub">${total?((1-aprobados/total)*100).toFixed(0)+'%':0} del total</div></div>
     <div class="kcard"><div class="klbl">Promedio Global</div><div class="kval">${total?(prom*100).toFixed(1)+'%':'—'}</div><div class="ksub">${prom>=0.7?'✅ Aprobado':'⚠ Refuerzo'}</div></div>
+    <div class="kcard kr"><div class="klbl">⏰ A Destiempo</div><div class="kval">${todos.filter(r=>r.destiempo).length}</div><div class="ksub">${todos.filter(r=>r.destiempo&&r.repCoordinador!=='SI').length} sin reportar</div></div>
     <div class="kcard"><div class="klbl">Usuarios Activos</div><div class="kval">${getUsuarios().length}</div><div class="ksub">registrados en sistema</div></div>`;
 
   // Por supervisor
@@ -1525,15 +1532,21 @@ function renderAdminRegistros(){
       sups.map(s=>`<option value="${s}" ${s===actual?'selected':''}>${s}</option>`).join('');
   }
 
-  const filtrados=filtro?todos.filter(r=>(r.nomUsuario||r.usuario)===filtro):todos;
+  let filtrados=filtro?todos.filter(r=>(r.nomUsuario||r.usuario)===filtro):todos;
+  const fEst=document.getElementById('filtro-est')?.value||'';
+  if(fEst==='aprobado') filtrados=filtrados.filter(r=>r.resGrupo>=0.7);
+  if(fEst==='refuerzo') filtrados=filtrados.filter(r=>r.resGrupo<0.7);
+  if(fEst==='destiempo') filtrados=filtrados.filter(r=>r.destiempo);
   const ordenados=[...filtrados].sort((a,b)=>new Date(b.fecha||0)-new Date(a.fecha||0));
 
   document.getElementById('admin-registros-tabla').innerHTML=ordenados.length?`
+    <div style="font-size:.75rem;color:var(--text2);margin-bottom:.5rem;font-weight:700;">Mostrando ${ordenados.length} de ${todos.length} registros ${_evalsNube!==null?'· ☁️ sincronizado con la nube':'· 💾 datos locales'}</div>
     <div style="overflow-x:auto;">
     <table class="rtbl">
       <thead><tr>
         <th>#</th><th>Supervisor</th><th>Empresa</th><th>Sector</th><th>Tipo</th>
         <th>Ruta/Área</th><th>Código</th><th>Fecha</th><th>Resultado</th><th>Estado</th>
+        <th>⏰ Destiempo</th><th>Reportó</th>
       </tr></thead>
       <tbody>
         ${ordenados.map((r,i)=>{
@@ -1549,10 +1562,12 @@ function renderAdminRegistros(){
             <td style="font-size:.78rem;">${fmtF(r.fecha)}</td>
             <td style="font-weight:800;color:${rok?'var(--gdim)':'var(--red)'};">${rp}%</td>
             <td><span class="bdg ${rok?'bg':'br'}">${rok?'APROBADO':'REFUERZO'}</span></td>
+            <td style="font-size:.72rem;">${r.destiempo?`<span class="bdg br" title="${(r.motivoDestiempo||'').replace(/"/g,'&quot;')}">⏰ ${r.destiempo}</span>`:'<span style="color:var(--text2);">—</span>'}</td>
+            <td style="text-align:center;font-size:.75rem;">${r.destiempo?(r.repCoordinador==='SI'?'<span style="color:var(--gdim);font-weight:800;">✅ SÍ</span>':'<span style="color:var(--red);font-weight:800;">❌ NO</span>'):'—'}</td>
           </tr>`;
         }).join('')}
       </tbody>
-    </table></div>` : '<div style="color:var(--text2);font-size:.85rem;padding:1rem;">Sin registros aún.</div>';
+    </table></div>` : '<div style="color:var(--text2);font-size:.85rem;padding:1rem;">Sin registros que coincidan con los filtros.</div>';
 }
 
 function exportAdminExcel(){
@@ -1566,7 +1581,7 @@ function exportAdminExcel(){
     ['Sistema - Departamento de Gestion Humana - Area de Relaciones Laborales'],
     ['Exportado: '+new Date().toLocaleString('es-PE')],
     [''],
-    ['#','Supervisor','Usuario','Empresa','Sector','Tipo','Ruta/Area','Codigo','Fecha','Resultado (%)','Estado']
+    ['#','Supervisor','Usuario','Empresa','Sector','Tipo','Ruta/Area','Codigo','Fecha','Resultado (%)','Estado','Destiempo','Motivo Destiempo','Reportado a Coordinador']
   ];
   const ordenados=[...todos].sort((a,b)=>new Date(b.fecha||0)-new Date(a.fecha||0));
   ordenados.forEach((r,i)=>{
@@ -1581,12 +1596,15 @@ function exportAdminExcel(){
       r.cod||'—',
       r.fecha||'—',
       parseFloat((r.resGrupo*100).toFixed(1)),
-      r.resGrupo>=0.7?'APROBADO':'REQUIERE REFUERZO'
+      r.resGrupo>=0.7?'APROBADO':'REQUIERE REFUERZO',
+      r.destiempo||'',
+      r.motivoDestiempo||'',
+      r.destiempo?(r.repCoordinador==='SI'?'SI':'NO'):''
     ]);
   });
 
   const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:5},{wch:28},{wch:14},{wch:12},{wch:14},{wch:16},{wch:28},{wch:9},{wch:12},{wch:14},{wch:18}];
+  ws['!cols']=[{wch:5},{wch:28},{wch:14},{wch:12},{wch:14},{wch:16},{wch:28},{wch:9},{wch:12},{wch:14},{wch:18},{wch:24},{wch:34},{wch:12}];
   if(ws['A1']) ws['A1'].s={font:{bold:true,sz:13,color:{rgb:'003DA5'}}};
   XLSX.utils.book_append_sheet(wb, ws, 'Registros Globales');
   XLSX.writeFile(wb, `ETI-Global-${new Date().toISOString().split('T')[0]}.xlsx`);
