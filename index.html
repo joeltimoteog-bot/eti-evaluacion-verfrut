@@ -443,6 +443,7 @@ select:focus{
     <!-- TAB PROGRAMACIÓN DE EVALUACIONES -->
     <div id="admin-prog" style="display:none;">
       <div class="ptit" style="margin-bottom:.8rem;">📅 Programación de Fechas de Evaluaciones</div>
+      <div class="kstrip" id="pg-kpis" style="margin-bottom:1rem;"></div>
       <div style="background:#fff;border-radius:12px;padding:1.2rem;border:1px solid var(--bdr);margin-bottom:1rem;">
         <div style="font-size:.85rem;font-weight:700;color:#003DA5;margin-bottom:.8rem;">➕ Programar Evaluación por Supervisor</div>
         <div style="display:grid;grid-template-columns:2fr 1fr auto;gap:.6rem;align-items:end;">
@@ -461,7 +462,10 @@ select:focus{
           <label class="fl">Observaciones (opcional)</label>
           <input class="fc" id="pg-obs" placeholder="Ej: Coordinar con el administrador del sector">
         </div>
-        <button class="btn bpri" onclick="pgGuardar()">💾 Guardar Programación</button>
+        <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+          <button class="btn bpri" onclick="pgGuardar()">💾 Guardar Programación</button>
+          <button class="btn bout" onclick="pgTestSheets()">🧪 Probar conexión Google Sheets</button>
+        </div>
       </div>
       <div class="ptit" style="font-size:.95rem;margin-bottom:.6rem;">🗓 Evaluaciones Programadas</div>
       <div id="pg-lista"></div>
@@ -3267,7 +3271,36 @@ function pgEstado(p){
   if(p.fechas.includes(h)) return {t:'📍 Para HOY',bg:'#fff3cd',c:'#8a6d00'};
   return {t:'🔵 Próxima',bg:'rgba(0,61,165,.08)',c:'#003DA5'};
 }
+// Enviar una fila de prueba a Google Sheets para verificar la conexión
+function pgTestSheets(){
+  if(!SHEETS_WEBHOOK_URL){toast('⚠️ Falta configurar la URL de Google Sheets en el sistema','e');return;}
+  const test={emp:'PRUEBA', sup:'PRUEBA DE CONEXIÓN', sector:'TEST', tipo:'obrero', fecha:hoy(),
+    resGen:0.85, usuario:SESSION?.user||'—', nomUsuario:SESSION?.nom||'—', destiempo:null,
+    rutas:[{nom:'RUTA DE PRUEBA', cod:'000', ne:1, resGrupo:0.85,
+      secs:[{nom:'Legislación Laboral',pct:0.9,pond:0.162,promSec:0},
+            {nom:'Bienestar Social',pct:0.85,pond:0.272,promSec:0},
+            {nom:'Sustentabilidad',pct:0.8,pond:0.128,promSec:0},
+            {nom:'Ética Empresarial',pct:0.9,pond:0.054,promSec:0},
+            {nom:'Seguridad y Salud en el Trabajo',pct:0.95,pond:0.114,promSec:0},
+            {nom:'Compromiso Medioambiental',pct:0.8,pond:0.128,promSec:0}]}],
+    creadoEn:new Date().toISOString(), ts:Date.now()};
+  enviarASheets(test);
+  toast('🧪 Fila de prueba enviada — revisa la pestaña "Evaluaciones" de tu hoja en ~10 segundos','s');
+}
+
 function renderPgLista(){
+  // KPIs de programación
+  const kdiv=document.getElementById('pg-kpis');
+  if(kdiv){
+    const todas=getProgs().map(p=>({p, e:pgEstado(p)}));
+    const n=k=>todas.filter(x=>x.e.t.includes(k)).length;
+    kdiv.innerHTML=`
+      <div class="kcard"><div class="klbl">Programadas</div><div class="kval">${todas.length}</div><div class="ksub">total</div></div>
+      <div class="kcard"><div class="klbl">🔵 Próximas</div><div class="kval">${n('Próxima')}</div><div class="ksub">por ejecutar</div></div>
+      <div class="kcard"><div class="klbl">📍 Para hoy</div><div class="kval">${n('HOY')}</div><div class="ksub">en fecha</div></div>
+      <div class="kcard kr"><div class="klbl">🚨 Vencidas</div><div class="kval">${n('Vencida')}</div><div class="ksub">requieren destiempo</div></div>
+      <div class="kcard kg"><div class="klbl">✅ Ejecutadas</div><div class="kval">${n('Ejecutada')}</div><div class="ksub">completadas</div></div>`;
+  }
   const div=document.getElementById('pg-lista'); if(!div)return;
   const l=getProgs().sort((a,b)=>a.fechas[0].localeCompare(b.fechas[0]));
   if(!l.length){div.innerHTML='<div style="font-size:.82rem;color:var(--text2);background:#fff;border:1px solid var(--bdr);border-radius:10px;padding:1rem;">Sin evaluaciones programadas aún.</div>';return;}
