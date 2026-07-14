@@ -1,0 +1,2394 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>RRHH — Verfrut</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root {
+  --bg: #f4f6fa; --white: #fff; --border: #e2e6f0;
+  --text: #1a1f36; --muted: #6b7280; --muted2: #9ca3af;
+  --accent: #c8102e; --accent-light: #fff0f2; --accent-dark: #a00c24;
+  --green: #1a3c6e; --green-light: #e8eef7;
+  --red: #c8102e; --red-light: #fff0f2;
+  --yellow: #d97706; --yellow-light: #fffbeb;
+  --radius: 12px; --radius-lg: 18px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow: 0 4px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
+  --shadow-lg: 0 10px 40px rgba(0,0,0,0.12);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: Tahoma, sans-serif; font-size: 10pt; min-height: 100vh; }
+
+/* ══ LOGIN SCREEN ══ */
+#loginScreen {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(145deg, #0d1f3c 0%, #1a3c6e 40%, #c8102e 100%);
+  padding: 20px;
+}
+.login-box {
+  background: white; border-radius: 24px; padding: 36px 28px;
+  width: 100%; max-width: 380px; box-shadow: var(--shadow-lg);
+  animation: popIn 0.4s ease;
+}
+@keyframes popIn { from { opacity:0; transform:scale(0.94) translateY(10px); } to { opacity:1; transform:scale(1) translateY(0); } }
+.login-logo { text-align: center; margin-bottom: 28px; }
+.login-logo img { height: 52px; object-fit: contain; }
+.login-logo-fallback {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 28px; font-weight: 800; letter-spacing: -1px;
+}
+.login-logo-fallback .ver { color: #dc2626; }
+.login-logo-fallback .frut { color: #1d4ed8; font-style: italic; }
+.login-subtitle { font-size: 12px; color: var(--muted); text-align: center; margin-top: 2px; }
+.login-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 20px; text-align: center; }
+.login-error { background: var(--red-light); border: 1px solid #fecaca; color: var(--red); border-radius: 10px; padding: 10px 14px; font-size: 13px; margin-bottom: 14px; display: none; text-align: center; }
+.login-field { margin-bottom: 14px; }
+.login-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; display: block; margin-bottom: 6px; }
+.login-input {
+  width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px;
+  font-size: 14px; font-family: Tahoma, sans-serif; font-size: 10pt; color: var(--text); background: var(--bg);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.login-input:focus { outline: none; border-color: var(--accent); background: white; box-shadow: 0 0 0 3px rgba(200,16,46,0.12); }
+.login-btn {
+  width: 100%; padding: 13px; background: linear-gradient(135deg, #c8102e, #a00c24);
+  color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 700;
+  font-family: 'Sora', sans-serif; cursor: pointer; transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(37,99,235,0.35); margin-top: 6px;
+}
+.login-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(37,99,235,0.4); }
+.login-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+.login-loading { text-align: center; font-size: 12px; color: var(--muted); margin-top: 10px; display: none; }
+
+/* ══ APP SCREEN ══ */
+#appScreen { display: none; }
+
+/* ── HEADER ── */
+.header {
+  background: white; border-bottom: 1px solid var(--border);
+  padding: 0 16px; position: sticky; top: 0; z-index: 100;
+  box-shadow: var(--shadow-sm);
+}
+.header-inner { display: flex; align-items: center; gap: 12px; height: 56px; }
+.header-logo img { height: 34px; object-fit: contain; }
+.header-logo-text {
+  font-size: 20px; font-weight: 800; letter-spacing: -0.5px; line-height: 1;
+}
+.header-logo-text .ver { color: #dc2626; }
+.header-logo-text .frut { color: #1d4ed8; font-style: italic; }
+.header-logo-sub { font-size: 9px; color: #dc2626; font-weight: 600; letter-spacing: 0.5px; }
+.header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.gs-dot { width: 8px; height: 8px; border-radius: 50%; background: #d1d5db; transition: background 0.3s; }
+.gs-dot.on { background: var(--green); box-shadow: 0 0 6px rgba(5,150,105,0.4); }
+.user-pill {
+  display: flex; align-items: center; gap: 6px; padding: 5px 10px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 20px;
+  cursor: pointer; transition: all 0.2s;
+}
+.user-pill:hover { border-color: var(--accent); }
+.user-avatar {
+  width: 24px; height: 24px; border-radius: 50%; background: var(--accent);
+  color: white; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+}
+.user-name { font-size: 12px; font-weight: 600; color: var(--text); }
+.user-role { font-size: 10px; color: var(--muted); }
+
+/* ── TABS ── */
+.tabs {
+  background: white; border-bottom: 1px solid var(--border);
+  display: flex; padding: 0 14px; gap: 2px; overflow-x: auto; scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  flex-shrink: 0; padding: 10px 13px; font-size: 12px; font-weight: 600;
+  color: var(--muted); border: none; background: none; cursor: pointer;
+  border-bottom: 2px solid transparent; transition: all 0.2s;
+  font-family: 'Sora', sans-serif; display: flex; align-items: center; gap: 5px;
+}
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab.hidden-tab { display: none; }
+
+/* ── MAIN ── */
+.main { padding: 14px; max-width: 620px; margin: 0 auto; padding-bottom: 50px; }
+
+/* ── CARD ── */
+.card { background: white; border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); margin-bottom: 14px; overflow: hidden; }
+.card-header { padding: 13px 17px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+.card-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+.card-icon.blue { background: var(--accent-light); }
+.card-icon.green { background: var(--green-light); }
+.card-title { font-size: 13px; font-weight: 700; color: var(--text); }
+.card-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.card-body { padding: 15px 17px; }
+
+/* ── INPUTS ── */
+.input-group { display: flex; flex-direction: column; gap: 5px; }
+.input-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; }
+.input-field {
+  background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px;
+  padding: 10px 13px; font-size: 14px; font-weight: 500; color: var(--text);
+  font-family: Tahoma, sans-serif; font-size: 10pt; width: 100%; transition: all 0.2s; -webkit-appearance: none;
+}
+.input-field:focus { outline: none; border-color: var(--accent); background: white; box-shadow: 0 0 0 3px rgba(200,16,46,0.1); }
+.input-field::placeholder { color: var(--muted2); font-weight: 400; }
+select.input-field { cursor: pointer; }
+.input-mono { font-family: 'JetBrains Mono', monospace; font-size: 15px; letter-spacing: 1px; }
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* ── BUTTONS ── */
+.btn { padding: 10px 17px; border-radius: 10px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; transition: all 0.15s; font-family: Tahoma, sans-serif; font-size: 10pt; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.btn-primary { background: var(--accent); color: white; box-shadow: 0 2px 8px rgba(200,16,46,0.3); }
+.btn-primary:hover { background: var(--accent-dark); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(200,16,46,0.4); }
+.btn-success { background: var(--green); color: white; box-shadow: 0 2px 8px rgba(5,150,105,0.25); }
+.btn-success:hover { background: #047857; }
+.btn-danger { background: var(--red); color: white; }
+.btn-danger:hover { background: #b91c1c; }
+.btn-outline { background: white; border: 1.5px solid var(--border); color: var(--text); }
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+.btn-ghost { background: transparent; color: var(--muted); }
+.btn-full { width: 100%; justify-content: center; }
+.btn-sm { padding: 6px 11px; font-size: 12px; border-radius: 8px; }
+.btn-lg { padding: 13px 22px; font-size: 14px; }
+
+/* ── STATUS ── */
+.status-banner { border-radius: 10px; padding: 11px 14px; font-size: 13px; font-weight: 500; display: flex; align-items: flex-start; gap: 8px; margin-bottom: 14px; animation: slideIn 0.25s ease; line-height: 1.4; }
+@keyframes slideIn { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:translateY(0); } }
+.status-found { background: #e8eef7; border: 1px solid #b8cce4; color: #1a3c6e; }
+.status-notfound { background: var(--yellow-light); border: 1px solid #fde68a; color: #92400e; }
+.status-error { background: var(--red-light); border: 1px solid #fecaca; color: #991b1b; }
+.status-success { background: #e8eef7; border: 1px solid #b8cce4; color: #1a3c6e; }
+.status-searching { background: var(--accent-light); border: 1px solid #bfdbfe; color: #1e40af; }
+
+/* ── WORKER CARD ── */
+.worker-card { background: linear-gradient(135deg, #1a3c6e, #c8102e); border-radius: 12px; padding: 16px; margin-bottom: 14px; color: white; box-shadow: 0 4px 16px rgba(200,16,46,0.3); }
+.worker-name-big { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+.worker-dni-small { font-size: 12px; opacity: 0.8; margin-top: 3px; font-family: 'JetBrains Mono', monospace; }
+.worker-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+.chip { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; background: rgba(255,255,255,0.2); }
+
+/* ── FORM SECTIONS ── */
+.form-section { border-bottom: 1px solid var(--border); }
+.form-section:last-child { border-bottom: none; }
+.section-header { padding: 12px 17px; display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; transition: background 0.15s; }
+.section-header:hover { background: var(--bg); }
+.section-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.section-dot.blue { background: var(--accent); }
+.section-dot.green { background: #1a3c6e; }
+.section-dot.yellow { background: var(--yellow); }
+.section-dot.red { background: var(--red); }
+.section-label-text { font-size: 12px; font-weight: 700; color: var(--text); flex: 1; text-transform: uppercase; letter-spacing: 0.5px; }
+.section-chev { font-size: 11px; color: var(--muted2); transition: transform 0.25s; }
+.section-chev.open { transform: rotate(180deg); }
+.section-body { padding: 15px 17px; display: grid; gap: 12px; background: #fafbfd; }
+.section-body.hidden { display: none; }
+
+/* ── BADGES ── */
+.badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.badge-blue { background: var(--accent-light); color: var(--accent); border: 1px solid #bfdbfe; }
+.badge-green { background: #e8eef7; color: #1a3c6e; border: 1px solid #b8cce4; }
+.badge-red { background: var(--red-light); color: var(--red); border: 1px solid #fecaca; }
+.badge-gray { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
+.badge-admin { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.badge-usuario { background: var(--accent-light); color: var(--accent); border: 1px solid #bfdbfe; }
+.badge-rapel { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+.badge-verfrut { background: var(--green-light); color: var(--green); border: 1px solid #a7f3d0; }
+
+/* ── STATS ── */
+.stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.stat-box { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow-sm); }
+.stat-num { font-size: 26px; font-weight: 700; font-family: 'JetBrains Mono', monospace; line-height: 1; }
+.stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; font-weight: 500; }
+
+/* ── TABLE ── */
+.table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; min-width: 420px; font-size: 13px; }
+thead { background: var(--bg); }
+th { padding: 10px 12px; text-align: left; font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.7px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+td { padding: 11px 12px; border-bottom: 1px solid var(--border); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #f8faff; }
+.td-action { display: flex; gap: 5px; }
+
+/* ── EMPTY ── */
+.empty-state { text-align: center; padding: 36px 20px; }
+.empty-icon { font-size: 34px; margin-bottom: 10px; opacity: 0.35; }
+.empty-state h3 { font-size: 14px; font-weight: 600; color: var(--muted); }
+.empty-state p { font-size: 12px; color: var(--muted2); margin-top: 4px; }
+
+/* ── TOAST ── */
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--text); color: white; padding: 11px 20px; border-radius: 50px; font-size: 13px; font-weight: 500; z-index: 999; transition: transform 0.3s ease; box-shadow: var(--shadow-lg); white-space: nowrap; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.toast-success { background: var(--green); }
+.toast.toast-error { background: var(--red); }
+
+/* ── MODAL ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px; }
+.modal-overlay.open { display: flex; }
+.modal { background: white; border-radius: var(--radius-lg); padding: 24px; width: 100%; max-width: 380px; box-shadow: var(--shadow-lg); animation: popIn 0.2s ease; }
+.modal-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+.modal-body { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+.modal-actions { display: flex; gap: 8px; }
+
+/* ── CONFIG ── */
+.config-section { padding: 15px 17px; border-bottom: 1px solid var(--border); }
+.config-section:last-child { border-bottom: none; }
+.config-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: var(--muted); margin-bottom: 12px; }
+.code-block { background: #1a1f36; color: #a5b4fc; padding: 14px; border-radius: 10px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; overflow-x: auto; line-height: 1.6; margin: 10px 0; white-space: pre; }
+.conn-status { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); margin-top: 10px; }
+.conn-dot { width: 9px; height: 9px; border-radius: 50%; background: #d1d5db; }
+.conn-dot.on { background: var(--green); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{ box-shadow:0 0 0 0 rgba(5,150,105,0.4); } 50%{ box-shadow:0 0 0 5px rgba(5,150,105,0); } }
+.conn-text { font-size: 12px; font-weight: 600; color: var(--muted); }
+.conn-text.on { color: var(--green); }
+
+/* ── USER TABLE ── */
+.user-row-admin { background: #fffbeb; }
+
+/* ── SEARCHING ── */
+.searching-dots::after { content: ''; animation: dots 1.5s steps(4,end) infinite; }
+@keyframes dots { 0%,20%{content:'';} 40%{content:'.';} 60%{content:'..';} 80%,100%{content:'...';} }
+
+.page { display: none; }
+.page.active { display: block; }
+.actions-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.actions-row .btn { flex: 1; min-width: 130px; justify-content: center; }
+
+/* ── MODAL SESIÓN ── */
+.sesion-modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(6px);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px; }
+.sesion-modal { background:white;border-radius:20px;padding:28px 24px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.2);animation:popIn 0.3s ease; }
+.sesion-modal-title { font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px; }
+.sesion-modal-sub { font-size:12px;color:var(--muted);margin-bottom:20px; }
+
+/* ── SESIÓN BAR ── */
+.sesion-bar { background:white;border-bottom:1px solid var(--border);padding:8px 16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;box-shadow:var(--shadow-sm); }
+.sesion-chip { display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;background:#fff0f2;color:#c8102e;border:1px solid #f5a0ad; }
+.sesion-chip.green { background:#e8eef7;color:#1a3c6e;border-color:#b8cce4; }
+.sesion-chip.yellow { background:var(--yellow-light);color:var(--yellow);border-color:#fde68a; }
+
+/* ── CONTADOR ── */
+.contador-card { background:linear-gradient(135deg,#1a3c6e,#c8102e);border-radius:14px;padding:14px 18px;margin-bottom:14px;color:white;display:flex;align-items:center;gap:14px;box-shadow:0 4px 16px rgba(200,16,46,0.3); }
+.contador-num { font-size:36px;font-weight:700;font-family:'JetBrains Mono',monospace;line-height:1; }
+.contador-label { font-size:12px;opacity:0.85; }
+.contador-bar { flex:1;height:8px;background:rgba(255,255,255,0.2);border-radius:4px;overflow:hidden; }
+.contador-fill { height:100%;background:white;border-radius:4px;transition:width 0.4s ease; }
+
+/* ── ESTADÍSTICAS ── */
+.stats-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px; }
+.stat-card { background:white;border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow-sm); }
+.stat-card-title { font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:var(--muted);margin-bottom:10px; }
+.stat-bar-row { display:flex;align-items:center;gap:8px;margin-bottom:6px; }
+.stat-bar-label { font-size:11px;color:var(--text);min-width:80px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.stat-bar-track { flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden; }
+.stat-bar-fill { height:100%;border-radius:3px;transition:width 0.5s ease; }
+.stat-bar-val { font-size:11px;font-weight:700;color:var(--text);min-width:24px;text-align:right; }
+</style>
+</head>
+<body>
+
+<!-- ══════════ PANTALLA QR (registro trabajador) ══════════ -->
+<div id="qrScreen" style="display:none;min-height:100vh;align-items:flex-start;justify-content:center;background:linear-gradient(145deg,#0d1f3c 0%,#1a3c6e 40%,#c8102e 100%);padding:20px;">
+  <div class="login-box" style="max-width:440px;">
+    <div class="login-logo" style="text-align:center;margin-bottom:16px;">
+      <div style="font-size:24px;font-weight:900;letter-spacing:-1px;">
+        <span style="color:#c8102e;">uni</span><span style="color:#1a3c6e;">frutti</span>
+      </div>
+      <div style="font-size:10px;color:#6b7280;margin-top:3px;letter-spacing:1px;text-transform:uppercase;">Registro de Personal</div>
+    </div>
+    <div class="login-title" style="text-align:center;">📝 Registra tus datos</div>
+    <div id="qrError" class="login-error"></div>
+    <div id="qrSuccess" style="display:none;background:#e8eef7;border:1px solid #b8cce4;color:#1a3c6e;border-radius:10px;padding:14px;font-size:13px;margin-bottom:14px;text-align:center;line-height:1.5;">
+      ✅ <strong>¡Registro exitoso!</strong><br>Gracias, tus datos fueron enviados correctamente.
+    </div>
+    <div id="qrForm">
+      <!-- BÚSQUEDA DNI -->
+      <div class="login-field">
+        <label class="login-label">Ingresa tu DNI (8 dígitos)</label>
+        <div style="display:flex;gap:8px;">
+          <input type="tel" id="qr-dni" class="login-input" placeholder="00000000" maxlength="8" inputmode="numeric" style="font-family:'JetBrains Mono',monospace;letter-spacing:1px;flex:1;">
+          <button class="login-btn" style="width:auto;margin-top:0;padding:12px 18px;" onclick="qrBuscar()">🔍</button>
+        </div>
+      </div>
+      <div id="qrBuscarStatus" style="font-size:12px;margin-bottom:10px;"></div>
+
+      <div id="qrCampos" style="display:none;">
+        <div class="login-field">
+          <label class="login-label">Apellido Paterno *</label>
+          <input type="text" id="qr-ap" class="login-input" style="text-transform:uppercase;">
+        </div>
+        <div class="login-field">
+          <label class="login-label">Apellido Materno</label>
+          <input type="text" id="qr-am" class="login-input" style="text-transform:uppercase;">
+        </div>
+        <div class="login-field">
+          <label class="login-label">Nombres *</label>
+          <input type="text" id="qr-nom" class="login-input" style="text-transform:uppercase;">
+        </div>
+        <div class="login-field">
+          <label class="login-label">Nacionalidad</label>
+          <input type="text" id="qr-nac" class="login-input" style="text-transform:uppercase;" placeholder="PERUANA">
+        </div>
+        <div class="login-field">
+          <label class="login-label">Estado Civil</label>
+          <select id="qr-ec" class="login-input">
+            <option value="">— Seleccionar —</option>
+            <option>SOLTERO</option><option>CASADO</option><option>CONVIVIENTE</option><option>DIVORCIADO</option><option>VIUDO</option>
+          </select>
+        </div>
+        <div class="login-field">
+          <label class="login-label">¿Tiene Hijos?</label>
+          <select id="qr-hijos" class="login-input"><option value="">— Seleccionar —</option><option>SI</option><option>NO</option></select>
+        </div>
+        <div class="login-field">
+          <label class="login-label">Dirección</label>
+          <input type="text" id="qr-dir" class="login-input" style="text-transform:uppercase;">
+        </div>
+        <div class="login-field">
+          <label class="login-label">Departamento</label>
+          <select id="qr-dep" class="login-input" onchange="qrCargarProvincias()"><option value="">— Seleccionar —</option></select>
+        </div>
+        <div class="login-field">
+          <label class="login-label">Provincia</label>
+          <select id="qr-prov" class="login-input"><option value="">— Seleccionar —</option></select>
+        </div>
+        <div class="login-field">
+          <label class="login-label">Distrito</label>
+          <div id="qr-dist-wrap"><input type="text" id="qr-dist" class="login-input" style="text-transform:uppercase;"></div>
+        </div>
+        <div class="login-field">
+          <label class="login-label">Teléfono</label>
+          <input type="tel" id="qr-tel1" class="login-input" inputmode="numeric" placeholder="999000000">
+        </div>
+        <div class="login-field">
+          <label class="login-label">Nivel Educativo</label>
+          <select id="qr-edu" class="login-input" onchange="qrToggleEdu()">
+            <option value="">— Seleccionar —</option>
+            <option value="Educación técnica completa">Educación técnica completa</option>
+            <option value="Educación Universitaria completa">Educación Universitaria completa</option>
+            <option value="Primaria Completa">Primaria Completa</option>
+            <option value="Primaria incompleta">Primaria incompleta</option>
+            <option value="Secundaria Completa">Secundaria Completa</option>
+            <option value="Secundaria incompleta">Secundaria incompleta</option>
+            <option value="Sin educación formal">Sin educación formal</option>
+          </select>
+        </div>
+        <div id="qr-edu-sup" style="display:none;">
+          <div class="login-field"><label class="login-label">Institución</label><input type="text" id="qr-inst" class="login-input" style="text-transform:uppercase;"></div>
+          <div class="login-field"><label class="login-label">Carrera</label><input type="text" id="qr-carrera" class="login-input" style="text-transform:uppercase;"></div>
+          <div class="login-field"><label class="login-label">Año de Egreso</label><input type="tel" id="qr-egreso" class="login-input" maxlength="4" inputmode="numeric"></div>
+        </div>
+        <div class="login-field">
+          <label class="login-label">¿Tiene Discapacidad?</label>
+          <select id="qr-incap" class="login-input"><option value="">— Seleccionar —</option><option>SI</option><option>NO</option></select>
+        </div>
+        <div class="login-field">
+          <label class="login-label">Parentesco contacto de referencia</label>
+          <select id="qr-parentesco" class="login-input">
+            <option value="">— Seleccionar —</option>
+            <option>Esposo(a)</option><option>Hijo(a)</option><option>Papa</option><option>Mamá</option>
+            <option>Tío(a)</option><option>Sobrino(a)</option><option>Primo(a)</option><option>Otros</option>
+          </select>
+        </div>
+        <div class="login-field">
+          <label class="login-label">Nombre del contacto de referencia</label>
+          <input type="text" id="qr-cem" class="login-input" style="text-transform:uppercase;">
+        </div>
+        <div class="login-field">
+          <label class="login-label">Teléfono de referencia</label>
+          <input type="tel" id="qr-celcem" class="login-input" inputmode="numeric" maxlength="9" placeholder="999000000">
+        </div>
+        <button class="login-btn" onclick="registrarQR()" id="qrBtn">Enviar mis datos</button>
+        <div style="font-size:11px;color:#6b7280;margin-top:14px;text-align:center;line-height:1.5;">
+          ℹ️ Completa todos los campos con tus datos personales.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ LOGIN SCREEN ══════════ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <img src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAFjAQ8DASIAAhEBAxEB/8QAHQABAAICAwEBAAAAAAAAAAAAAAcIBAYDBQkCAf/EAEkQAAEDAwEEAwsJBQgCAwEAAAEAAgMEBQYRBwgSITFRdBMiNTdBYXORkrGyFBcyNlVxcoHhFTM0QqEjJFJTYoLB0UbCOERUY//EABwBAQABBQEBAAAAAAAAAAAAAAAEAQIDBQcGCP/EADgRAAICAQICBggFBAIDAAAAAAABAgMEBREhMQYSM0FRcQcTFBcyYaHRIjVTgcEjNEKRJLFy4fD/2gAMAwEAAhEDEQA/ALloiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCKLN5rKbtiOz5tzs00cNQapjOKRuo0KrPaNvGfTXiggfcaMslqoo3ARdILgD5VsMbTrMivrxa2Id2bCqfUaL1OcGtLnHQAakqJ9pW3XFMQmkpIXi6VsfJ9PDIA5p8+qw94zOqvGtmzRRShlwq2t4Xf6SSHKl7RU1tVqTJUVErulx4nOJ85UrTtNjevWWciPm5zqfUhzLtbCNrp2lXK6QC2TUTKRjXNEjgddT5lLar9ulYDfsVNyul3j7gyuiZ3OJzdHDQ681YFQM6NULmquRMxZWSqTs5hERRCQEREAREQBFCm9RmmQYdaLXPYZ4onzSPD+6M4uQChrZrtlz267Q7Da66spXU1XViOUNi0JboejmthTptt1XrYtbEOzNhCz1b5l0EXzCSYmk9JAUS70WXXvD8Jpq+xyxxzvqmsJe3iGhUSmp22KC5skWWKuDm+4lxFR7Hdt20KpyG20s9bSGKaqjjeBD5C4A+VXdpyTAwnpIWfLwp4rSn3mLHyoX79XuORFGu8jktzxPZjW3m0SxxVUT2Brnt1HM8+SqzQbeNoE1XBGblREPe0HSHz/esmNp1mRDrxa2Lb8yFMurIvgiwrFPJU2WiqJSDJJAxziOstBWaoDWz2JSe63CIioVCi/antmsWz++NtNyoqueV0Yk1iA00KlBU43zfGVD2SNTtPohfeoT5EXMtlVU5R5k17ONu2O5tkYslBQVsMxjL+KQDTRS4qN7qg02st7MferyK7UseGPd1Icti3BundX1p8yJdo23THsJyB9nuFBWzSsJHFEBpyWXsu2zWLP7o+gttFVwPYdCZQNFW7er8aVR+J/8Awu83OdBmVSejmPcp89PpWH65LjsQ45dryvV78Ny31bVU9FTPqaqZkMLBq57joAopy3b9hdhqHwMfJXubyJp3BwUX72G0usdeH4faZ3xNh/iXNOnECOX3qu1LSz1U/cqSmlqJnH6MbS5xP5KmDpMbIKy18yuVqDhLqVlw7PvLYdX1QgfRV1OD/PIAAFLWMZNZckoxVWivgqmEcxG/XhPUV5011pulAAbha6ulaegzRFoPrW17Hc3ueFZVSPpp3CgmlDZ4ie9DSeZA61nyNGrcHKl8TFRqU1JK0udtkyPH8YxQXHJLWLjR92azuRYHd8eg6FQxQbZtkU1wpYYsGayWSdjGO+Ss71xcAD0da2ferr4bpsYpLhTnWKeoje37iqiWXw5a+2w/GFj07Brtocp778e8vzcqddyUdtiwu+hU91qLAIwWQvp3kN/3KFtmV5tePZrQ3i80z6mkpyS6JoB16uRUxb4//jPZX/EoEtVurLrWNo6CnfPO/wCixjdSVsMCMXhpS5cSHlyayG1zLz7INq1k2hzVdLaaOppzRMaXd1AA0PIaLe7tc7faaR1XcquKlgYNXSSO0AVdNz3G7zYLpfZrrQzUzZImcJkYW66HzqPN5baLX5NlU9loqpzLVT8i1juUjuYcD5uS0r0+NuU66n+FGzjmSrx1Ozmydsn3hsLs8xiiE1dodOKAggrv8U2sWXIcDr8upqWpZS0RcHxvA4jwjXkqNWCxXO9VIpLVQyzvPTwMJA850Vl8Axm64vu8ZHR3eHuU7xLIB5i1ScvT8eiKSf4t0YKMy+2TbXDY7Fu9NiDmhwtNz0P+kKacMv8ATZPjNDfaON8cFZEJGNf0gHrXmzAB8mZ9y9A9gIA2Q44Brp8jb0/eVj1TBpxq1Ktd5fgZVt02ps7jaNltFhOKz5BcIpZYIXNa5sf0jqojZvR4g6RjP2Vc++cGjvR5Sto3sDpsXuWg1/touX5qjsf72E//ANWe8KumYFORU5zXHcZ2XbVaowfAtHvi1sdxxDHq6Jrmsmc54B6ebQVXXBrpBYs3s18qWPfBQ1IlkazpI0PQp73o/Frin4f/AECrjSU81XVRUtPG6SaV3CxjRqXHqC2emRTxeq+XEhZrav3XPgWxG9JiEUQBtVzPCP8ACFib1d5gyHYzabzSseyGpqY5Gtf0gEKu8+z3LnwOLbJWcxy/sXf9KcdvFLPRbueOUtTG6OaOWJrmuGhB4VEli49N1bqfHfxM3r7rKZqzwK62WpZRXmgrpASynqGSuA6SGuBVq496LEYog11quRLRz0aFUyCN80scMbS573BrQPKStlfs+y0sOljrOY/yXf8AS2OXjY9zXru75kPHuur39WXDyDaNi1Zsfiza6Wl9ZaKgNd8mlYHHmdBqDyUX0e2fZDLUxMjwVrHOcA0/JWcj6l8Znbqu17nVFQ10L4aiJsYex40I78+RVttv8dTekb7wtdiYFNkZvjwb7ybk5dsZRXyXceldsmiqLdTzwM4IpImuY3ToBA0CyF12M/V639mj+ELsV5uS2Zu48UgiIqFQqc75oPzkwnQ6fJI+auMq075+M1E1NR5DTQ8ejhHIQOhoC2OlTUcmO5Cz4uVD2Iw3V3NZtXYXua0GnIGp056q8q81scvNZYrzT3W3yFs0Dw7QHTiAOuisMN6Cc2PuZs8IrjGRrxu5HTp1Wz1XAtutU61uQcDLrqg4zexH+9RKx+1SqaxwcWPeHAHoPJd3uhlwya4PaD3rSdf9qh/JrzWZBfay93F5dU1cndJNTrzVi9zrG6qns96vlXCWRVDNackdI4TqpWWvUYPUl4JEfHfrcrrIgvaxUyVe0S61Mp1e52h/JTvubYra6i2z5FVU0c1S4lsZcPoFrukKAdpf15uf4/8Akqzu5h9QHekf8Sx6hJxwVt8i/CSllPf5m/bbsWtV9wC5/KqaMzQQOdDJpzYesKgtcw08k8LXEmJxaHfcvRfaP9Rbx2Zy867x/HV3pXe9YtCk3CSfIyarFKUWix20qpkqd12yGTmWPhbr18lXWy+HbX22H4wrCZ//APF2z+kh9xVfLL4ctfbYfjCmYHZz82Rsv44+SJ93x/8Axnsr/iWm7rPjct3+73Lcd8bkcaOuv91f8S03dZcPndto6+L3LDT+XvyZks/vF+xdu7PMVtqJG9IjPuXm1enF17uTj0msm+Mr0ivngip9GV5uXfwxcu1zfGVF0HnP9jPq3+JcDdDx6hocBN0ETXVk072ulI77h11AW+7avFpe+ySe5a3useKyH07/APhb9m9sN4xK52wDvqmnfGPvIWsyJ/8ALcpeJsKYf8dJeB5t050p2HzL0C2AyMk2R48WOB/ubfeVRDIbTLZL3WWedjmuppDH3w0108qljYxtwrsJtX7GraVtZRt07k57j/ZgD6IAXodTx5ZNK9Xx7zTYN0aLX1yet7CaOHYzcS9wGs0Wg8p5qj0f72Hzys94Urba9sFdtAibbmUzaWgZ0ta4kSc9QSCtH2fWKfJcxt9op43OdJICSByGnPmq6dRLFx36zh3jMtV9y6hO29J4tcU/D/6BQnsh8bOLduHuKnvfFpm0eG43TNbp3PVpHnDAFAmyHxs4t24e4qzAe+G35l2V/cr9j0OgA7iz8IUEb6vi5o+2sU7wfuWfhCgjfV8XNH21i8/p/wDdQ8zbZn9vLyKo4p9a7N22L4wvSSm507NepebmJ/Wuzdti+ML0jpf4dn3LZ698UP3IOk/5fsRHvd8tjNx9JH8Spbbf46m9I33q6W954mbj6SP4lSy2/wAdTfjb7wpej/2z82YdS7ZHpFjP1et/Zo/hC7FddjP1et/Zo/hC7FeWl8TN7H4UERFaXBdbktlob/Z6i13CJssE7CxwPnXZIqptPdFGk1sym20fd5yS0Vk0+NRm4UjnFzY+Te5jqWgjZbn/AB8H7Bfxa6acS9ByARoQCPOuPuMOuvco/ZC29etXxjs0ma6emVSe6exT3Zzu75JdKyGoyRpt1O1wcWcncWnPRWvs9korFjgtNthbFBFCWsaPuXbgADQDQIoWVm25L/G+BJoxa6F+EoptA2b5rV5hX1VLZnywyP1a7i6VYTdSx+749hTqS8Uhpp+N54SdelymQwwk6mKM/wC0L6YxjBoxrWjzDRZsjUZ3UqprgjHThRqsdiZ0ud08tXh90poG8cskBa0dZVFrtsvzySuqzHY3lr5HFp4ukar0EIBGhGoXH3CH/Jj9kK3Dz54iait9y7JxI5DW75Fcc3xPIard3tdlpre6Sviki44tejQc1CNn2YZ2y9W6R9jeGR1cTnHi6AHglX+McZbwljS3q05L57hD/kx+yFmp1WyqLikuLb/2Y7NPhZJNvkVq3psQyS+yWD9k251SIadzZNDpwniWrbumCZbZtp1BW3O1Op6dnFxPLtdOSuA+ON/02Ndp1jVfjYomnVsbAesNCsjqU40ep2WxWWDF2+s3Me7xuktk8bBq5zCAFQq7bMM7ddq98dje5j6mVzTxdILiQvQBcfcIf8mP2QseHnTxN+qt9y/JxI5G275Ec7uNpuNm2cxUV0pzT1AmcSwnyKSl+Na1o0a0NHUAv1RbbHZNzfeSIQ6kVFdxCe3XYnS5k83a0OFLcWjnwt/eeVVuumyDaFb6p8Elic4A6NcHjmFf1fLoo3HV0bHHzjVT8bVbqI9XmiJfgV2vrcmUKsWxraDdKxkP7GdFGTo6QvHeqz2w3Y/QYHB8sqniquUgBMhboWlSuyONn0GNb9w0X0rcrU7siPVfBFaMGul9ZcWQTvdY3e8istpistEap8cjy8A6aclB+y7Zxm1DtLx2uq7K6Onp6wPlfxfRGh5q8j2Mf9NjXfeNV+CGEHURMB6w0KtGpTpp9UkthZgxss9Y2fsIIiYD0gBQ3vZ4/eMhwSlpLNSGpmbVtcWg6aBTMvx7GvGj2tcPONVDoudNisXcSbalZBwfeUHxnZlnMOSWuaWyPbHHVxPe7i6AHAlX1pgRAwHqQQQg6iGP2QuRZ8zNlltOS22MONixx99nzIu3nbNc77sqrrdaaY1FU97C1gOmuh5qptBsxzxlZA51ieA17Se+869AnNa4aOaHDqIXx3CH/Jj9kLLi6lPGr6iSZZkYUb5dZsxcfjfDY6GKVvC9lOxrh1ENCzkRa5vd7kxLZbBERUKhadmO0fGMVugt13r4YJywPDXO0OhW4qpG921p2iQnQfwrFium4R3Rv+jWlVarnxxrW0mnyJs+e3A/tim9v9E+e3A/tim9v9FSzhb1D1Jwt6h6lD9sn4I6V7t9P/Ul9PsXT+e3A/tim9v9E+e3A/tim9v9FSzhb1D1Jwt6h6k9sn4Ie7fT/wBSX0+xdP57cD+2Kb2/0T57cD+2Kb2/0VLOFvUPUnC3qHqT2yfgh7t9P/Ul9PsXT+e3A/tim9v9E+e3A/tim9v9FSzhb1D1Jwt6h6k9sn4Ie7fT/wBSX0+xdP57cD+2Kb2/0T57cD+2Kb2/0VLOFvUPUnC3qHqT2yfgh7t9P/Ul9PsXT+e3A/tim9v9E+e3A/tim9v9FSzhb1D1Jwt6h6k9sn4Ie7fT/wBSX0+xdMbbcEJAF4puZ0+n+ikSgq4a6kjqqd4fHI0OaR5QRqvOggat5D6Q969AcA+qNu9Az4Qs+PfKxtM8f0t6MY2i11ypk31m+Z0+WbTMWxm6m2XW4QwVAYH8LnaHQ/kup+e3A/tim9v9FAG9OAdq8mo/+pGor4W9Q9Swzy5qTSS4HoNK6B4OZhVZE5yTkk+77F0/ntwP7Ypvb/RPntwP7Ypvb/RUs4W9Q9ScLeoepU9sn4I2Hu30/wDUl9PsXT+e3A/tim9v9E+e3A/tim9v9FSzhb1D1Jwt6h6k9sn4Ie7fT/1JfT7F0/ntwP7Ypvb/AET57cD+2Kb2/wBFSzhb1D1Jwt6h6k9sn4Ie7fT/ANSX0+xdP57cD+2Kb2/0T57cD+2Kb2/0VLOFvUPUnC3qHqT2yfgh7t9P/Ul9PsXT+e3A/tim9v8ARPntwP7Ypvb/AEVLOFvUPUnC3qHqT2yfgh7t9P8A1JfT7F0/ntwP7Ypvb/RfrNteCPe1jbvTauOg7/8ARUr4W9Q9S5qFrfl9PyH7xvvT2ufgi2Xo50+MW/WS+n2PRSmmZUU8c8ZDmSNDmkeUEarkWBjngGg7PH8IWetijjdkerNpdwREQsCqTvd+MSHsrFbZVJ3u/GJD2Vij5XZnsugf5xDyZDCIi1h3sIiIAiIgCIiAIiIAiIgB6W/iHvXoBgH1Rt3oGfCF5/npb+Ie9egGAfVG3egZ8IUvD+JnMPSX2FPm/wCCqW9N42JOyRqLFKe9N42JOyRqLFGs+OXme06N/lVH/igiIrTdhERAEREAREQBERAFzUHhCn9I33rhXNQeEKf0jfeiLLfgfkehGOeAaDs8fwhZ6wMc8A0HZ4/hCz1ulyPlm7tJebCIiqYwqk73fjEh7KxW2VSd7vxiQ9lYo+V2Z7LoH+cQ8mQwiItYd7CIiAIiIAiIgCIiAIiIAelv4h716AYB9Ubd6Bnwhef56W/iHvXoBgH1Rt3oGfCFLw/iZzD0l9hT5v8AgqlvTeNiTskaixSnvTeNeTska0PHcavmQVQprVQSSvPQXAhvrUafGyW3iew0G6unSKJ2SSSiuLOoRTbje7vkFdG193qnUBI6GEOWyO3ZoDGAMiqOLr7k1ZFj2PuIt3TPR6pdV27+SbK3Ip0v27leaWJ7rXcH1jh9EP0bqotyjCMnxqQsu1tezTyx6vH9FZKuceaJ+D0h07OfVotTfhyf1NdRP6IrDdBERAEREAXNQeEKf0jfeuFc1B4Qp/SN96Ist+B+R6EY54BoOzx/CFnrAxzwDQdnj+ELPW6XI+Wbu0l5sIiKpjCqTvd+MSHsrFbZVJ3u/GJD2Vij5XZnsugf5xDyZDCIi1h3sIiIAiIgCIiAIiIAiIgB6W/iHvXoBgH1Rt3oGfCF5/npb+Ie9egGAfVG3egZ8IUvD+JnMPSX2FPm/wCCOc02QMzDaWb5c5NKBsDGdz0+np0hSbjuO2iw0TKS20ccMbBoOXNZsdfRyVrqNk7DOxvE5mvMBZKmxrjFtrvOZ5eqZeRVCm2T6sUkl3BERXmtCw7nbKG5Uz6esp45Y3jQgtWYiF0ZOL3T2ZWDbnsXFrhmv2NxE07dXSwNH0fOoCcC1xa4aOB0I6ir7bRsotGL47UVl0fG4cB4Ynfz+ZUUvVTHW3eqq4Y+5xyyuc1vUCSVrcmEYy4Hbegmq5udjyjkJuMeUn3/AC+exhoiKMe+CIiALmoPCFP6RvvXCuag8IU/pG+9EWW/A/I9CMc8A0HZ4/hCz1gY54BoOzx/CFnrdLkfLN3aS82ERFUxhVJ3u/GJD2Vitsqk73fjEh7KxR8rsz2XQP8AOIeTIYREWsO9hERAEREAREQBERAERfhc0dJAQH6elv4h716AYB9Ubd6BnwhUGo6KsrS35JTSTauH0Br5VfvBGPjxS3skaWuEDAQfJ3oUvD+JnLvSTOLppSfHd/wVo2/5Lecb2zGstVU6J7KWI8JJLT0+TVbts73g7bWRx0eSxmlm00dUOIaz1BR3vR2+uftOkqY6SV0PySMcYHJRAXM4i1xGo5ELF62VdktvE22F0f0/V9JoVq/Eoriuf/3meg9lyew3mJslsudPUtI1HAdV2vdY9NeMLzvpblcqUAUlxq4B1RylvuWYclyIsDP25cNO0O/7WdZnijQW+jSfW/p38Pmi+l0v9mtcbpK+4Q07W9JeVF2e7esatFPJFZZBc5yNGvheCAfOCqpVF1u1SCKi6VkwPSHzOKw9B06KyWXJrgtjY6f6OcaqSlk2OfyXBfc2LN8yveX3J9ZdakkE97G3VrQPu10WuoiittvdnQ8fHqxq1XVHaK7kEREMwREQBc1B4Qp/SN964VzUHhCn9I33oiy34H5HoRjngGg7PH8IWesDHPANB2eP4Qs9bpcj5Zu7SXmwiIqmMKpO934xIeysVtlUne78YkPZWKPldmey6B/nEPJkMIiLWHewiIgCIiAIiIAuaipamtqW09HTyTyu6GsbqVsWz/Br1md1ZSW6AtiB1kldyaB5dD0aq2mzXZZj+IUcbvk7Kmu076aRo4gfMVmqolZ5HlOkHSzF0hdT4rPBfyQHgewjIb33OpuhbSUruZYSWvCmzFtiGI2aNndIXVjh093AcpRRToY8I9xyTUul2p57e8+rHwXA6OhxHGqJobTWSii0/wAMQC7qNjI2BjGhrR0AL6RZkkuR5yy2yx7zk35mBcLNarg7iraCnqHaaayM1Wr3zZbh10jc02mmpy7pdFGAVu6KjinzRlpzMih71za8mVyzPdzi4JJ8drH906eGd/JQZlWJX7Gap0F0oZWtadO6hh4D+a9AF1mRWG1X+idSXSjiqI3DQcbddPOo9mJF/DwPZ6R09zsSSjk/1I/U89QQRqEU17ZNiVdYnyXbHgaih11kjP0m/cAoWe1zHlj2lrgdCCNCFAnCUHtI6/perY2p0q7HluvDvXmfKIitNkEREAREQBc1B4Qp/SN964VzUHhCn9I33oiy34H5HoRjngGg7PH8IWesDHPANB2eP4Qs9bpcj5Zu7SXmwiIqmMKpO934xIeysVtlUne78YkPZWKPldmey6B/nEPJkMIiLWHewiIgCIiALatmGG1+a5HFQUsbhTtIdPJpyDfLoegla7baGpudwgt9HGZJ538DGjrV3NjmFUmIYtTwsha2plaHynTmHEcws1FXrJceR5Lpb0hWkYu1faS5fL5neYVi9rxWzRW62wMYGgcbwNC89ZXeoi2iSS2RwO22d03ZY92+8IiKpjCIiAIiIAiIgPmaNk0TopGhzHDQg+UKs28RsmbQiXJrBT6Q/SnhYPo/cOkqza4a2miq6WSnnYHxvaQQVjsrVi2Zt9F1i/SclXVPh3rxR50eUg8iORRSTt7wQ4fk7pqWMi31TtYyByB6So2WplFxezPonT86rPx45FT4SQREVCaEREAXNQeEKf0jfeuFc1B4Qp/SN96Ist+B+R6EY54BoOzx/CFnrAxzwDQdnj+ELPW6XI+Wbu0l5sIiKpjCqTvd+MSHsrFbZVJ3u/GJD2Vij5XZnsugf5xDyZDCIi1h3sIiIAiL5kOjCQgJz3UMSFyvs1/qouKCFv8AYkjkHg81awcuQWg7CMdixzZ/R07GcLpv7ck9PfgFb8trRDqQSPnPpRqb1HUrLN/wp7LyQREWY88EREAREQBERAEREAREQGibbsUjynCKynbGDVxxkwO05gqkFRE6Cplp3/Sikcw/eDovRmRocxzSNQRoqMbbbEzHtotdRRMLY3gTfm8klQcyHKR1T0cam+tZhSfD4l/JpSIihHWQiIgC5qDwhT+kb71wrmoPCFP6RvvRFlvwPyPQjHPANB2eP4Qs9YGOeAaDs8fwhZ63S5Hyzd2kvNhERVMYVSd7vxiQ9lYrbKpO934xIeysUfK7M9l0D/OIeTIYREWsO9hERAF2uIUTbjlFuoX6cM0vCdfuXVLadkbO6bT8eYQCDVjp+4qq5oh6hN14tsl3Rf8A0XoskIgs9HC0ABkDG+poWYvinGlPGOpoH9F9rdHzBN7ybCIiFoREQBERAEREAREQBERAFVvfAtjYL7RXUN0NQRFr16NVpFXrfRiDbFYJh0urHg+wo+X2TZ6voVa69ZqS7919Cs6Ii1h9BBERAFzUHhCn9I33rhXNQeEKf0jfeiLLfgfkehGOeAaDs8fwhZ6wMc8A0HZ4/hCz1ulyPlm7tJebCIiqYwqm73kThnsE38ppmBWyVZ98Kka2so63Tm7hZr+Sj5XZs9d0HsUNYr3790V6REWsO/hERAFsmy6b5PtGsU2unBVA6/kVraybXWG33Knrmkgwv4uSJ7PcjZlTux7K13pr6HofRO46OF/+JjT/AEXKuqxCsZXY1b6hjg4Op49SOvhC7VbpcUfL9sHCbi+5hERVMYREQBERAEREAREQBERAFXPfNqWvoLJSg82VTnEfexWMVRt6+8Mrc8FsjfxNp42SebUghRsrsmj1/QfHlbrFcl/ju/pt/JDaIi1p34IiIAsi2tL7lTNb0mRvvWOu6wejNfllBSj+eQKq5mDKsVdM5vuT/wCi+uPtLbHQtP8A+eP4Qs5Y9sZ3O20rP8MLB/QLIW5R8uWPebYREVSwKDt7q0urMPpKuJvfRVHE4+YBTitN2zWkXbZ9dIwNZIoHPYNOk6LHdHrQaNtoWV7LqNNvg19SigOo1Rfro3xOMUg0ew6OHUV+LTo+lk01ugiIqlQjgHAg+VEQFvN1vJv2vhAoKiUOq6eR3ek8wwHQKYVSHYRlr8UziBz38NLVlsUp15Nbrrqrs0dRFV00dRA8PjkaHNI8oK2eNZ1obeBwDpppL0/UZSivwT4r+UcqIikHkQiIgCIiAIiIAiIgCIiAxLvWw262z1lQ4NjiaS4nyKg2cXia+5ZX3GfmTK6Np1170OOistvSZqy144bBST/3isBZIAebR0hVQ5nmeZPMrX5dm76q7jsXo70l00TzLFxlwXkvuERFEOlhERAFvmwS2yXHafagG6xseS89XJaGp63QbO+ovVwucjO9h4SxxWSqPWmkaHpPl+y6XdP5bf74FoY28EbW9QAX0iLbnzgEREAXFWQMqqWSnkGrJG8Lh5lyohVPZ7oobtYsklizu40z28LZZnSRjT+XVaorI73GIh8NPk9PGS9ukLg3q61W4cxqtRdDqTaPo3ozqS1DTa7d+KWz80ERFjN+EREAOvkJB6wrR7tu0uGvoWY5dpw2piGkTnHpb0AKri56CsqrfWxVtFK6KeJwcxwPlHWr67HXLdGj1/RKtYxXTPhJcn4M9FkUM7Ddr9DkdJFabzMyC5MAaOI6d084CmZbWE4zW6PnzUdOyNOvdF8dmvr5BERXkEIiIAiIgCIiALXNoGV2/ErBPca2RoLW940nmSvvOsttOJWiSuudSyLRveNcdC4qmm1LPrnm96fUTvfFRsce4w69A8+nIqPfeq1suZ6zox0Zu1e5Sktqlzfj8kdPm2Q1mUZHU3ese5zpDo0E8gB0LpURaxtvizvlFMKK41wWyS2QREQyhERAfoBc5rB0uIA/NXP3csdNjwClklZw1E4Jfy59PJVW2X45LlGaUNtYxzmcXG4jyaEFXvt1MykooaeNoa2NgboPuUzDhu3I5b6R9TShXhRfF/if8HOiIp5yQIiIAiIgOnzKywX7Hqu2zsD+6xuDdR0EjpVD8uslRjuRVdpqI3M7hIWsJ/mA8q9CFAO9Hs9fcaVmUWyImenbwyMaOkE6lxH3BRcqrrR6y5o950F1xYGW8e1/gn9H3FYEX40hw1C/VrjuIREQBERAclNPNTTtnp5XxSNOocxxB/op02T7eay2MjteTsNRA3RscrAAWj/UT0qB0PNXQnKt7xNVqujYmqVeryI7+D715M9AsZyqxZFTNmtdwgqNRqWsdqQu7XnnZr3drPM2W3V08Gn8rHkAqTcW2+5XayyGtZBUU46SW6vU2GWn8SOXal6OsupuWJJSXg+DLfoq/wBr3k7MdG19uq9etjRou7j3iMPc0H5JWjzHRZlfW+88xZ0V1et7OhkyooOrt5DF4wRBb65x+4LT8j3jrnNG5lko2Rk8tZmeRUlkVrvM+P0O1e97eqa8+BZqtq6ajhdNVTMijaNS5x5BRLtK252GwwyUtneLhVkEB8TgWsPnBVbso2hZTkRPy24SxNPSyJ5AWqkkuLnElx6SekqNZlt8InttI9HcK5KzOnv8ly/dnfZnl17y24vrbtUl5cdRG0kMH5dC6BEURvd7s6VRRXj1quqO0V3IIiIZgiIgCeYcyehFuux3C6jM8rhpg0ilhdxyv8gI0On5qqTk9kRczLrw6JX2vaMVuTjur4UbdZTkNZFpNV6Oi1HNo6Cp3WNa6KC3UEVHTMDIom6NAHQslbeuChFRR83atqNmpZc8ife/p3BERXmtCIiAIiIAuGtpoqyklpp2h0crCxwPURouZEKptPdFMdvWzuXD7/LW0cJ/ZlQ4uYWjkwdAHmUYL0DzPHLflFintVwhbJHIOXENdHeQqlW07BrjhN8kpKiN76UuPcptNQR5z0BazIp6j3XI7f0N6URz6Vi5D/qR5fNfc1FERRz3oREQBERAEREAIBTQdSIgAAHkREQBERAEREAREQBEXPQ0tRXVcdJSROlmkcGta0a8yhbKSinKT4I5rHbKu83WC3UUT5ZpXBujRroCdNVdjY9gtJheNQ0/c2mtkaDUPA6XDl0rVdgGyyHFqJl5ucbX3KZuo158AI5jVTEthjU9VdaXM4l006TrUbPZcd/04834v7BERSzwIREQBERAEREAREQBa/nWJ2vLbPJQXKBkmre8cRqWlbAio0mtmZKrZ0zVlb2a5MottQ2eXnCLs6OaF81DI49xmA19enQtLXoZkFlt19t0lDcadk0Mg0IIVXdr+xK5WOWS549Eaqi1LnxgadzHX51r7sZx4x5HZejXTerMUcfMfVn49z+zIVRfUsckUjo5WOY9p0IcNF8qKdDTTW6CIiFQiIgCIiAIiIAiIgCIiAIhW04HgeQ5jXMhttJIKfX+1mI04B18+lEm3siPk5VOLW7LpKMV3s6C12+tudbHR0FO+aaR3C0NaSNfOfIrW7DdkNJjdPHd7xG2a4vHEA4fu/uK2XZXsws+GUbZBEyeuc3v5S3n9ykEcuhbCnGUfxS5nG+lPTOeoJ42J+Gvvfe//QREUs58EREAREQBERAEREAREQBERAF+PYx7S17WuaekEahfqICL9pexuwZXFJPSsZRVxHKUDlr9wVbc52VZXi0z3PopKmjYNflDW6BXiXHUU8FRGY54Y5WnpD2gj+qwWY8J8eTPW6L0xz9MShv14eD/AIZ5zHUHRwII6dQiuzmWx/D8k4pJ6N0M/wDK6J/AAfuAUO5Xu53imc+ezXKCaMcxCI3F3rUKeNZHlxOlad070zLSVrdcvny/2QQi228bN83tbyJ8drSwfzhoAP8AVa1X0VXQO4a2nfTu6nrC01zR6yjOxshb1WKXk0Y6L47rH/iC/Q9h/mCt3RKPpF8mRg6XBfURErwyPvnHoATdFG0uYRd5bsQym48PyGxVc4d0FoH/AGt5xrYTmV2DX1bP2Y0kaieInl+RV6hKXJGsytawMRb23RX77/8ARFWq7bHcbvmQ1HcLPb5al+unehWZxDd6x+3PjmvMzq2Znlje5o9RUuWWw2mzwNhoKKGINGgIYOL16KTDEk/iPFan6RcapOOHDrPxfBfcgLZvu+AGOuymbjadD8m0LS381YCyWe32aiZSW+mjhjYNBo0a+tZ6KZXVGtbI5jqmt5mqT62RPf5dy/YIiLIakIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIDjmghmGksTHj/U3VYFTj1iqf39ooZD1ugaf+F2aKjSZfGycPhexqlXs8xSpeXPtNO0n/DG0f8LBl2V4fI8ONvaPuAH/AAt5RU6kfAlR1LLjysf+2abFs0xGMgi2RHTrYP8ApdpRYfjVI0CKzUXLymBpPuXfInUj4Fk87Jn8Vj/2zGgt9DT6dwo4I9OjhjAWSBoNAiK4jOTfMIiIUCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiA//2Q==" style="height:90px;object-fit:contain;" alt="Unifrutti">
+      <div style="font-size:10px;color:#6b7280;margin-top:6px;font-weight:500;letter-spacing:1px;text-transform:uppercase;">Gestión de Personal</div>
+    </div>
+    <div class="login-title">Sistema de Registro de Personal</div>
+    <div class="login-error" id="loginError">Usuario o contraseña incorrectos</div>
+    <div class="login-field">
+      <label class="login-label">Usuario</label>
+      <input type="text" id="loginUser" class="login-input" placeholder="Ingresa tu usuario" autocomplete="username">
+    </div>
+    <div class="login-field">
+      <label class="login-label">Contraseña</label>
+      <input type="password" id="loginPass" class="login-input" placeholder="Ingresa tu contraseña" autocomplete="current-password">
+    </div>
+    <button class="login-btn" onclick="iniciarSesion()" id="loginBtn">Ingresar</button>
+    <div class="login-loading" id="loginLoading">🔄 Verificando...</div>
+  </div>
+</div>
+
+<!-- ══════════ MODAL SESIÓN ══════════ -->
+<div class="sesion-modal-overlay" id="sesionModal" style="display:none;">
+  <div class="sesion-modal">
+    <div class="sesion-modal-title">📋 Configurar nuevo registro</div>
+    <div class="sesion-modal-sub">¿Qué tipo de registro vas a realizar?</div>
+    <div style="display:grid;gap:12px;">
+      <div class="input-group">
+        <label class="input-label">Tipo de registro *</label>
+        <select id="s-tipo" class="input-field" onchange="toggleTipoRegistro()">
+          <option value="">— Seleccionar —</option>
+          <option value="Bus Completo">🚌 Bus Completo</option>
+          <option value="Complemento">➕ Complemento</option>
+        </select>
+      </div>
+
+      <!-- Campos solo para Bus Completo -->
+      <div id="campos-bus-completo" style="display:none;gap:12px;">
+        <div class="form-row-2">
+          <div class="input-group">
+            <label class="input-label">Ruta</label>
+            <input type="text" id="s-ruta" class="input-field" placeholder="Ej: LA RITA" style="text-transform:uppercase;">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Código</label>
+            <input type="text" id="s-codigo" class="input-field" placeholder="Ej: 20001" style="text-transform:uppercase;">
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div class="input-group">
+            <label class="input-label">Número de Grupo</label>
+            <select id="s-sector" class="input-field">
+              <option value="">— Grupo —</option>
+              <option value="01">01</option><option value="02">02</option>
+              <option value="03">03</option><option value="04">04</option>
+              <option value="05">05</option><option value="06">06</option>
+              <option value="07">07</option><option value="08">08</option>
+              <option value="09">09</option><option value="10">10</option>
+              <option value="11">11</option><option value="12">12</option>
+              <option value="13">13</option><option value="14">14</option>
+              <option value="15">15</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Cantidad de personal</label>
+            <input type="number" id="s-cantidad" class="input-field" placeholder="Ej: 20" min="1" max="500">
+          </div>
+        </div>
+      </div>
+
+      <!-- Mensaje para Complemento -->
+      <div id="campos-complemento" style="display:none;background:var(--green-light);border:1px solid #b8cce4;border-radius:8px;padding:12px;font-size:13px;color:var(--green);line-height:1.5;">
+        ➕ <strong>Modo Complemento:</strong> El registro será libre, sin límite de cantidad. Puedes registrar varios complementos que irán a distintas rutas.
+      </div>
+
+      <div id="sesionError" style="display:none;background:var(--red-light);border:1px solid #fecaca;color:var(--red);border-radius:8px;padding:9px 13px;font-size:12px;"></div>
+      <button class="btn btn-primary btn-full btn-lg" onclick="confirmarSesion()">✅ Iniciar registro</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ APP SCREEN ══════════ -->
+<div id="appScreen">
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-inner">
+    <div class="header-logo">
+      <img src="data:image/png;base64,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" style="height:44px;object-fit:contain;" alt="Unifrutti">
+    </div>
+    <div class="header-right">
+      <div class="gs-dot" id="gsDot"></div>
+      <div class="user-pill">
+        <div class="user-avatar" id="userAvatar">?</div>
+        <div>
+          <div class="user-name" id="userNameDisplay">—</div>
+          <div class="user-role" id="userRoleDisplay">—</div>
+        </div>
+      </div>
+      <button class="btn btn-sm" onclick="cerrarSesion()" style="background:#fef2f2;border:1.5px solid #fecaca;color:#dc2626;padding:6px 10px;font-size:11px;">
+        ⏻ Salir
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- SESIÓN BAR -->
+<div class="sesion-bar" id="sesionBar">
+  <span style="font-size:11px;font-weight:700;color:var(--muted);margin-right:4px;">SESIÓN:</span>
+  <div class="sesion-chip" id="sb-wrap-ruta" style="display:none;">🛣️ <span id="sb-ruta">—</span></div>
+  <div class="sesion-chip" id="sb-wrap-codigo" style="display:none;">🔑 <span id="sb-codigo">—</span></div>
+  <div class="sesion-chip green" id="sb-wrap-sector" style="display:none;">👥 Grupo <span id="sb-sector">—</span></div>
+  <div class="sesion-chip" id="sb-wrap-tipo" style="display:none;background:#fff0f2;color:#c8102e;border-color:#f5a0ad;">🚌 <span id="sb-tipo">—</span></div>
+  <div class="sesion-chip yellow" id="sb-wrap-cont" style="display:none;">👥 <span id="sb-contador">0</span> / <span id="sb-cantidad">0</span></div>
+  <span id="sb-sinsesion" style="font-size:11px;color:var(--muted2);">Sin registro activo</span>
+  <button class="btn btn-sm btn-primary" style="margin-left:auto;font-size:11px;" onclick="abrirSesionModal()">➕ Nuevo registro</button>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="showPage('buscar',this)">🔍 Buscar</button>
+  <button class="tab" onclick="showPage('lista',this)">📋 Lista</button>
+  <button class="tab" onclick="showPage('excel',this)">📊 Excel</button>
+  <button class="tab admin-tab" onclick="showPage('usuarios',this)">👥 Usuarios</button>
+  <button class="tab admin-tab" onclick="showPage('estadisticas',this)">📊 Stats</button>
+  <button class="tab admin-tab" onclick="showPage('config',this)">⚙️ Config</button>
+</div>
+
+<div class="main">
+
+<!-- ═══ BUSCAR ═══ -->
+<div id="page-buscar" class="page active">
+  <div id="contadorCard" style="display:none;margin-top:14px;">
+    <div class="contador-card">
+      <div>
+        <div class="contador-num"><span id="cnt-actual">0</span></div>
+        <div class="contador-label">registros completados</div>
+      </div>
+      <div style="flex:1;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;opacity:0.85;margin-bottom:5px;">
+          <span id="cnt-sector-label">—</span>
+          <span><span id="cnt-actual2">0</span> de <span id="cnt-total">0</span></span>
+        </div>
+        <div class="contador-bar"><div class="contador-fill" id="cnt-fill" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px;">
+    <div class="card-body">
+      <div style="display:flex;gap:10px;">
+        <div class="input-group" style="flex:1;">
+          <label class="input-label">DNI del trabajador</label>
+          <input type="tel" id="dniSearch" class="input-field input-mono" placeholder="00000000" maxlength="8" inputmode="numeric">
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <button class="btn btn-primary btn-lg" onclick="buscarDNI()">🔍 Buscar</button>
+        </div>
+      </div>
+      <div style="margin-top:9px;font-size:11px;color:var(--muted2);">ℹ️ Busca automáticamente en Rapel y Verfrut</div>
+    </div>
+  </div>
+
+  <div id="statusBanner"></div>
+  <div id="workerCardWrap"></div>
+
+  <div id="formCard" class="card" style="display:none;">
+    <!-- DATOS PERSONALES -->
+    <div class="form-section">
+      <div class="section-header" onclick="toggleSection('personal')">
+        <div class="section-dot blue"></div>
+        <div class="section-label-text">Datos Personales</div>
+        <span class="section-chev open" id="chev-personal">▼</span>
+      </div>
+      <div class="section-body" id="sec-personal">
+        <div class="input-group">
+          <label class="input-label">DNI *</label>
+          <input type="tel" id="f-dni" class="input-field input-mono" placeholder="00000000" maxlength="8" inputmode="numeric">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Apellido Paterno *</label>
+          <input type="text" id="f-ap" class="input-field" placeholder="Apellido paterno">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Apellido Materno</label>
+          <input type="text" id="f-am" class="input-field" placeholder="Apellido materno">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Nombres *</label>
+          <input type="text" id="f-nom" class="input-field" placeholder="Nombres completos">
+        </div>
+        <div class="form-row-2">
+          <div class="input-group">
+            <label class="input-label">Estado Civil</label>
+            <select id="f-ec" class="input-field" onchange="avanzarSiguiente('f-ec')">
+              <option value="">— Seleccionar —</option>
+              <option>Soltero</option><option>Casado</option>
+              <option>Conviviente</option><option>Divorciado</option><option>Viudo</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Tiene Hijos</label>
+            <select id="f-hijos" class="input-field" onchange="avanzarSiguiente('f-hijos')">
+              <option value="">— Seleccionar —</option>
+              <option value="SI">SI</option>
+              <option value="NO">NO</option>
+            </select>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <!-- UBICACIÓN -->
+    <div class="form-section">
+      <div class="section-header" onclick="toggleSection('ubicacion')">
+        <div class="section-dot green"></div>
+        <div class="section-label-text">Ubicación y Contacto</div>
+        <span class="section-chev" id="chev-ubicacion">▼</span>
+      </div>
+      <div class="section-body hidden" id="sec-ubicacion">
+        <div class="input-group">
+          <label class="input-label">¿El colaborador sigue viviendo en su misma dirección?</label>
+          <select id="f-mismadir" class="input-field" onchange="toggleDireccion();">
+            <option value="">— Seleccionar —</option>
+            <option value="SI">SI</option>
+            <option value="NO">NO</option>
+          </select>
+        </div>
+        <div id="g-direccion" style="display:none;gap:12px;">
+        <div class="input-group">
+          <label class="input-label">Dirección</label>
+          <input type="text" id="f-dir" class="input-field" placeholder="Av. / Jr. / Calle...">
+        </div>
+        <div class="form-row-2">
+          <div class="input-group">
+            <label class="input-label">Departamento</label>
+            <select id="f-dep" class="input-field" onchange="cargarProvincias()">
+              <option value="">— Seleccionar —</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Provincia</label>
+            <select id="f-prov" class="input-field">
+              <option value="">— Seleccionar —</option>
+            </select>
+          </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Distrito</label>
+          <div id="f-dist-wrap"><input type="text" id="f-dist" class="input-field" placeholder="Distrito"></div>
+        </div>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Teléfono 1</label>
+          <input type="tel" id="f-tel1" class="input-field" placeholder="999000000" maxlength="9" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'').slice(0,9)">
+        </div>
+      </div>
+    </div>
+    <!-- EDUCACIÓN -->
+    <div class="form-section">
+      <div class="section-header" onclick="toggleSection('educacion')">
+        <div class="section-dot yellow"></div>
+        <div class="section-label-text">Educación</div>
+        <span class="section-chev" id="chev-educacion">▼</span>
+      </div>
+      <div class="section-body hidden" id="sec-educacion">
+        <div class="input-group">
+          <label class="input-label">Nivel Educativo</label>
+          <select id="f-edu" class="input-field" onchange="toggleEducacion()">
+            <option value="">— Seleccionar —</option>
+            <option value="Educación técnica completa">Educación técnica completa</option>
+            <option value="Educación Universitaria completa">Educación Universitaria completa</option>
+            <option value="Primaria Completa">Primaria Completa</option>
+            <option value="Primaria incompleta">Primaria incompleta</option>
+            <option value="Secundaria Completa">Secundaria Completa</option>
+            <option value="Secundaria incompleta">Secundaria incompleta</option>
+            <option value="Sin educación formal">Sin educación formal</option>
+          </select>
+        </div>
+        <div id="g-edu-superior" style="display:none;gap:12px;">
+          <div class="input-group">
+            <label class="input-label">Nombre de Institución</label>
+            <input type="text" id="f-inst" class="input-field" placeholder="Nombre de institución">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Carrera</label>
+            <input type="text" id="f-carrera" class="input-field" placeholder="Carrera o especialidad">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Año de Egreso</label>
+            <input type="tel" id="f-egreso" class="input-field input-mono" placeholder="2020" maxlength="4" inputmode="numeric">
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- EMERGENCIA -->
+    <div class="form-section">
+      <div class="section-header" onclick="toggleSection('emergencia')">
+        <div class="section-dot red"></div>
+        <div class="section-label-text">Salud y Emergencia</div>
+        <span class="section-chev" id="chev-emergencia">▼</span>
+      </div>
+      <div class="section-body hidden" id="sec-emergencia">
+        <div class="input-group">
+          <label class="input-label">¿Tiene Discapacidad?</label>
+          <select id="f-incap" class="input-field" onchange="avanzarSiguiente('f-incap')">
+            <option value="">— Seleccionar —</option>
+            <option value="SI">SI</option>
+            <option value="NO">NO</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Parentesco del Contacto de Referencia</label>
+          <select id="f-parentesco" class="input-field" onchange="toggleParentesco()">
+            <option value="">— Seleccionar —</option>
+            <option value="Esposo(a)">Esposo(a)</option>
+            <option value="Hijo(a)">Hijo(a)</option>
+            <option value="Papa">Papa</option>
+            <option value="Mamá">Mamá</option>
+            <option value="Tío(a)">Tío(a)</option>
+            <option value="Sobrino(a)">Sobrino(a)</option>
+            <option value="Primo(a)">Primo(a)</option>
+            <option value="Otros">Otros</option>
+          </select>
+        </div>
+        <div class="input-group" id="g-parentesco-otro" style="display:none;">
+          <label class="input-label">Especificar parentesco</label>
+          <input type="text" id="f-parentesco-otro" class="input-field" placeholder="Especifica el parentesco">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Nombre completo del contacto</label>
+          <input type="text" id="f-cem" class="input-field" placeholder="Nombre completo">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Teléfono / Celular de referencia</label>
+          <input type="tel" id="f-celcem" class="input-field" placeholder="999000000" maxlength="9" inputmode="numeric" oninput="validarTelefono(this)">
+          <span id="tel-hint" style="font-size:10px;color:var(--muted2);">Ingresa 7 dígitos (fijo) o 9 dígitos (celular)</span>
+        </div>
+      </div>
+    </div>
+    <!-- SAVE -->
+    <div style="padding:15px 17px;display:flex;gap:10px;">
+      <button class="btn btn-success" style="flex:1;justify-content:center;" onclick="guardarRegistro()">
+        <span id="btnGuardarIcon">💾</span>
+        <span id="btnGuardarText">Registrar en BB.REGISTRO</span>
+      </button>
+      <button class="btn btn-outline btn-sm" onclick="limpiarFormulario()">✕</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LISTA ═══ -->
+<div id="page-lista" class="page">
+  <div style="margin-top:14px;">
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-num" id="statTotal">0</div>
+        <div class="stat-label">Registros locales</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="statHoy">0</div>
+        <div class="stat-label">Registrados hoy</div>
+      </div>
+    </div>
+    <div class="card" id="adminAllCard" style="display:none;">
+      <div class="card-header">
+        <div class="card-icon blue">🌐</div>
+        <div><div class="card-title">Todos los registros (BB.REGISTRO)</div><div class="card-sub">Vista global de todos los usuarios</div></div>
+        <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="cargarTodosRegistros()">🔄 Cargar todos</button>
+      </div>
+      <div class="card-body" style="padding-bottom:10px;">
+        <input type="text" class="input-field" id="filterAdminInput" placeholder="Buscar en todos los registros..." oninput="renderTodosRegistros()">
+      </div>
+      <div id="adminTableContainer">
+        <div class="empty-state"><div class="empty-icon">🌐</div><h3>Presiona "Cargar todos"</h3><p>Verás todos los registros de BB.REGISTRO</p></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body" style="padding-bottom:10px;">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;">📋 Mis registros locales</div>
+        <input type="text" class="input-field" id="filterInput" placeholder="Buscar por nombre o DNI..." oninput="filtrarLista()">
+      </div>
+      <div id="tableContainer">
+        <div class="empty-state"><div class="empty-icon">📋</div><h3>Sin registros</h3><p>Los registros locales aparecerán aquí</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ EXCEL ═══ -->
+<div id="page-excel" class="page">
+  <div style="margin-top:14px;">
+    <div class="card">
+      <div class="card-header"><div class="card-icon green">☁️</div><div><div class="card-title">Exportar registros (BB.REGISTRO)</div><div class="card-sub">Descarga desde Google Sheets por rango de fechas</div></div></div>
+      <div class="card-body">
+        <div class="form-row-2" style="margin-bottom:12px;">
+          <div class="input-group">
+            <label class="input-label">Desde</label>
+            <input type="date" id="exp-desde" class="input-field">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Hasta</label>
+            <input type="date" id="exp-hasta" class="input-field">
+          </div>
+        </div>
+        <button class="btn btn-success btn-full" onclick="exportarBBRegistro()">⬇️ Descargar por rango de fechas (Excel)</button>
+        <button class="btn btn-outline btn-full" style="margin-top:8px;" onclick="exportarBBRegistroTodo()">⬇️ Descargar TODO (sin filtro)</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-icon blue">📊</div><div><div class="card-title">Exportar registros locales</div><div class="card-sub">Solo los de este navegador</div></div></div>
+      <div class="card-body">
+        <div class="actions-row">
+          <button class="btn btn-outline" onclick="exportarExcel()">⬇️ Excel (.xlsx)</button>
+          <button class="btn btn-outline" onclick="exportarCSV()">⬇️ CSV</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-icon blue">📥</div><div><div class="card-title">Importar datos</div><div class="card-sub">Carga desde Excel</div></div></div>
+      <div class="card-body">
+        <input type="file" id="fileImport" accept=".xlsx,.csv" style="display:none" onchange="importarExcel(this)">
+        <button class="btn btn-outline btn-full" onclick="document.getElementById('fileImport').click()">📁 Seleccionar archivo</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-icon" style="background:#fef2f2;">⚠️</div><div><div class="card-title">Zona de peligro</div></div></div>
+      <div class="card-body">
+        <button class="btn btn-danger btn-full" onclick="confirmarLimpiar()">🗑 Limpiar registros locales</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ESTADÍSTICAS ═══ -->
+<div id="page-estadisticas" class="page">
+  <div style="margin-top:14px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div style="font-size:14px;font-weight:700;color:var(--text);">📊 Indicadores de registro</div>
+      <button class="btn btn-sm btn-outline" onclick="renderEstadisticas()">🔄 Actualizar</button>
+    </div>
+    <div class="stats-grid" id="statsTop">
+      <div class="stat-box"><div class="stat-num" id="st-total">0</div><div class="stat-label">Total registrados</div></div>
+      <div class="stat-box"><div class="stat-num" id="st-hoy">0</div><div class="stat-label">Registrados hoy</div></div>
+    </div>
+    <div class="card">
+      <div class="card-body" style="padding-bottom:6px;">
+        <div class="stat-card-title">👥 Por Grupo</div>
+        <div id="stats-sector"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body" style="padding-bottom:6px;">
+        <div class="stat-card-title">🚌 Por Tipo (Bus Nuevo / Complemento)</div>
+        <div id="stats-tipo"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body" style="padding-bottom:6px;">
+        <div class="stat-card-title">👤 Por Usuario</div>
+        <div id="stats-usuario"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body" style="padding-bottom:6px;">
+        <div class="stat-card-title">🛣️ Por Ruta / Código</div>
+        <div id="stats-ruta"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ USUARIOS (solo Admin) ═══ -->
+<div id="page-usuarios" class="page">
+  <div style="margin-top:14px;">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon blue">👥</div>
+        <div><div class="card-title">Gestión de Usuarios</div><div class="card-sub">Usuarios registrados en Google Sheets</div></div>
+        <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="cargarUsuarios()">🔄 Actualizar</button>
+      </div>
+      <div id="usuariosTable">
+        <div class="empty-state"><div class="empty-icon">👥</div><h3>Cargando usuarios...</h3><p>Conectando con Google Sheets</p></div>
+      </div>
+    </div>
+    <!-- AGREGAR USUARIO -->
+    <div class="card">
+      <div class="card-header"><div class="card-icon green">➕</div><div><div class="card-title">Agregar nuevo usuario</div><div class="card-sub">Se guardará en la hoja Usuarios</div></div></div>
+      <div class="card-body">
+        <div style="display:grid;gap:12px;">
+          <div class="form-row-2">
+            <div class="input-group">
+              <label class="input-label">Usuario</label>
+              <input type="text" id="nu-user" class="input-field" placeholder="ej: jperez">
+            </div>
+            <div class="input-group">
+              <label class="input-label">Contraseña</label>
+              <input type="text" id="nu-pass" class="input-field" placeholder="ej: Perez2026">
+            </div>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Cargo</label>
+            <input type="text" id="nu-cargo" class="input-field" placeholder="ej: Asistente de RR.HH.">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Estado / Rol</label>
+            <select id="nu-estado" class="input-field">
+              <option value="usuario">usuario</option>
+              <option value="Administrador">Administrador</option>
+            </select>
+          </div>
+          <button class="btn btn-success btn-full" onclick="agregarUsuario()">💾 Guardar usuario en Google Sheets</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CONFIG (solo Admin) ═══ -->
+<div id="page-config" class="page">
+  <div style="margin-top:14px;">
+    <div class="card">
+      <div class="card-header"><div class="card-icon blue">☁️</div><div><div class="card-title">Google Sheets — Apps Script</div><div class="card-sub">URL de conexión con la base de datos</div></div></div>
+      <div class="config-section">
+        <div class="config-title">URL de la implementación</div>
+        <div class="input-group">
+          <input type="url" id="gsWebhookUrl" class="input-field" placeholder="https://script.google.com/macros/s/...">
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="guardarConfigGS()">💾 Guardar y activar</button>
+          <button class="btn btn-outline" onclick="probarConexion()">🔗 Probar</button>
+        </div>
+        <div class="conn-status" style="margin-top:10px;">
+          <div class="conn-dot" id="connDot"></div>
+          <div class="conn-text" id="connText">Sin configurar</div>
+        </div>
+      </div>
+      <div class="config-section">
+        <div class="config-title">Código Apps Script actualizado</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:8px;">Este código maneja búsqueda, registro y gestión de usuarios:</p>
+        <div class="code-block" id="codeBlock">function doGet(e) {
+  var cb = e.parameter.callback;
+  var p  = e.parameter;
+  var d  = p.data ? JSON.parse(decodeURIComponent(p.data)) : p;
+  var r  = handleRequest(d);
+  return cb
+    ? ContentService.createTextOutput(cb+'('+r+')').setMimeType(ContentService.MimeType.JAVASCRIPT)
+    : ContentService.createTextOutput(r).setMimeType(ContentService.MimeType.JSON);
+}
+function doPost(e) {
+  var d = JSON.parse(e.postData.contents);
+  var r = handleRequest(d);
+  return ContentService.createTextOutput(r).setMimeType(ContentService.MimeType.JSON);
+}
+function handleRequest(d) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var accion = d.accion || '';
+
+  // LOGIN
+  if (accion === 'login') {
+    var sh = ss.getSheetByName('Usuarios');
+    if (!sh) return JSON.stringify({ok:false,msg:'Hoja Usuarios no encontrada'});
+    var rows = sh.getDataRange().getValues();
+    var passHash = hashPassword(String(d.password).trim());
+    for (var i = 1; i < rows.length; i++) {
+      if (String(rows[i][0]).trim().toLowerCase() === String(d.usuario).trim().toLowerCase()) {
+        var almacenada = String(rows[i][3]).trim();
+        // Acepta hash o (por compatibilidad) texto plano la primera vez
+        if (almacenada === passHash || almacenada === String(d.password).trim()) {
+          return JSON.stringify({ok:true, usuario:rows[i][0], cargo:rows[i][1], estado:rows[i][2]});
+        }
+        return JSON.stringify({ok:false, msg:'Usuario o contraseña incorrectos'});
+      }
+    }
+    return JSON.stringify({ok:false, msg:'Usuario o contraseña incorrectos'});
+  }
+
+  // BUSCAR PERSONAL
+  if (accion === 'buscar') {
+    var sheet = ss.getSheetByName(d.empresa);
+    if (!sheet) return JSON.stringify({encontrado:false});
+    // TextFinder: busca rápido el DNI en la columna A sin recorrer todo
+    var dniBuscar = String(d.dni).trim();
+    var col = sheet.getRange(1, 1, sheet.getLastRow(), 1);
+    var encontrado = col.createTextFinder(dniBuscar).matchEntireCell(true).findNext();
+    if (!encontrado) {
+      // Intentar como número (por si el DNI está sin ceros)
+      encontrado = col.createTextFinder(String(parseInt(dniBuscar))).matchEntireCell(true).findNext();
+    }
+    if (!encontrado) return JSON.stringify({encontrado:false});
+    var fila = encontrado.getRow();
+    var v = sheet.getRange(fila, 1, 1, 21).getValues()[0];
+    return JSON.stringify({encontrado:true,
+      dni:v[0], ap:v[1], am:v[2], nombres:v[3],
+      nac:v[4], ec:v[5], dir:v[6], dep:v[7],
+      prov:v[8], dist:v[9], tel1:v[10], tel2:v[11],
+      hijos:v[12], nhijos:v[13], edu:v[14], inst:v[15],
+      carrera:v[16], egreso:v[17], incap:v[18],
+      cem:v[19], celcem:v[20]});
+  }
+
+  // BUSCAR EN AMBAS HOJAS (Rapel y Verfrut) en una sola llamada — más rápido
+  if (accion === 'buscarAmbas') {
+    var dniB = String(d.dni).trim();
+    var empresas = ['Rapel','Verfrut'];
+    for (var e = 0; e < empresas.length; e++) {
+      var sh = ss.getSheetByName(empresas[e]);
+      if (!sh) continue;
+      var c = sh.getRange(1, 1, sh.getLastRow(), 1);
+      var enc = c.createTextFinder(dniB).matchEntireCell(true).findNext();
+      if (!enc) enc = c.createTextFinder(String(parseInt(dniB))).matchEntireCell(true).findNext();
+      if (enc) {
+        var f = enc.getRow();
+        var vv = sh.getRange(f, 1, 1, 21).getValues()[0];
+        return JSON.stringify({encontrado:true, _empresa:empresas[e],
+          dni:vv[0], ap:vv[1], am:vv[2], nombres:vv[3], nac:vv[4], ec:vv[5],
+          dir:vv[6], dep:vv[7], prov:vv[8], dist:vv[9], tel1:vv[10], tel2:vv[11],
+          hijos:vv[12], nhijos:vv[13], edu:vv[14], inst:vv[15], carrera:vv[16],
+          egreso:vv[17], incap:vv[18], cem:vv[19], celcem:vv[20]});
+      }
+    }
+    return JSON.stringify({encontrado:false});
+  }
+
+  // REGISTRAR PERSONAL
+  if (accion === 'registrar') {
+    var reg = ss.getSheetByName('BB.REGISTRO');
+    if (!reg) {
+      reg = ss.insertSheet('BB.REGISTRO');
+      reg.appendRow(['DNI','ApellidoPaterno','ApellidoMaterno','Nombres','Nacionalidad',
+        'EstadoCivil','SigueMismaDir','Direccion','Departamento','Provincia','Distrito',
+        'Telefono1','TieneHijos','NivelEducativo','Institucion','Carrera','AnoEgreso',
+        'Discapacidad','Parentesco','ContactoReferencia','TelefonoReferencia',
+        'FechaRegistro','Empresa','Ruta','Codigo','Grupo','Tipo','RegistradoPor']);
+    }
+    var parentescoFinal = (d.parentesco === 'Otros' && d.parentescoOtro) ? d.parentescoOtro : (d.parentesco||'');
+    reg.appendRow([d.dni,d.ap,d.am,d.nombres,d.nac,d.ec,d.mismadir||'',d.dir,d.dep,d.prov,
+      d.dist,d.tel1,d.hijos,d.edu,d.inst,d.carrera,d.egreso,d.incap,parentescoFinal,
+      d.cem,d.celcem,d.fecha,d.empresaOrigen||'',d.ruta||'',d.codigo||'',d.sector||'',
+      d.tipo||'',d.registradoPor||'']);
+    return JSON.stringify({ok:true});
+  }
+
+  // LISTAR TODOS LOS REGISTROS DE BB.REGISTRO (admin)
+  if (accion === 'listarBBRegistro') {
+    var rsh = ss.getSheetByName('BB.REGISTRO');
+    if (!rsh) return JSON.stringify({registros:[]});
+    var rd = rsh.getDataRange().getValues();
+    var rl = [];
+    for (var i = 1; i < rd.length; i++) {
+      if (!rd[i][0]) continue;
+      rl.push({dni:rd[i][0], ap:rd[i][1], am:rd[i][2], nombres:rd[i][3],
+        sector:rd[i][25], tipo:rd[i][28], registradoPor:rd[i][29], fecha:rd[i][23]});
+    }
+    return JSON.stringify({registros:rl});
+  }
+
+  // CONTAR REGISTROS POR GRUPO (contador compartido)
+  if (accion === 'contarGrupo') {
+    var rsh = ss.getSheetByName('BB.REGISTRO');
+    if (!rsh) return JSON.stringify({count:0});
+    var rd = rsh.getDataRange().getValues();
+    var count = 0;
+    for (var i = 1; i < rd.length; i++) {
+      if (String(rd[i][25]).trim() === String(d.grupo).trim()
+          && String(rd[i][24]).trim() === String(d.codigo).trim()) count++;
+    }
+    return JSON.stringify({count:count});
+  }
+
+  // REGISTRO VIA QR (hoja PRE-REGISTRO-QR)
+  if (accion === 'registrarQR') {
+    var qsh = ss.getSheetByName('PRE-REGISTRO-QR');
+    if (!qsh) {
+      qsh = ss.insertSheet('PRE-REGISTRO-QR');
+      qsh.appendRow(['DNI','ApellidoPaterno','ApellidoMaterno','Nombres','Nacionalidad',
+        'EstadoCivil','TieneHijos','Direccion','Departamento','Provincia','Distrito',
+        'Telefono','NivelEducativo','Institucion','Carrera','AnoEgreso','Discapacidad',
+        'Parentesco','ContactoReferencia','TelefonoReferencia','FechaRegistro']);
+    }
+    qsh.appendRow([d.dni, d.ap, d.am, d.nombres, d.nac||'', d.ec||'', d.hijos||'',
+      d.dir||'', d.dep||'', d.prov||'', d.dist||'', d.tel1||'', d.edu||'',
+      d.inst||'', d.carrera||'', d.egreso||'', d.incap||'', d.parentesco||'',
+      d.cem||'', d.celcem||'', d.fecha]);
+    return JSON.stringify({ok:true});
+  }
+
+  // LISTAR USUARIOS
+  if (accion === 'listarUsuarios') {
+    var sh = ss.getSheetByName('Usuarios');
+    if (!sh) return JSON.stringify({usuarios:[]});
+    var rows = sh.getDataRange().getValues();
+    var lista = [];
+    for (var i = 1; i < rows.length; i++) {
+      if (rows[i][0]) lista.push({usuario:rows[i][0], cargo:rows[i][1], estado:rows[i][2]});
+    }
+    return JSON.stringify({usuarios:lista});
+  }
+
+  // AGREGAR USUARIO
+  if (accion === 'agregarUsuario') {
+    var sh = ss.getSheetByName('Usuarios');
+    if (!sh) return JSON.stringify({ok:false, msg:'Hoja Usuarios no encontrada'});
+    sh.appendRow([d.usuario, d.cargo, d.estado, hashPassword(String(d.password).trim())]);
+    return JSON.stringify({ok:true});
+  }
+
+  // ELIMINAR USUARIO
+  if (accion === 'eliminarUsuario') {
+    var sh = ss.getSheetByName('Usuarios');
+    if (!sh) return JSON.stringify({ok:false});
+    var rows = sh.getDataRange().getValues();
+    for (var i = 1; i < rows.length; i++) {
+      if (String(rows[i][0]).trim().toLowerCase() === String(d.usuario).trim().toLowerCase()) {
+        sh.deleteRow(i + 1);
+        return JSON.stringify({ok:true});
+      }
+    }
+    return JSON.stringify({ok:false, msg:'Usuario no encontrado'});
+  }
+
+  return JSON.stringify({error:'accion no reconocida'});
+}
+
+// Convierte una contraseña a hash SHA-256 (irreversible)
+function hashPassword(texto) {
+  var raw = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, texto, Utilities.Charset.UTF_8);
+  var hash = '';
+  for (var i = 0; i < raw.length; i++) {
+    var b = raw[i]; if (b < 0) b += 256;
+    var h = b.toString(16); if (h.length === 1) h = '0' + h;
+    hash += h;
+  }
+  return hash;
+}
+
+// EJECUTA ESTA FUNCIÓN UNA SOLA VEZ para convertir las contraseñas existentes a hash.
+// En el editor de Apps Script: selecciona "migrarPasswords" arriba y presiona Ejecutar.
+function migrarPasswords() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName('Usuarios');
+  var rows = sh.getDataRange().getValues();
+  for (var i = 1; i < rows.length; i++) {
+    var pass = String(rows[i][3]).trim();
+    // Si ya es hash (64 caracteres hex) no la toca
+    if (pass.length === 64 && /^[0-9a-f]+$/.test(pass)) continue;
+    if (pass) {
+      sh.getRange(i + 1, 4).setValue(hashPassword(pass));
+    }
+  }
+}</div>
+        <button class="btn btn-outline btn-full" style="margin-top:8px;" onclick="copiarCodigo()">📋 Copiar código</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-icon green">📱</div><div><div class="card-title">Código QR para trabajadores</div><div class="card-sub">Comparte este QR para que registren su DNI y nombres</div></div></div>
+      <div class="card-body" style="text-align:center;">
+        <div id="qrCodeBox" style="display:inline-block;padding:14px;background:white;border-radius:12px;border:1px solid var(--border);margin-bottom:12px;"></div>
+        <div style="font-size:11px;color:var(--muted);word-break:break-all;margin-bottom:10px;" id="qrUrlText"></div>
+        <button class="btn btn-outline btn-full" onclick="generarQR()">🔄 Generar / Actualizar QR</button>
+        <button class="btn btn-success btn-full" style="margin-top:8px;" onclick="descargarQR()">⬇️ Descargar QR (imagen)</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-icon" style="background:#f3f4f6;">ℹ️</div><div><div class="card-title">Acerca del sistema</div></div></div>
+      <div class="card-body" style="font-size:12px;color:var(--muted);line-height:2;">
+        <div>Versión: <strong style="color:var(--text)">4.0.0</strong></div>
+        <div>Búsqueda: <strong style="color:var(--text)">Rapel + Verfrut (automático)</strong></div>
+        <div>Registro: <strong style="color:var(--text)">BB.REGISTRO</strong></div>
+        <div>Usuarios: <strong style="color:var(--text)">Hoja Usuarios (Google Sheets)</strong></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+<!-- MENSAJE BIENVENIDA -->
+<div style="text-align:center;padding:18px 20px 8px;font-size:10pt;font-family:Tahoma,sans-serif;color:#6b7280;line-height:1.7;">
+  <strong style="color:#1a1f36;">¡Hola! Te saluda Joel Timoteo.</strong><br>
+  Si tienes alguna duda del sistema por favor me comentas por interno. Saludos. 🙂
+</div>
+</div><!-- /appScreen -->
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">¿Estás seguro?</div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-actions">
+      <button class="btn btn-danger" style="flex:1;justify-content:center;" id="modalConfirm">Confirmar</button>
+      <button class="btn btn-outline" style="flex:1;justify-content:center;" onclick="cerrarModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════
+//  DATA & SESSION
+// ════════════════════════════════
+const PERU_UBIGEO = {"AMAZONAS": ["Chachapoyas", "Bagua", "Bongará", "Condorcanqui", "Luya", "Rodríguez de Mendoza", "Utcubamba"], "ÁNCASH": ["Huaraz", "Aija", "Antonio Raymondi", "Asunción", "Bolognesi", "Carhuaz", "Carlos Fermín Fitzcarrald", "Casma", "Corongo", "Huari", "Huarmey", "Huaylas", "Mariscal Luzuriaga", "Ocros", "Pallasca", "Pomabamba", "Recuay", "Santa", "Sihuas", "Yungay"], "APURÍMAC": ["Abancay", "Andahuaylas", "Antabamba", "Aymaraes", "Cotabambas", "Chincheros", "Grau"], "AREQUIPA": ["Arequipa", "Camaná", "Caravelí", "Castilla", "Caylloma", "Condesuyos", "Islay", "La Unión"], "AYACUCHO": ["Huamanga", "Cangallo", "Huanca Sancos", "Huanta", "La Mar", "Lucanas", "Parinacochas", "Páucar del Sara Sara", "Sucre", "Víctor Fajardo", "Vilcas Huamán"], "CAJAMARCA": ["Cajamarca", "Cajabamba", "Celendín", "Chota", "Contumazá", "Cutervo", "Hualgayoc", "Jaén", "San Ignacio", "San Marcos", "San Miguel", "San Pablo", "Santa Cruz"], "CALLAO": ["Callao"], "CUSCO": ["Cusco", "Acomayo", "Anta", "Calca", "Canas", "Canchis", "Chumbivilcas", "Espinar", "La Convención", "Paruro", "Paucartambo", "Quispicanchi", "Urubamba"], "HUANCAVELICA": ["Huancavelica", "Acobamba", "Angaraes", "Castrovirreyna", "Churcampa", "Huaytará", "Tayacaja"], "HUÁNUCO": ["Huánuco", "Ambo", "Dos de Mayo", "Huacaybamba", "Huamalíes", "Leoncio Prado", "Marañón", "Pachitea", "Puerto Inca", "Lauricocha", "Yarowilca"], "ICA": ["Ica", "Chincha", "Nasca", "Palpa", "Pisco"], "JUNÍN": ["Huancayo", "Concepción", "Chanchamayo", "Jauja", "Junín", "Satipo", "Tarma", "Yauli", "Chupaca"], "LA LIBERTAD": ["Trujillo", "Ascope", "Bolívar", "Chepén", "Julcán", "Otuzco", "Pacasmayo", "Pataz", "Sánchez Carrión", "Santiago de Chuco", "Gran Chimú", "Virú"], "LAMBAYEQUE": ["Chiclayo", "Ferreñafe", "Lambayeque"], "LIMA": ["Lima", "Barranca", "Cajatambo", "Canta", "Cañete", "Huaral", "Huarochirí", "Huaura", "Oyón", "Yauyos"], "LORETO": ["Maynas", "Alto Amazonas", "Loreto", "Mariscal Ramón Castilla", "Requena", "Ucayali", "Datem del Marañón", "Putumayo"], "MADRE DE DIOS": ["Tambopata", "Manu", "Tahuamanu"], "MOQUEGUA": ["Mariscal Nieto", "General Sánchez Cerro", "Ilo"], "PASCO": ["Pasco", "Daniel Alcides Carrión", "Oxapampa"], "PIURA": ["Piura", "Ayabaca", "Huancabamba", "Morropón", "Paita", "Sullana", "Talara", "Sechura"], "PUNO": ["Puno", "Azángaro", "Carabaya", "Chucuito", "El Collao", "Huancané", "Lampa", "Melgar", "Moho", "San Antonio de Putina", "San Román", "Sandia", "Yunguyo"], "SAN MARTÍN": ["Moyobamba", "Bellavista", "El Dorado", "Huallaga", "Lamas", "Mariscal Cáceres", "Picota", "Rioja", "San Martín", "Tocache"], "TACNA": ["Tacna", "Candarave", "Jorge Basadre", "Tarata"], "TUMBES": ["Tumbes", "Contralmirante Villar", "Zarumilla"], "UCAYALI": ["Coronel Portillo", "Atalaya", "Padre Abad", "Purús"]};
+const DISTRITOS = {
+  "PIURA|Piura": ["PIURA","CASTILLA","CATACAOS","CURA MORI","EL TALLÁN","LA ARENA","LA UNIÓN","LAS LOMAS","TAMBOGRANDE","VEINTISÉIS DE OCTUBRE"]
+};
+let trabajadores = JSON.parse(localStorage.getItem('pd_local') || '[]');
+let gsConfig     = JSON.parse(localStorage.getItem('gs_config') || JSON.stringify({
+  webhookUrl: 'https://script.google.com/macros/s/AKfycbzLXByoch3vA4SG4p9h2gkHlV5khEfnB-U9SrAH5gcwG2agVWCtfvOnG3zsuXXUr-TH/exec',
+  habilitado: true
+}));
+let hoyCount     = parseInt(localStorage.getItem('hoy_count') || '0');
+let hoyDate      = localStorage.getItem('hoy_date') || '';
+let modoEdicion  = false;
+let sesionActiva = null; // {ruta, codigo, sector, cantidad, registrados}
+let cacheRapel   = []; // Cache local de hoja Rapel
+let cacheVerfrut = []; // Cache local de hoja Verfrut
+let cacheLoaded  = false;
+let empresaEncontrada = ''; // Rapel o Verfrut, donde se halló al trabajador
+let editDNI      = null;
+let sesion       = null; // { usuario, cargo, estado }
+
+const hoy = new Date().toDateString();
+if(hoyDate !== hoy) { hoyCount=0; localStorage.setItem('hoy_date',hoy); localStorage.setItem('hoy_count','0'); }
+
+// ════════════════════════════════
+//  LOGIN
+// ════════════════════════════════
+async function iniciarSesion() {
+  const user = document.getElementById('loginUser').value.trim();
+  const pass = document.getElementById('loginPass').value.trim();
+  const errEl = document.getElementById('loginError');
+  const btn   = document.getElementById('loginBtn');
+  const load  = document.getElementById('loginLoading');
+
+  if(!user || !pass) { errEl.textContent='Ingresa usuario y contraseña'; errEl.style.display='block'; return; }
+
+  errEl.style.display = 'none';
+  btn.disabled = true;
+  load.style.display = 'block';
+
+  if(!gsConfig.habilitado || !gsConfig.webhookUrl) {
+    errEl.textContent = 'Sin conexión a Google Sheets. Verifica la URL en Config.';
+    errEl.style.display = 'block';
+    btn.disabled = false; load.style.display = 'none';
+    return;
+  }
+
+  try {
+    const payload = { accion:'login', usuario:user, password:pass };
+    const url = gsConfig.webhookUrl + '?data=' + encodeURIComponent(JSON.stringify(payload));
+    const resp = await fetch(url);
+    const txt  = await resp.text();
+    const match = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+    const data  = JSON.parse(match ? match[1] : txt);
+
+    if(data.ok) {
+      _setSesion(data);
+    } else {
+      errEl.textContent = data.msg || 'Usuario o contraseña incorrectos';
+      errEl.style.display = 'block';
+      btn.disabled = false; load.style.display = 'none';
+    }
+  } catch(e) {
+    errEl.textContent = 'Error de conexión. Verifica la URL en Config.';
+    errEl.style.display = 'block';
+    btn.disabled = false; load.style.display = 'none';
+  }
+}
+
+function _setSesion(data) {
+  sesion = data;
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display   = 'block';
+  const isAdmin = data.estado === 'Administrador';
+  const isCreador = data.usuario.toLowerCase() === 'jtimoteo';
+
+  // Header
+  document.getElementById('userAvatar').textContent      = data.usuario.charAt(0).toUpperCase();
+  document.getElementById('userNameDisplay').textContent  = data.usuario;
+  document.getElementById('userRoleDisplay').textContent  = data.estado;
+
+  // Tabs según rol
+  document.querySelectorAll('.admin-tab').forEach(t => {
+    t.style.display = isAdmin ? '' : 'none';
+  });
+  // Pestaña Usuarios solo para jtimoteo
+  document.querySelectorAll('.tab').forEach(t => {
+    if(t.textContent.includes('Usuarios')) {
+      t.style.display = isCreador ? '' : 'none';
+    }
+  });
+  // Card de todos los registros solo para administradores
+  const adminCard = document.getElementById('adminAllCard');
+  if(adminCard) adminCard.style.display = isAdmin ? '' : 'none';
+
+  actualizarEstadoConexion();
+  actualizarStats();
+  if(isAdmin) cargarUsuarios();
+  // Cache desactivado: con +2000 registros es mejor buscar puntualmente
+  // Los administradores entran directo con mensaje de bienvenida; usuarios normales ven el modal
+  if(isAdmin) {
+    const primerNombre = data.usuario.charAt(0).toUpperCase() + data.usuario.slice(1);
+    setTimeout(() => showToast('👋 Hola ' + primerNombre + ', bienvenido. ¿En qué trabajamos hoy?', 'success'), 500);
+  } else {
+    setTimeout(() => abrirSesionModal(), 400);
+  }
+  document.getElementById('loginBtn').disabled = false;
+  document.getElementById('loginLoading').style.display = 'none';
+}
+
+function cerrarSesion() {
+  if(!confirm('¿Cerrar sesión?')) return;
+  if(intervaloContador) { clearInterval(intervaloContador); intervaloContador = null; }
+  sesion = null;
+  sesionActiva = null;
+  document.getElementById('appScreen').style.display   = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginError').style.display = 'none';
+  showPage('buscar', document.querySelector('.tab'));
+}
+
+// ════════════════════════════════
+//  SESIÓN DE REGISTRO
+// ════════════════════════════════
+function abrirSesionModal() {
+  document.getElementById('sesionModal').style.display = 'flex';
+  document.getElementById('sesionError').style.display = 'none';
+  document.getElementById('s-ruta').value = '';
+  document.getElementById('s-codigo').value = '';
+  document.getElementById('s-sector').value = '';
+  document.getElementById('s-cantidad').value = '';
+}
+
+function toggleTipoRegistro() {
+  const tipo = document.getElementById('s-tipo').value;
+  document.getElementById('campos-bus-completo').style.display = tipo === 'Bus Completo' ? 'grid' : 'none';
+  document.getElementById('campos-complemento').style.display = tipo === 'Complemento' ? 'block' : 'none';
+}
+
+function confirmarSesion() {
+  const tipo   = document.getElementById('s-tipo').value;
+  const errEl  = document.getElementById('sesionError');
+
+  if(!tipo) {
+    errEl.textContent = '⚠️ Selecciona el tipo de registro.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  if(tipo === 'Bus Completo') {
+    const ruta     = document.getElementById('s-ruta').value.trim().toUpperCase();
+    const codigo   = document.getElementById('s-codigo').value.trim().toUpperCase();
+    const sector   = document.getElementById('s-sector').value;
+    const cantidad = parseInt(document.getElementById('s-cantidad').value);
+    if(!ruta || !codigo || !sector || !cantidad || cantidad < 1) {
+      errEl.textContent = '⚠️ Completa ruta, código, grupo y cantidad.';
+      errEl.style.display = 'block';
+      return;
+    }
+    sesionActiva = { ruta, codigo, sector, tipo, cantidad, registrados: 0 };
+    document.getElementById('sesionModal').style.display = 'none';
+    actualizarSesionBar();
+    actualizarContador();
+    showToast('✅ Bus Completo iniciado: Grupo ' + sector, 'success');
+    sincronizarContadorGrupo();
+    iniciarAutoContador();
+  } else {
+    // Complemento: registro libre, sin contador ni límite
+    sesionActiva = { ruta:'', codigo:'', sector:'', tipo:'Complemento', cantidad:0, registrados:0, libre:true };
+    document.getElementById('sesionModal').style.display = 'none';
+    actualizarSesionBar();
+    showToast('➕ Modo Complemento: registro libre', 'success');
+  }
+}
+
+function actualizarSesionBar() {
+  if(!sesionActiva) return;
+  const esLibre = sesionActiva.libre === true;
+  // En Complemento ocultar ruta/codigo/grupo/contador
+  document.getElementById('sb-wrap-ruta').style.display    = esLibre ? 'none' : 'flex';
+  document.getElementById('sb-wrap-codigo').style.display  = esLibre ? 'none' : 'flex';
+  document.getElementById('sb-wrap-sector').style.display  = esLibre ? 'none' : 'flex';
+  document.getElementById('sb-wrap-tipo').style.display    = 'flex';
+  document.getElementById('sb-wrap-cont').style.display    = esLibre ? 'none' : 'flex';
+  document.getElementById('sb-sinsesion').style.display = 'none';
+  if(!esLibre) {
+    document.getElementById('sb-ruta').textContent    = sesionActiva.ruta;
+    document.getElementById('sb-codigo').textContent  = sesionActiva.codigo;
+    document.getElementById('sb-sector').textContent  = sesionActiva.sector;
+    document.getElementById('sb-contador').textContent = sesionActiva.registrados;
+    document.getElementById('sb-cantidad').textContent = sesionActiva.cantidad;
+  }
+  const tipoEl = document.getElementById('sb-tipo'); if(tipoEl) tipoEl.textContent = sesionActiva.tipo||'—';
+}
+
+function actualizarContador() {
+  if(!sesionActiva || sesionActiva.libre) {
+    const card = document.getElementById('contadorCard');
+    if(card) card.style.display = 'none';
+    return;
+  }
+  const card = document.getElementById('contadorCard');
+  card.style.display = 'block';
+  const pct = Math.min(100, Math.round((sesionActiva.registrados / sesionActiva.cantidad) * 100));
+  document.getElementById('cnt-actual').textContent  = sesionActiva.registrados;
+  document.getElementById('cnt-actual2').textContent = sesionActiva.registrados;
+  document.getElementById('cnt-total').textContent   = sesionActiva.cantidad;
+  document.getElementById('cnt-sector-label').textContent = 'Grupo: ' + sesionActiva.sector + ' — ' + (sesionActiva.tipo||'');
+  document.getElementById('cnt-fill').style.width   = pct + '%';
+  document.getElementById('sb-contador').textContent = sesionActiva.registrados;
+}
+
+// CAMBIO 01: Contador compartido — consulta cuántos hay en el grupo en Google Sheets
+async function sincronizarContadorGrupo() {
+  if(!sesionActiva || sesionActiva.libre || !gsConfig.habilitado || !gsConfig.webhookUrl) return;
+  try {
+    const url = gsConfig.webhookUrl + '?accion=contarGrupo&grupo=' + encodeURIComponent(sesionActiva.sector) + '&codigo=' + encodeURIComponent(sesionActiva.codigo);
+    const resp = await fetch(url);
+    const txt = await resp.text();
+    const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+    const r = JSON.parse(m ? m[1] : txt);
+    if(typeof r.count === 'number') {
+      sesionActiva.registrados = r.count;
+      actualizarContador();
+    }
+  } catch(e) {}
+}
+
+// Auto-actualiza el contador compartido cada 10 segundos
+let intervaloContador = null;
+function iniciarAutoContador() {
+  if(intervaloContador) clearInterval(intervaloContador);
+  intervaloContador = setInterval(() => {
+    if(sesionActiva) sincronizarContadorGrupo();
+  }, 10000);
+}
+
+// ════════════════════════════════
+//  ESTADÍSTICAS
+// ════════════════════════════════
+function renderEstadisticas() {
+  document.getElementById('st-total').textContent = trabajadores.length;
+  document.getElementById('st-hoy').textContent   = hoyCount;
+
+  const total = trabajadores.length || 1;
+
+  // Por Grupo
+  const sectores = {};
+  trabajadores.forEach(t => { const s = t.sector||'Sin grupo'; sectores[s]=(sectores[s]||0)+1; });
+  document.getElementById('stats-sector').innerHTML = renderBars(sectores, total, ['#1a3c6e','#c8102e','#d97706','#374151','#6b7280']);
+
+  // Por Tipo (Bus Nuevo / Complemento)
+  const tipos = {};
+  trabajadores.forEach(t => { const tp = t.tipo||'Sin tipo'; tipos[tp]=(tipos[tp]||0)+1; });
+  document.getElementById('stats-tipo').innerHTML = renderBars(tipos, total, ['#c8102e','#1a3c6e']);
+
+  // Por Usuario
+  const usuarios = {};
+  trabajadores.forEach(t => { const u = t.registradoPor||'Sin usuario'; usuarios[u]=(usuarios[u]||0)+1; });
+  document.getElementById('stats-usuario').innerHTML = renderBars(usuarios, total, ['#1a3c6e','#c8102e','#374151']);
+
+  // Por Ruta/Código
+  const rutas = {};
+  trabajadores.forEach(t => {
+    const r = (t.ruta && t.codigo) ? t.ruta+' / '+t.codigo : (t.ruta||t.codigo||'Sin ruta');
+    rutas[r]=(rutas[r]||0)+1;
+  });
+  document.getElementById('stats-ruta').innerHTML = renderBars(rutas, total, ['#c8102e','#1a3c6e','#374151']);
+}
+
+function renderBars(obj, total, colors) {
+  const entries = Object.entries(obj).sort((a,b)=>b[1]-a[1]);
+  if(!entries.length) return '<p style="font-size:12px;color:var(--muted2);padding:8px 0;">Sin datos</p>';
+  return entries.map(([k,v],i) => {
+    const pct = Math.round((v/total)*100);
+    const col = colors[i % colors.length];
+    return `<div class="stat-bar-row">
+      <div class="stat-bar-label" title="${k}">${k}</div>
+      <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%;background:${col};"></div></div>
+      <div class="stat-bar-val">${v}</div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════
+//  NAV
+// ════════════════════════════════
+function showPage(p, btn) {
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(p==='lista')         { renderLista(); actualizarStats(); }
+  if(p==='config')        cargarConfigGS();
+  if(p==='usuarios')      cargarUsuarios();
+  if(p==='estadisticas')  renderEstadisticas();
+}
+
+// ════════════════════════════════
+//  FORM HELPERS
+// ════════════════════════════════
+function toggleSection(id) {
+  document.getElementById('sec-'+id).classList.toggle('hidden');
+  document.getElementById('chev-'+id).classList.toggle('open');
+}
+function toggleDireccion() {
+  const v = document.getElementById('f-mismadir').value;
+  const g = document.getElementById('g-direccion');
+  // Si NO sigue viviendo en la misma dirección => abrir campos para nueva dirección
+  g.style.display = v === 'NO' ? 'grid' : 'none';
+  if(v === 'SI') {
+    document.getElementById('f-dir').value = '';
+    document.getElementById('f-dep').value = '';
+    document.getElementById('f-prov').value = '';
+    document.getElementById('f-dist').value = '';
+    avanzarSiguiente('f-dist'); // saltar a teléfono
+  }
+  if(v === 'NO') { cargarDepartamentos(); setTimeout(() => document.getElementById('f-dir').focus(), 100); }
+}
+
+function cargarDepartamentos() {
+  const sel = document.getElementById('f-dep');
+  if(sel.options.length > 1) return; // ya cargado
+  Object.keys(PERU_UBIGEO).forEach(dep => {
+    const o = document.createElement('option');
+    o.value = dep; o.textContent = dep;
+    sel.appendChild(o);
+  });
+}
+
+function cargarProvincias() {
+  const dep = document.getElementById('f-dep').value;
+  const selProv = document.getElementById('f-prov');
+  if(dep) setTimeout(() => selProv.focus(), 100);
+  selProv.innerHTML = '<option value="">— Seleccionar —</option>';
+  if(dep && PERU_UBIGEO[dep]) {
+    PERU_UBIGEO[dep].forEach(prov => {
+      const o = document.createElement('option');
+      o.value = prov; o.textContent = prov;
+      selProv.appendChild(o);
+    });
+  }
+  selProv.onchange = actualizarDistrito;
+  actualizarDistrito();
+}
+
+function actualizarDistrito() {
+  const dep = document.getElementById('f-dep').value;
+  const prov = document.getElementById('f-prov').value;
+  if(prov) setTimeout(() => { const d=document.getElementById('f-dist'); if(d) d.focus(); }, 100);
+  const cont = document.getElementById('f-dist-wrap');
+  const key = dep + '|' + prov;
+  if(DISTRITOS[key]) {
+    let html = '<select id="f-dist" class="input-field"><option value="">— Seleccionar —</option>';
+    DISTRITOS[key].forEach(d => { html += '<option value="'+d+'">'+d+'</option>'; });
+    html += '</select>';
+    cont.innerHTML = html;
+  } else {
+    cont.innerHTML = '<input type="text" id="f-dist" class="input-field" placeholder="Distrito">';
+  }
+}
+
+function toggleEducacion() {
+  const v = document.getElementById('f-edu').value;
+  const superior = v === 'Educación técnica completa' || v === 'Educación Universitaria completa';
+  const g = document.getElementById('g-edu-superior');
+  g.style.display = superior ? 'grid' : 'none';
+  if(!superior) {
+    document.getElementById('f-inst').value = '';
+    document.getElementById('f-carrera').value = '';
+    document.getElementById('f-egreso').value = '';
+  }
+}
+
+function toggleParentesco() {
+  const v = document.getElementById('f-parentesco').value;
+  document.getElementById('g-parentesco-otro').style.display = v === 'Otros' ? '' : 'none';
+}
+
+function validarTelefono(input) {
+  input.value = input.value.replace(/\D/g, '');
+  const len = input.value.length;
+  const hint = document.getElementById('tel-hint');
+  if(len === 0) { hint.style.color = 'var(--muted2)'; hint.textContent = 'Ingresa 7 dígitos (fijo) o 9 dígitos (celular)'; }
+  else if(len === 7) { hint.style.color = 'var(--green)'; hint.textContent = '✅ Teléfono fijo válido (7 dígitos)'; }
+  else if(len === 9) { hint.style.color = 'var(--green)'; hint.textContent = '✅ Celular válido (9 dígitos)'; }
+  else if(len < 7) { hint.style.color = 'var(--yellow)'; hint.textContent = `${len} dígitos — faltan ${7-len} para fijo`; }
+  else if(len > 7 && len < 9) { hint.style.color = 'var(--yellow)'; hint.textContent = `${len} dígitos — faltan ${9-len} para celular`; }
+  else { hint.style.color = 'var(--red)'; hint.textContent = 'Máximo 9 dígitos'; input.value = input.value.slice(0,9); }
+}
+
+// ════════════════════════════════
+//  SEARCH
+// ════════════════════════════════
+// Cargar toda la hoja Rapel y Verfrut al iniciar sesión
+async function cargarCacheHojas() {
+  if(!gsConfig.habilitado || !gsConfig.webhookUrl) return;
+
+  // 1. Intentar cargar cache guardado en localStorage (válido 12 horas)
+  try {
+    const guardado = JSON.parse(localStorage.getItem('cache_hojas') || 'null');
+    if(guardado && guardado.fecha && (Date.now() - guardado.fecha < 12*60*60*1000)) {
+      cacheRapel   = guardado.rapel || [];
+      cacheVerfrut = guardado.verfrut || [];
+      cacheLoaded  = true;
+      // Refrescar en segundo plano sin bloquear
+      refrescarCacheSilencioso();
+      return;
+    }
+  } catch(e) {}
+
+  // 2. Si no hay cache válido, descargar
+  try {
+    const [r, v] = await Promise.all([ cargarHoja('Rapel'), cargarHoja('Verfrut') ]);
+    cacheRapel = r || []; cacheVerfrut = v || []; cacheLoaded = true;
+    localStorage.setItem('cache_hojas', JSON.stringify({rapel:cacheRapel, verfrut:cacheVerfrut, fecha:Date.now()}));
+    showToast('✅ Base cargada (' + (cacheRapel.length + cacheVerfrut.length) + ' registros)', 'success');
+  } catch(e) { cacheLoaded = false; }
+}
+
+async function refrescarCacheSilencioso() {
+  try {
+    const [r, v] = await Promise.all([ cargarHoja('Rapel'), cargarHoja('Verfrut') ]);
+    if(r && r.length) cacheRapel = r;
+    if(v && v.length) cacheVerfrut = v;
+    localStorage.setItem('cache_hojas', JSON.stringify({rapel:cacheRapel, verfrut:cacheVerfrut, fecha:Date.now()}));
+  } catch(e) {}
+}
+
+async function cargarHoja(empresa) {
+  try {
+    const url = gsConfig.webhookUrl + '?accion=listarHoja&empresa=' + encodeURIComponent(empresa);
+    const resp = await fetch(url);
+    const txt  = await resp.text();
+    const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+    const data = JSON.parse(m ? m[1] : txt);
+    return data.registros || [];
+  } catch(e) { return []; }
+}
+
+function buscarDNI() {
+  const dni = document.getElementById('dniSearch').value.trim();
+  if(!dni || !/^\d{8}$/.test(dni)) { mostrarStatus('error','⚠️ Ingresa un DNI válido de 8 dígitos'); return; }
+
+  document.getElementById('formCard').style.display = 'none';
+  document.getElementById('workerCardWrap').innerHTML = '';
+  mostrarStatus('searching','<span class="searching-dots">🔍 Buscando</span>');
+
+  if(gsConfig.habilitado && gsConfig.webhookUrl) {
+    // Una sola llamada que busca en Rapel Y Verfrut (más rápido que 2 llamadas)
+    buscarAmbas(dni).then(res => {
+      if(res && res.encontrado) { _procesarResultado(res, dni); }
+      else _procesarResultado({encontrado:false}, dni);
+    }).catch(() => _procesarResultado({encontrado:false}, dni));
+  } else {
+    const local = trabajadores.find(t => t.dni===dni);
+    _procesarResultado(local ? {encontrado:true,...local} : {encontrado:false}, dni);
+  }
+}
+
+async function buscarAmbas(dni) {
+  try {
+    const url = gsConfig.webhookUrl + '?accion=buscarAmbas&dni='+encodeURIComponent(dni);
+    const resp = await fetch(url);
+    const txt  = await resp.text();
+    const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+    return JSON.parse(m ? m[1] : txt);
+  } catch(e) {
+    return {encontrado: false};
+  }
+}
+
+async function buscarEnEmpresa(dni, empresa) {
+  try {
+    const url = gsConfig.webhookUrl + '?accion=buscar&dni='+encodeURIComponent(dni)+'&empresa='+encodeURIComponent(empresa);
+    const resp = await fetch(url);
+    const txt  = await resp.text();
+    const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+    return JSON.parse(m ? m[1] : txt);
+  } catch(e) {
+    return {encontrado: false};
+  }
+}
+
+function _procesarResultado(res, dni) {
+  document.getElementById('formCard').style.display = 'block';
+  if(res && res.encontrado) {
+    modoEdicion=true; editDNI=dni;
+    const emp = res._empresa || res.empresa || '';
+    empresaEncontrada = emp;
+    mostrarStatus('found',`✅ Encontrado en <strong>${emp}</strong>: ${res.nombres} ${res.ap} ${res.am}`);
+    mostrarWorkerCard(res, emp);
+    cargarDatos(res);
+  } else {
+    modoEdicion=false; editDNI=null;
+    empresaEncontrada = '';
+    mostrarStatus('notfound','📝 No encontrado en Rapel ni Verfrut. Completa los datos para registrarlo.');
+    limpiarFormularioInterno();
+    document.getElementById('f-dni').value = dni;
+    document.getElementById('sec-personal').classList.remove('hidden');
+    document.getElementById('chev-personal').classList.add('open');
+  }
+  document.getElementById('btnGuardarText').textContent = 'Registrar en BB.REGISTRO';
+  document.getElementById('btnGuardarIcon').textContent = '💾';
+  // Auto-avance: enfocar el primer campo vacío después de buscar
+  setTimeout(() => enfocarPrimerCampoVacio(), 300);
+}
+
+// Orden de campos del formulario para el auto-avance
+const ORDEN_CAMPOS = ['f-dni','f-ap','f-am','f-nom','f-ec','f-hijos','f-mismadir',
+  'f-dir','f-dep','f-prov','f-dist','f-tel1','f-edu','f-inst','f-carrera','f-egreso',
+  'f-incap','f-parentesco','f-cem','f-celcem'];
+
+function enfocarPrimerCampoVacio() {
+  for(let i=0; i<ORDEN_CAMPOS.length; i++) {
+    const el = document.getElementById(ORDEN_CAMPOS[i]);
+    if(el && el.offsetParent !== null && !el.value) { el.focus(); return; }
+  }
+}
+
+// Avanza al siguiente campo visible después del actual
+function avanzarSiguiente(idActual) {
+  const idx = ORDEN_CAMPOS.indexOf(idActual);
+  if(idx === -1) return;
+  for(let i=idx+1; i<ORDEN_CAMPOS.length; i++) {
+    const el = document.getElementById(ORDEN_CAMPOS[i]);
+    if(el && el.offsetParent !== null) { el.focus(); return; }
+  }
+}
+
+function mostrarStatus(tipo, msg) {
+  const map = {found:'status-found',notfound:'status-notfound',error:'status-error',success:'status-success',searching:'status-searching'};
+  document.getElementById('statusBanner').innerHTML = `<div class="status-banner ${map[tipo]}">${msg}</div>`;
+}
+
+function mostrarWorkerCard(t, empresa) {
+  document.getElementById('workerCardWrap').innerHTML = `
+    <div class="worker-card">
+      <div class="worker-name-big">${t.nombres||''} ${t.ap||''} ${t.am||''}</div>
+      <div class="worker-dni-small">DNI: ${t.dni}</div>
+      <div class="worker-chips">
+        ${empresa ? `<div class="chip">${empresa}</div>` : ''}
+        ${t.ec ? `<div class="chip">${t.ec}</div>` : ''}
+        ${t.dep ? `<div class="chip">${t.dep}</div>` : ''}
+      </div>
+    </div>`;
+}
+
+// ════════════════════════════════
+//  FORM
+// ════════════════════════════════
+function cargarDatos(t) {
+  const m = {dni:'dni',ap:'ap',am:'am',nombres:'nom',ec:'ec',dir:'dir',dep:'dep',prov:'prov',dist:'dist',tel1:'tel1',hijos:'hijos',edu:'edu',inst:'inst',carrera:'carrera',egreso:'egreso',incap:'incap',cem:'cem',celcem:'celcem'};
+  Object.entries(m).forEach(([k,id]) => { const el=document.getElementById('f-'+id); if(el) el.value=t[k]||''; });
+  const hv = (t.hijos||'').toUpperCase();
+  if(hv==='SI'||hv==='SÍ') { document.getElementById('f-hijos').value='SI'; }
+  // Activar campos educación si corresponde
+  toggleEducacion();
+  // Cargar parentesco si existe
+  if(t.parentesco) { const pe=document.getElementById('f-parentesco'); if(pe) pe.value=t.parentesco; toggleParentesco(); }
+  if(t.parentescoOtro) { const po=document.getElementById('f-parentesco-otro'); if(po) po.value=t.parentescoOtro; }
+}
+
+function limpiarFormularioInterno() {
+  ['dni','ap','am','nom','ec','dir','dep','prov','dist','tel1','hijos','edu','inst','carrera','egreso','incap','cem','celcem','parentesco','parentesco-otro'].forEach(c => { const el=document.getElementById('f-'+c); if(el) el.value=''; });
+  document.getElementById('g-edu-superior').style.display='none';
+  document.getElementById('g-parentesco-otro').style.display='none';
+  const hint=document.getElementById('tel-hint'); if(hint){ hint.style.color='var(--muted2)'; hint.textContent='Ingresa 7 dígitos (fijo) o 9 dígitos (celular)'; }
+}
+
+function limpiarFormulario() {
+  limpiarFormularioInterno();
+  document.getElementById('statusBanner').innerHTML='';
+  document.getElementById('formCard').style.display='none';
+  document.getElementById('workerCardWrap').innerHTML='';
+  document.getElementById('dniSearch').value='';
+  modoEdicion=false; editDNI=null;
+}
+
+// ════════════════════════════════
+//  GUARDAR
+// ════════════════════════════════
+function obtenerDatosFormulario() {
+  return {
+    dni: document.getElementById('f-dni').value.trim(),
+    ap:  document.getElementById('f-ap').value.trim(),
+    am:  document.getElementById('f-am').value.trim(),
+    nombres: document.getElementById('f-nom').value.trim(),
+    ec:  document.getElementById('f-ec').value,
+    mismadir: (document.getElementById('f-mismadir')||{}).value || '',
+    dir: document.getElementById('f-dir').value.trim(),
+    dep: document.getElementById('f-dep').value.trim(),
+    prov: document.getElementById('f-prov').value.trim(),
+    dist: document.getElementById('f-dist').value.trim(),
+    tel1: document.getElementById('f-tel1').value.trim(),
+    hijos: document.getElementById('f-hijos').value,
+    edu: document.getElementById('f-edu').value,
+    inst: document.getElementById('f-inst').value.trim(),
+    carrera: document.getElementById('f-carrera').value.trim(),
+    egreso: document.getElementById('f-egreso').value.trim(),
+    incap: document.getElementById('f-incap').value,
+    cem: document.getElementById('f-cem').value.trim(),
+    celcem: document.getElementById('f-celcem').value.trim(),
+    parentesco: (document.getElementById('f-parentesco')||{}).value || '',
+    parentescoOtro: (document.getElementById('f-parentesco-otro')||{}).value || '',
+    fecha: new Date().toLocaleDateString('es-PE'),
+    empresa: 'BB.REGISTRO',
+    empresaOrigen: empresaEncontrada || '',
+    ruta: sesionActiva ? sesionActiva.ruta : '',
+    codigo: sesionActiva ? sesionActiva.codigo : '',
+    sector: sesionActiva ? sesionActiva.sector : '',
+    tipo: sesionActiva ? sesionActiva.tipo : '',
+    registradoPor: sesion ? sesion.usuario : ''
+  };
+}
+
+function validarDatos(d) {
+  if(!d.dni||!/^\d{8}$/.test(d.dni)) { showToast('⚠️ DNI obligatorio (8 dígitos)','error'); return false; }
+  if(!d.ap) { showToast('⚠️ Falta el Apellido Paterno','error'); return false; }
+  if(!d.nombres) { showToast('⚠️ Faltan los Nombres','error'); return false; }
+  if(!d.ec) { showToast('⚠️ Selecciona el Estado Civil','error'); return false; }
+  if(!d.hijos) { showToast('⚠️ Indica si tiene hijos','error'); return false; }
+  if(!d.mismadir) { showToast('⚠️ Indica si sigue en la misma dirección','error'); return false; }
+  if(d.tel1 && (!/^\d+$/.test(d.tel1) || (d.tel1.length!==7 && d.tel1.length!==9))) { showToast('⚠️ Teléfono: 7 dígitos (fijo) o 9 (celular)','error'); return false; }
+  if(!d.edu) { showToast('⚠️ Selecciona el Nivel Educativo','error'); return false; }
+  if(!d.incap) { showToast('⚠️ Indica si tiene discapacidad','error'); return false; }
+  if(d.celcem && d.celcem.length>0 && d.celcem.length!==7 && d.celcem.length!==9) { showToast('⚠️ Teléfono de referencia: 7 o 9 dígitos','error'); return false; }
+  if(d.egreso&&!/^\d{4}$/.test(d.egreso)) { showToast('⚠️ Año de egreso: 4 dígitos','error'); return false; }
+  return true;
+}
+
+function guardarRegistro() {
+  if(!sesionActiva) { showToast('⚠️ Primero inicia un registro con el botón "Nuevo registro"','error'); abrirSesionModal(); return; }
+  const datos = obtenerDatosFormulario();
+  if(!validarDatos(datos)) return;
+  const idx = trabajadores.findIndex(t => t.dni===datos.dni);
+  if(idx!==-1) trabajadores[idx]=datos; else { trabajadores.push(datos); hoyCount++; localStorage.setItem('hoy_count',hoyCount); }
+  localStorage.setItem('pd_local', JSON.stringify(trabajadores));
+  registrarEnBBRegistro(datos);
+  // Solo Bus Completo tiene contador; Complemento es libre
+  if(sesionActiva && !sesionActiva.libre) {
+    sesionActiva.registrados++;
+    actualizarContador();
+    // Re-sincronizar con el grupo después de 3s (dar tiempo a que Sheets guarde)
+    setTimeout(() => sincronizarContadorGrupo(), 3000);
+  }
+  limpiarFormulario();
+  mostrarStatus('success','✅ Registrado en BB.REGISTRO correctamente');
+}
+
+async function registrarEnBBRegistro(datos) {
+  if(!gsConfig.habilitado||!gsConfig.webhookUrl) { showToast('⚠️ Sin conexión GS. Guardado local.','error'); return; }
+  try {
+    const payload = {accion:'registrar',...datos};
+    const url = gsConfig.webhookUrl+'?data='+encodeURIComponent(JSON.stringify(payload));
+    const resp = await fetch(url);
+    const txt  = await resp.text();
+    const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+    const r = JSON.parse(m ? m[1] : txt);
+    if(r.ok) showToast('☁️ Guardado en BB.REGISTRO','success');
+  } catch(e) { showToast('⚠️ Error al guardar en Google Sheets','error'); }
+}
+
+// ════════════════════════════════
+//  LISTA
+// ════════════════════════════════
+function renderLista() {
+  actualizarStats();
+  const q = document.getElementById('filterInput').value.toLowerCase();
+  const f = trabajadores.filter(t =>
+    (t.dni||'').includes(q)||(t.nombres||'').toLowerCase().includes(q)||
+    (t.ap||'').toLowerCase().includes(q)||(t.am||'').toLowerCase().includes(q));
+  const cont = document.getElementById('tableContainer');
+  if(!f.length) { cont.innerHTML=`<div class="empty-state"><div class="empty-icon">📋</div><h3>Sin registros</h3><p>No se encontraron trabajadores</p></div>`; return; }
+  let html=`<div class="table-wrap"><table><thead><tr><th>DNI</th><th>Nombre</th><th>E.Civil</th><th>Acción</th></tr></thead><tbody>`;
+  f.forEach(t => {
+    html+=`<tr><td><strong style="font-family:'JetBrains Mono',monospace;font-size:12px;">${t.dni}</strong></td>
+    <td>${t.nombres||''} ${t.ap||''} ${t.am||''}</td>
+    <td><span class="badge badge-blue">${t.ec||'-'}</span></td>
+    <td><div class="td-action">
+      <button class="btn btn-sm btn-outline" onclick="editarDesdeTabla('${t.dni}')">✏️</button>
+      <button class="btn btn-sm btn-danger" onclick="confirmarEliminar('${t.dni}')">🗑</button>
+    </div></td></tr>`;
+  });
+  html+='</tbody></table></div>';
+  cont.innerHTML=html;
+}
+function filtrarLista() { renderLista(); }
+
+// ── CAMBIO 08: Admin ve TODOS los registros de BB.REGISTRO ──
+let todosRegistros = [];
+async function cargarTodosRegistros() {
+  if(!gsConfig.habilitado || !gsConfig.webhookUrl) { showToast('Sin conexión Google Sheets','error'); return; }
+  const cont = document.getElementById('adminTableContainer');
+  cont.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><h3>Cargando todos los registros...</h3></div>';
+  try {
+    const url = gsConfig.webhookUrl + '?accion=listarBBRegistro';
+    const resp = await fetch(url);
+    const txt = await resp.text();
+    const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+    const data = JSON.parse(m ? m[1] : txt);
+    todosRegistros = data.registros || [];
+    renderTodosRegistros();
+    showToast('✅ ' + todosRegistros.length + ' registros cargados','success');
+  } catch(e) {
+    cont.innerHTML = '<div class="empty-state"><div class="empty-icon">❌</div><h3>Error al cargar</h3></div>';
+  }
+}
+
+function renderTodosRegistros() {
+  const q = (document.getElementById('filterAdminInput').value||'').toLowerCase();
+  const f = todosRegistros.filter(t =>
+    (String(t.dni)||'').includes(q) || (t.nombres||'').toLowerCase().includes(q) ||
+    (t.ap||'').toLowerCase().includes(q) || (t.registradoPor||'').toLowerCase().includes(q) ||
+    (t.sector||'').toLowerCase().includes(q));
+  const cont = document.getElementById('adminTableContainer');
+  if(!f.length) { cont.innerHTML = '<div class="empty-state"><div class="empty-icon">🌐</div><h3>Sin registros</h3></div>'; return; }
+  let html = '<div class="table-wrap"><table><thead><tr><th>DNI</th><th>Nombre</th><th>Grupo</th><th>Tipo</th><th>Usuario</th><th>Fecha</th></tr></thead><tbody>';
+  f.forEach(t => {
+    html += '<tr><td><strong style="font-family:JetBrains Mono,monospace;font-size:12px;">'+t.dni+'</strong></td>'+
+      '<td>'+(t.nombres||'')+' '+(t.ap||'')+' '+(t.am||'')+'</td>'+
+      '<td>'+(t.sector||'-')+'</td>'+
+      '<td><span class="badge badge-blue">'+(t.tipo||'-')+'</span></td>'+
+      '<td>'+(t.registradoPor||'-')+'</td>'+
+      '<td style="font-size:11px;">'+(t.fecha||'-')+'</td></tr>';
+  });
+  html += '</tbody></table></div>';
+  cont.innerHTML = html;
+}
+function actualizarStats() { document.getElementById('statTotal').textContent=trabajadores.length; document.getElementById('statHoy').textContent=hoyCount; }
+function editarDesdeTabla(dni) {
+  document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab')[0].classList.add('active');
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.getElementById('page-buscar').classList.add('active');
+  document.getElementById('dniSearch').value=dni;
+  buscarDNI();
+  setTimeout(()=>window.scrollTo(0,0),100);
+}
+
+// ════════════════════════════════
+//  USUARIOS
+// ════════════════════════════════
+async function cargarUsuarios() {
+  const cont = document.getElementById('usuariosTable');
+  cont.innerHTML=`<div class="empty-state"><div class="empty-icon">⏳</div><h3>Cargando...</h3></div>`;
+  if(!gsConfig.habilitado||!gsConfig.webhookUrl) {
+    cont.innerHTML=`<div class="empty-state"><div class="empty-icon">⚠️</div><h3>Sin conexión</h3><p>Configura la URL de Google Sheets</p></div>`;
+    return;
+  }
+  try {
+    const url = gsConfig.webhookUrl+'?accion=listarUsuarios';
+    const resp = await fetch(url);
+    const txt  = await resp.text();
+    const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+    const data = JSON.parse(m ? m[1] : txt);
+    const usuarios = data.usuarios || [];
+    if(!usuarios.length) { cont.innerHTML=`<div class="empty-state"><div class="empty-icon">👥</div><h3>Sin usuarios</h3></div>`; return; }
+    let html=`<div class="table-wrap"><table><thead><tr><th>Usuario</th><th>Cargo</th><th>Rol</th><th>Acción</th></tr></thead><tbody>`;
+    usuarios.forEach(u => {
+      const isAdmin = u.estado==='Administrador';
+      html+=`<tr class="${isAdmin?'user-row-admin':''}">
+        <td><strong>${u.usuario}</strong></td>
+        <td style="font-size:12px;max-width:150px;white-space:normal;">${u.cargo||'-'}</td>
+        <td><span class="badge ${isAdmin?'badge-admin':'badge-usuario'}">${u.estado||'usuario'}</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="confirmarEliminarUsuario('${u.usuario}')">🗑</button></td>
+      </tr>`;
+    });
+    html+='</tbody></table></div>';
+    cont.innerHTML=html;
+  } catch(e) { cont.innerHTML=`<div class="empty-state"><div class="empty-icon">❌</div><h3>Error al cargar</h3></div>`; }
+}
+
+async function agregarUsuario() {
+  const user  = document.getElementById('nu-user').value.trim();
+  const pass  = document.getElementById('nu-pass').value.trim();
+  const cargo = document.getElementById('nu-cargo').value.trim();
+  const estado= document.getElementById('nu-estado').value;
+  if(!user||!pass||!cargo) { showToast('Completa todos los campos','error'); return; }
+  if(!gsConfig.habilitado||!gsConfig.webhookUrl) { showToast('Sin conexión Google Sheets','error'); return; }
+  try {
+    const payload = {accion:'agregarUsuario', usuario:user, cargo, estado, password:pass};
+    const url = gsConfig.webhookUrl+'?data='+encodeURIComponent(JSON.stringify(payload));
+    const resp = await fetch(url);
+    const txt  = await resp.text();
+    const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+    const r = JSON.parse(m ? m[1] : txt);
+    if(r.ok) {
+      showToast('✅ Usuario agregado correctamente','success');
+      document.getElementById('nu-user').value='';
+      document.getElementById('nu-pass').value='';
+      document.getElementById('nu-cargo').value='';
+      document.getElementById('nu-estado').value='usuario';
+      cargarUsuarios();
+    } else { showToast(r.msg||'Error al agregar','error'); }
+  } catch(e) { showToast('Error de conexión','error'); }
+}
+
+function confirmarEliminarUsuario(usuario) {
+  document.getElementById('modalTitle').textContent='¿Eliminar usuario?';
+  document.getElementById('modalBody').textContent=`Se eliminará el usuario "${usuario}" de Google Sheets. Esta acción no se puede deshacer.`;
+  document.getElementById('modalConfirm').onclick=()=>{ eliminarUsuario(usuario); cerrarModal(); };
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+async function eliminarUsuario(usuario) {
+  try {
+    const payload = {accion:'eliminarUsuario', usuario};
+    const url = gsConfig.webhookUrl+'?data='+encodeURIComponent(JSON.stringify(payload));
+    const resp = await fetch(url);
+    const txt  = await resp.text();
+    const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+    const r = JSON.parse(m ? m[1] : txt);
+    if(r.ok) { showToast('Usuario eliminado','success'); cargarUsuarios(); }
+    else showToast(r.msg||'Error al eliminar','error');
+  } catch(e) { showToast('Error de conexión','error'); }
+}
+
+// ════════════════════════════════
+//  ELIMINAR PERSONAL
+// ════════════════════════════════
+function confirmarEliminar(dni) {
+  const t = trabajadores.find(w=>w.dni===dni);
+  document.getElementById('modalTitle').textContent='¿Eliminar trabajador?';
+  document.getElementById('modalBody').textContent=`Se eliminará el registro local de ${t?t.nombres+' '+t.ap:dni}.`;
+  document.getElementById('modalConfirm').onclick=()=>{ trabajadores=trabajadores.filter(t=>t.dni!==dni); localStorage.setItem('pd_local',JSON.stringify(trabajadores)); cerrarModal(); renderLista(); showToast('Eliminado','success'); };
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function confirmarLimpiar() {
+  document.getElementById('modalTitle').textContent='⚠️ Limpiar registros';
+  document.getElementById('modalBody').textContent=`Se eliminarán los ${trabajadores.length} registros locales.`;
+  document.getElementById('modalConfirm').onclick=()=>{ trabajadores=[]; localStorage.setItem('pd_local','[]'); cerrarModal(); showToast('Datos eliminados','success'); };
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function cerrarModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+
+// ════════════════════════════════
+//  EXCEL
+// ════════════════════════════════
+async function exportarBBRegistro() {
+  const desde = document.getElementById('exp-desde').value;
+  const hasta = document.getElementById('exp-hasta').value;
+  if(!desde || !hasta) { showToast('Selecciona ambas fechas','error'); return; }
+  _descargarBBRegistro(desde, hasta);
+}
+
+async function exportarBBRegistroTodo() {
+  _descargarBBRegistro(null, null);
+}
+
+async function _descargarBBRegistro(desde, hasta) {
+  if(typeof XLSX === 'undefined') { showToast('⚠️ Librería Excel no cargó','error'); return; }
+  if(!gsConfig.habilitado || !gsConfig.webhookUrl) { showToast('Sin conexión Google Sheets','error'); return; }
+  showToast('⏳ Descargando registros...','');
+  try {
+    const url = gsConfig.webhookUrl + '?accion=exportarBBRegistro';
+    const resp = await fetch(url);
+    const txt = await resp.text();
+    const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+    const data = JSON.parse(m ? m[1] : txt);
+    let filas = data.filas || [];
+    if(!filas.length) { showToast('No hay registros en BB.REGISTRO','error'); return; }
+
+    // Filtrar por rango de fechas si se especificó
+    if(desde && hasta) {
+      const header = filas[0];
+      // Buscar columna FechaRegistro
+      let idxFecha = header.indexOf('FechaRegistro');
+      if(idxFecha === -1) idxFecha = 22; // posición por defecto
+      const dDesde = new Date(desde + 'T00:00:00');
+      const dHasta = new Date(hasta + 'T23:59:59');
+      const filtradas = filas.slice(1).filter(row => {
+        const f = parseFechaPE(row[idxFecha]);
+        return f && f >= dDesde && f <= dHasta;
+      });
+      filas = [header, ...filtradas];
+      if(filas.length === 1) { showToast('Sin registros en ese rango','error'); return; }
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet(filas);
+    ws['!cols'] = filas[0].map(()=>({wch:16}));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'BB.REGISTRO');
+    const sufijo = (desde && hasta) ? desde + '_a_' + hasta : 'completo';
+    XLSX.writeFile(wb, `BB-REGISTRO_${sufijo}.xlsx`);
+    showToast('✅ ' + (filas.length-1) + ' registros exportados','success');
+  } catch(e) {
+    showToast('Error al exportar: ' + e.message,'error');
+  }
+}
+
+// Convierte fecha formato es-PE (DD/MM/YYYY) a objeto Date
+function parseFechaPE(str) {
+  if(!str) return null;
+  const s = String(str).trim();
+  // Si ya es una fecha ISO o Date
+  if(s.includes('-') && s.length >= 10) { const d = new Date(s); return isNaN(d) ? null : d; }
+  const partes = s.split('/');
+  if(partes.length === 3) {
+    return new Date(parseInt(partes[2]), parseInt(partes[1])-1, parseInt(partes[0]));
+  }
+  const d = new Date(s);
+  return isNaN(d) ? null : d;
+}
+
+function exportarExcel() {
+  if(typeof XLSX === 'undefined') { showToast('⚠️ Librería Excel no cargó. Usa CSV.','error'); return; }
+  if(!trabajadores.length) { showToast('Sin datos para exportar','error'); return; }
+  try {
+    const h=['DNI','ApellidoPaterno','ApellidoMaterno','Nombres','Nacionalidad','EstadoCivil','SigueMismaDir','Direccion','Departamento','Provincia','Distrito','Telefono1','Telefono2','TieneHijos','NivelEducativo','Institucion','Carrera','AnoEgreso','Discapacidad','Parentesco','ContactoReferencia','TelefonoReferencia','FechaRegistro','Ruta','Codigo','Grupo','Tipo','RegistradoPor'];
+    const r=trabajadores.map(t=>[t.dni,t.ap,t.am,t.nombres,t.nac,t.ec,t.mismadir||'',t.dir,t.dep,t.prov,t.dist,t.tel1,t.tel2,t.hijos,t.edu,t.inst,t.carrera,t.egreso,t.incap,t.parentesco||'',t.cem,t.celcem,t.fecha,t.ruta||'',t.codigo||'',t.sector||'',t.tipo||'',t.registradoPor||'']);
+    const ws=XLSX.utils.aoa_to_sheet([h,...r]); ws['!cols']=h.map(()=>({wch:16}));
+    const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Personal');
+    XLSX.writeFile(wb,`Personal_${new Date().toLocaleDateString('es-PE').replace(/\//g,'-')}.xlsx`);
+    showToast('✅ Excel exportado','success');
+  } catch(err) { showToast('Error al exportar: '+err.message,'error'); }
+}
+function exportarCSV() {
+  if(!trabajadores.length) { showToast('Sin datos para exportar','error'); return; }
+  const h=['DNI','ApellidoPaterno','ApellidoMaterno','Nombres','Nacionalidad','EstadoCivil','SigueMismaDir','Direccion','Departamento','Provincia','Distrito','Telefono1','Telefono2','TieneHijos','NivelEducativo','Institucion','Carrera','AnoEgreso','Discapacidad','Parentesco','ContactoReferencia','TelefonoReferencia','FechaRegistro','Ruta','Codigo','Grupo','Tipo','RegistradoPor'];
+  const r=trabajadores.map(t=>[t.dni,t.ap,t.am,t.nombres,t.nac,t.ec,t.mismadir||'',t.dir,t.dep,t.prov,t.dist,t.tel1,t.tel2,t.hijos,t.edu,t.inst,t.carrera,t.egreso,t.incap,t.parentesco||'',t.cem,t.celcem,t.fecha,t.ruta||'',t.codigo||'',t.sector||'',t.tipo||'',t.registradoPor||'']);
+  const csv='\uFEFF'+[h,...r].map(row=>row.map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download=`Personal_${new Date().toLocaleDateString('es-PE').replace(/\//g,'-')}.csv`; a.click();
+  showToast('✅ CSV exportado','success');
+}
+function importarExcel(input) {
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(e) {
+    try {
+      const wb=XLSX.read(e.target.result,{type:'binary'});
+      const ws=wb.Sheets[wb.SheetNames[0]]; const data=XLSX.utils.sheet_to_json(ws);
+      let count=0;
+      data.forEach(row=>{
+        const dni=String(row['DNI']||row['dni']||'').trim();
+        if(!dni||!/^\d{8}$/.test(dni)) return;
+        if(!trabajadores.find(t=>t.dni===dni)) {
+          trabajadores.push({dni,ap:row['ApellidoPaterno']||'',am:row['ApellidoMaterno']||'',nombres:row['Nombres']||'',nac:row['Nacionalidad']||'',ec:row['EstadoCivil']||'',dir:row['Direccion']||'',dep:row['Departamento']||'',prov:row['Provincia']||'',dist:row['Distrito']||'',tel1:row['Telefono1']||'',tel2:row['Telefono2']||'',hijos:row['TieneHijos']||'',nhijos:row['CantHijos']||'',edu:row['NivelEducativo']||'',inst:row['Institucion']||'',carrera:row['Carrera']||'',egreso:row['AnoEgreso']||'',incap:row['Incapacitado']||'',cem:row['ContactoEmergencia']||'',celcem:row['CelularEmergencia']||'',fecha:row['FechaRegistro']||new Date().toLocaleDateString('es-PE')});
+          count++;
+        }
+      });
+      localStorage.setItem('pd_local',JSON.stringify(trabajadores));
+      showToast(`✅ ${count} registros importados`,'success');
+    } catch(err) { showToast('Error al importar','error'); }
+  };
+  reader.readAsBinaryString(file);
+}
+
+// ════════════════════════════════
+//  CONFIG
+// ════════════════════════════════
+function cargarConfigGS() {
+  if(gsConfig.webhookUrl) document.getElementById('gsWebhookUrl').value=gsConfig.webhookUrl;
+  actualizarEstadoConexion();
+}
+function guardarConfigGS() {
+  const url=document.getElementById('gsWebhookUrl').value.trim();
+  if(!url) { showToast('Ingresa la URL','error'); return; }
+  gsConfig={webhookUrl:url, habilitado:true};
+  localStorage.setItem('gs_config',JSON.stringify(gsConfig));
+  actualizarEstadoConexion();
+  showToast('✅ Configuración guardada','success');
+}
+function actualizarEstadoConexion() {
+  const on=gsConfig.habilitado&&gsConfig.webhookUrl;
+  ['connDot','gsDot'].forEach(id=>{ const el=document.getElementById(id); if(el) { if(on) el.classList.add('on'); else el.classList.remove('on'); } });
+  const ct=document.getElementById('connText'); if(ct) { ct.textContent=on?'Conectado y activo':'Sin configurar'; if(on) ct.classList.add('on'); else ct.classList.remove('on'); }
+}
+async function probarConexion() {
+  if(!gsConfig.webhookUrl) { showToast('Guarda la URL primero','error'); return; }
+  showToast('🔄 Probando...','');
+  try {
+    const url=gsConfig.webhookUrl+'?accion=listarUsuarios';
+    const resp=await fetch(url);
+    if(resp.ok) showToast('✅ Conexión exitosa','success'); else showToast('⚠️ Error','error');
+  } catch(e) { showToast('❌ Sin conexión','error'); }
+}
+function copiarCodigo() {
+  navigator.clipboard.writeText(document.getElementById('codeBlock').textContent).then(()=>showToast('📋 Código copiado','success'));
+}
+
+// ════════════════════════════════
+//  QR — Registro de trabajadores (formulario completo)
+// ════════════════════════════════
+async function qrBuscar() {
+  const dni = document.getElementById('qr-dni').value.trim();
+  const status = document.getElementById('qrBuscarStatus');
+  if(!dni || !/^\d{8}$/.test(dni)) { status.style.color='#c8102e'; status.textContent='⚠️ DNI inválido (8 dígitos)'; return; }
+
+  status.style.color='#1a3c6e'; status.textContent='🔍 Buscando tus datos...';
+  document.getElementById('qrCampos').style.display='none';
+
+  // Cargar departamentos en el select QR
+  qrCargarDepartamentos();
+
+  let encontrado = null;
+  if(gsConfig.habilitado && gsConfig.webhookUrl) {
+    try {
+      const [r1, r2] = await Promise.all([
+        buscarEnEmpresa(dni, 'Rapel'),
+        buscarEnEmpresa(dni, 'Verfrut')
+      ]);
+      if(r1 && r1.encontrado) encontrado = r1;
+      else if(r2 && r2.encontrado) encontrado = r2;
+    } catch(e) {}
+  }
+
+  document.getElementById('qrCampos').style.display='block';
+
+  if(encontrado) {
+    status.style.color='#059669';
+    status.textContent='✅ ' + (encontrado.nombres||'') + ' ' + (encontrado.ap||'') + ' ' + (encontrado.am||'') + ' — completa los demás campos';
+    document.getElementById('qr-ap').value  = (encontrado.ap||'').toUpperCase();
+    document.getElementById('qr-am').value  = (encontrado.am||'').toUpperCase();
+    document.getElementById('qr-nom').value = (encontrado.nombres||'').toUpperCase();
+  } else {
+    status.style.color='#d97706';
+    status.textContent='📝 No se encontraron datos previos. Llena todos los campos.';
+  }
+}
+
+function qrCargarDepartamentos() {
+  const sel = document.getElementById('qr-dep');
+  if(sel.options.length > 1) return;
+  Object.keys(PERU_UBIGEO).forEach(dep => {
+    const o = document.createElement('option'); o.value=dep; o.textContent=dep; sel.appendChild(o);
+  });
+}
+
+function qrCargarProvincias() {
+  const dep = document.getElementById('qr-dep').value;
+  const selProv = document.getElementById('qr-prov');
+  selProv.innerHTML = '<option value="">— Seleccionar —</option>';
+  if(dep && PERU_UBIGEO[dep]) {
+    PERU_UBIGEO[dep].forEach(prov => {
+      const o = document.createElement('option'); o.value=prov; o.textContent=prov; selProv.appendChild(o);
+    });
+  }
+  selProv.onchange = qrActualizarDistrito;
+  qrActualizarDistrito();
+}
+
+function qrActualizarDistrito() {
+  const dep = document.getElementById('qr-dep').value;
+  const prov = document.getElementById('qr-prov').value;
+  const cont = document.getElementById('qr-dist-wrap');
+  const key = dep + '|' + prov;
+  if(DISTRITOS[key]) {
+    let html = '<select id="qr-dist" class="login-input"><option value="">— Seleccionar —</option>';
+    DISTRITOS[key].forEach(d => { html += '<option value="'+d+'">'+d+'</option>'; });
+    html += '</select>';
+    cont.innerHTML = html;
+  } else {
+    cont.innerHTML = '<input type="text" id="qr-dist" class="login-input" style="text-transform:uppercase;">';
+  }
+}
+
+function qrToggleEdu() {
+  const v = document.getElementById('qr-edu').value;
+  const sup = v === 'Educación técnica completa' || v === 'Educación Universitaria completa';
+  document.getElementById('qr-edu-sup').style.display = sup ? 'block' : 'none';
+}
+
+async function registrarQR() {
+  const g = id => (document.getElementById(id)||{}).value || '';
+  const dni = g('qr-dni').trim();
+  const ap  = g('qr-ap').trim().toUpperCase();
+  const nom = g('qr-nom').trim().toUpperCase();
+  const err = document.getElementById('qrError');
+  const btn = document.getElementById('qrBtn');
+
+  if(!dni || !/^\d{8}$/.test(dni)) { err.textContent='⚠️ DNI inválido (8 dígitos)'; err.style.display='block'; return; }
+  if(!ap || !nom) { err.textContent='⚠️ Completa apellido paterno y nombres'; err.style.display='block'; return; }
+
+  err.style.display='none';
+  btn.disabled=true; btn.textContent='Enviando...';
+
+  try {
+    const payload = {
+      accion:'registrarQR',
+      dni, ap, am:g('qr-am').toUpperCase(), nombres:nom,
+      nac:g('qr-nac').toUpperCase(), ec:g('qr-ec'), hijos:g('qr-hijos'),
+      dir:g('qr-dir').toUpperCase(), dep:g('qr-dep'), prov:g('qr-prov'), dist:g('qr-dist').toUpperCase(),
+      tel1:g('qr-tel1'), edu:g('qr-edu'), inst:g('qr-inst').toUpperCase(),
+      carrera:g('qr-carrera').toUpperCase(), egreso:g('qr-egreso'),
+      incap:g('qr-incap'), parentesco:g('qr-parentesco'),
+      cem:g('qr-cem').toUpperCase(), celcem:g('qr-celcem'),
+      fecha:new Date().toLocaleDateString('es-PE')
+    };
+    const url = gsConfig.webhookUrl + '?data=' + encodeURIComponent(JSON.stringify(payload));
+    const resp = await fetch(url);
+    const txt = await resp.text();
+    const m = txt.match(/^[a-zA-Z0-9_]+\((.+)\)\s*;?$/s);
+    const r = JSON.parse(m ? m[1] : txt);
+    if(r.ok) {
+      document.getElementById('qrForm').style.display='none';
+      document.getElementById('qrSuccess').style.display='block';
+    } else {
+      err.textContent='Error al enviar. Intenta de nuevo.'; err.style.display='block';
+      btn.disabled=false; btn.textContent='Enviar mis datos';
+    }
+  } catch(e) {
+    err.textContent='Error de conexión. Intenta de nuevo.'; err.style.display='block';
+    btn.disabled=false; btn.textContent='Enviar mis datos';
+  }
+}
+
+function generarQR() {
+  const baseUrl = window.location.origin + window.location.pathname;
+  const qrUrl = baseUrl + '?qr=1';
+  document.getElementById('qrUrlText').textContent = qrUrl;
+  const box = document.getElementById('qrCodeBox');
+  box.innerHTML = '';
+  if(typeof QRCode === 'undefined') { showToast('Librería QR no cargó','error'); return; }
+  new QRCode(box, { text: qrUrl, width: 200, height: 200, colorDark:'#1a3c6e', colorLight:'#ffffff' });
+  showToast('✅ QR generado','success');
+}
+
+function descargarQR() {
+  const img = document.querySelector('#qrCodeBox img') || document.querySelector('#qrCodeBox canvas');
+  if(!img) { showToast('Primero genera el QR','error'); return; }
+  let dataUrl;
+  if(img.tagName === 'CANVAS') dataUrl = img.toDataURL('image/png');
+  else dataUrl = img.src;
+  const a = document.createElement('a');
+  a.href = dataUrl; a.download = 'QR_Registro_Unifrutti.png'; a.click();
+  showToast('✅ QR descargado','success');
+}
+
+// ════════════════════════════════
+//  TOAST
+// ════════════════════════════════
+let toastTimer;
+function showToast(msg, type='success') {
+  const t=document.getElementById('toast'); t.textContent=msg;
+  t.className=`toast toast-${type} show`;
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ════════════════════════════════
+//  INIT
+// ════════════════════════════════
+// Detectar si es acceso vía QR (trabajador)
+const urlParams = new URLSearchParams(window.location.search);
+if(urlParams.get('qr') === '1') {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('qrScreen').style.display = 'flex';
+}
+
+// Si ya tiene GS config, mostrarlo en login
+actualizarEstadoConexion();
+
+document.getElementById('modalOverlay').addEventListener('click',function(e){ if(e.target===this) cerrarModal(); });
+document.getElementById('loginPass').addEventListener('keypress',function(e){ if(e.key==='Enter') iniciarSesion(); });
+document.getElementById('loginUser').addEventListener('keypress',function(e){ if(e.key==='Enter') document.getElementById('loginPass').focus(); });
+document.getElementById('dniSearch').addEventListener('keypress',function(e){ if(e.key==='Enter') buscarDNI(); });
+
+// CAMBIO 05: Convertir a MAYÚSCULAS todo lo que escribe el usuario en campos de texto
+document.addEventListener('input', function(e) {
+  const el = e.target;
+  if(el.tagName === 'INPUT' && el.type === 'text' && el.id && el.id.startsWith('f-')) {
+    const start = el.selectionStart, end = el.selectionEnd;
+    el.value = el.value.toUpperCase();
+    el.setSelectionRange(start, end);
+  }
+});
+
+// AUTO-AVANCE: presionar Enter en un campo del formulario salta al siguiente
+document.addEventListener('keypress', function(e) {
+  if(e.key !== 'Enter') return;
+  const el = e.target;
+  if(el.id && (el.id.startsWith('f-')) && typeof ORDEN_CAMPOS !== 'undefined' && ORDEN_CAMPOS.includes(el.id)) {
+    e.preventDefault();
+    avanzarSiguiente(el.id);
+  }
+});
+</script>
+</body>
+</html>
