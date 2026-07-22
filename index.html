@@ -183,6 +183,9 @@ select:focus{
 .psel:focus{outline:none;border-color:var(--navy3);background:#ffffff;color:var(--navy);}
 .psel.scored{background:#ffffff !important;border-color:var(--navy3);color:var(--navy) !important;font-weight:600;}
 .psel.smax{background:rgba(0,122,61,.08) !important;border-color:var(--gdim);color:var(--gdim) !important;font-weight:700;}
+.psel.perr{border-color:var(--red) !important;background:rgba(200,16,46,.07) !important;}
+input.psel::-webkit-outer-spin-button,input.psel::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+input.psel{-moz-appearance:textfield;appearance:textfield;cursor:text;}
 /* Forzar color de texto en option del select nativo */
 .psel option{color:#333333;background:#ffffff;}
 
@@ -2162,8 +2165,8 @@ function mkCuest(ri){
         <table style="border-collapse:collapse;width:100%;min-width:${totalW}px;">
           <thead>
             <tr style="background:var(--navy);">
-              <th style="width:${numW}px;padding:5px 4px;"></th>
-              <th style="width:${txtW}px;min-width:${txtW}px;padding:5px 8px;text-align:left;font-size:.68rem;color:rgba(255,255,255,.7);font-weight:600;">Pregunta</th>
+              <th style="width:${numW}px;padding:5px 4px;position:sticky;left:0;z-index:4;background:var(--navy);"></th>
+              <th style="width:${txtW}px;min-width:${txtW}px;padding:5px 8px;text-align:left;font-size:.68rem;color:rgba(255,255,255,.7);font-weight:600;position:sticky;left:${numW}px;z-index:4;background:var(--navy);box-shadow:3px 0 6px -2px rgba(0,0,0,.25);">Pregunta</th>
               ${Array.from({length:ne},(_,ei)=>`
                 <th style="width:${colW}px;min-width:${colW}px;padding:5px 2px;text-align:center;font-size:.62rem;color:#fff;font-weight:700;border-left:1px solid rgba(255,255,255,.1);">
                   Eval.<br>${ei+1}
@@ -2175,23 +2178,23 @@ function mkCuest(ri){
     sec.pregs.forEach(preg=>{
       const savedVals=Array.from({length:ne},(_,ei)=>r.sc?.[sec.id]?.[preg.n]?.[ei]??'');
       html+=`<tr style="border-bottom:1px solid var(--surf2);">
-        <td style="width:${numW}px;padding:6px 4px;vertical-align:top;text-align:center;">
+        <td style="width:${numW}px;padding:6px 4px;vertical-align:top;text-align:center;position:sticky;left:0;z-index:2;background:#fff;">
           <span class="pnum">${preg.n}</span>
         </td>
-        <td style="width:${txtW}px;min-width:${txtW}px;padding:6px 8px;vertical-align:middle;">
+        <td style="width:${txtW}px;min-width:${txtW}px;padding:6px 8px;vertical-align:middle;position:sticky;left:${numW}px;z-index:2;background:#fff;box-shadow:3px 0 6px -2px rgba(0,61,165,.15);">
           <span class="ptxt" style="display:block;">${preg.t}</span>
-          <span class="pmx">Máx ${preg.max} pt${preg.max>1?'s':''}</span>
+          <span class="pmx">Máx ${preg.max} pt${preg.max>1?'s':''} · escribe 0–${preg.max}</span>
         </td>`;
       for(let ei=0;ei<ne;ei++){
         const v=savedVals[ei];
-        const cls='psel'+(v?' scored'+(parseInt(v)===preg.max?' smax':''):'');
+        const cls='psel'+(v!==''&&v!==undefined&&v!==null?' scored'+(parseInt(v)===preg.max?' smax':''):'');
         html+=`<td style="width:${colW}px;min-width:${colW}px;padding:4px 3px;vertical-align:middle;text-align:center;border-left:1px solid var(--surf2);">
-          <select class="${cls}" style="width:${colW-6}px;font-size:.73rem;padding:.25rem .15rem;text-align:center;"
-            id="s${ri}_${sec.id}_${preg.n}_${ei}"
+          <input class="${cls}" type="number" inputmode="numeric" min="0" max="${preg.max}" step="1"
+            style="width:${colW-6}px;font-size:.73rem;padding:.25rem .1rem;text-align:center;"
+            id="s${ri}_${sec.id}_${preg.n}_${ei}" value="${v??''}"
+            placeholder="0–${preg.max}" title="Escribe el puntaje: 0 a ${preg.max}, o deja en blanco si no respondió"
             data-ri="${ri}" data-sid="${sec.id}" data-pn="${preg.n}" data-ei="${ei}" data-max="${preg.max}"
-            onchange="onSel(this)">
-            ${mkOpts(preg.max,v)}
-          </select>
+            oninput="onPts(this)" onchange="onPts(this)">
         </td>`;
       }
       html+=`</tr>`;
@@ -2258,6 +2261,33 @@ function rfchEv(i){
   updAc(i);
   updP3();
   toast(`Ruta ${i+1}: ${ne} evaluado${ne>1?'s':''} configurado${ne>1?'s':''}. Cuestionario regenerado.`,'i');
+}
+
+// ── Puntaje escrito a mano, validado contra el máximo de cada pregunta ──
+let _ptsAvisoT=0;
+function avisoPts(mx){
+  const ahora=Date.now();
+  if(ahora-_ptsAvisoT<1800) return;   // no repetir el aviso en cada tecla
+  _ptsAvisoT=ahora;
+  const lista=Array.from({length:mx+1},(_,i)=>i);
+  const opciones=lista.length>1?lista.slice(0,-1).join(', ')+' o '+lista[lista.length-1]:String(lista[0]);
+  toast(`⚠️ El puntaje de esta pregunta va de 0 a ${mx}. Puedes escribir ${opciones}, o dejarlo en blanco si el evaluado no respondió.`,'e');
+}
+function onPts(el){
+  const mx=+el.dataset.max;
+  const raw=String(el.value).trim();
+  if(raw===''){ el.classList.remove('perr'); onSel(el); return; }
+  const n=Number(raw);
+  if(!Number.isInteger(n) || n<0 || n>mx){
+    avisoPts(mx);
+    el.value='';                       // se limpia: puede volver a escribir un valor válido
+    onSel(el);
+    el.classList.add('perr');
+    setTimeout(()=>{ el.classList.remove('perr'); },1400);
+    return;
+  }
+  el.classList.remove('perr');
+  onSel(el);
 }
 
 function onSel(el){
