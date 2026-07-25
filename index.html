@@ -1205,22 +1205,31 @@ function agregarArea(){
 // ══════════════════════════════════════════
 
 // Usuarios base del sistema
+// ── SEGURIDAD: las contraseñas NO se guardan en texto plano.
+// "ph" es la huella SHA-256 de (usuario|contraseña|sal). Nadie que lea este
+// código fuente puede recuperar la contraseña a partir de la huella.
+const ETI_SALT='ETI-VERFRUT-2026';
+async function etiHash(user,pwd){
+  const data=new TextEncoder().encode(String(user)+'|'+String(pwd)+'|'+ETI_SALT);
+  const buf=await crypto.subtle.digest('SHA-256',data);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
 const USUARIOS_BASE = [
-  {user:'jtimoteo',  pwd:'jtimoteo2026',  nom:'Joel Timoteo Gonza',       rol:'admin'},
-  {user:'ecastro',   pwd:'ecastro2026',  nom:'Elberth Castro Bayona',    rol:'supervisor'},
-  {user:'yluzon',    pwd:'yluzon2026',   nom:'Yhanell Geraldine Luzon Venegas',  rol:'supervisor'},
-  {user:'almartinez',pwd:'almartinez2026',nom:'Alexander Martinez Juarez',rol:'supervisor'},
-  {user:'sviera',    pwd:'sviera2026',   nom:'Sergio Viera Giron',       rol:'supervisor'},
-  {user:'rmolero',   pwd:'rmolero2026',  nom:'Roberto Molero Abad',      rol:'supervisor'},
-  {user:'fzapata',   pwd:'fzapata2026',  nom:'Alex Zapata Suarez',       rol:'supervisor'},
-  {user:'javendano', pwd:'javendano2026',nom:'Jhonny Avendaño Granda',   rol:'supervisor'},
-  {user:'mmechato',  pwd:'mmechato2026', nom:'Muriel Mechato Navarro',   rol:'supervisor'},
-  {user:'fpulache',  pwd:'fpulache2026', nom:'Flor Pulache Viera',       rol:'supervisor'},
-  {user:'atineo',    pwd:'atineo2026',   nom:'Alex Tineo Ramos',         rol:'supervisor'},
-  {user:'glucia',    pwd:'glucia2026',   nom:'Lucia (Asistente)',        rol:'supervisor'},
-  {user:'ovilela',   pwd:'ovilela2026',  nom:'Olga Vilela Ludeña',       rol:'supervisor'},
-  {user:'jchavez',   pwd:'jchavez2026',  nom:'Jorge Chavez Coordova',    rol:'supervisor'},
-  {user:'ptamayo',   pwd:'ptamayo2026',  nom:'Pool Tamayo Rodriguez',    rol:'supervisor'},
+  {user:'jtimoteo',  ph:'4144313f138f53a9a7a81c5f855a70e754df61c61eb6a8c1d5bcf90b296ee068', nom:'Joel Timoteo Gonza',       rol:'admin'},
+  {user:'ecastro',   ph:'70a4cd0e782ab93b256fcc13282cd919ee8e6ef54644e5867f2685d33cc0c3a8', nom:'Elberth Castro Bayona',    rol:'supervisor'},
+  {user:'yluzon',    ph:'49088035e18ec7329132e6e20678a7eeb4e292c508ce03e2e69eef3a364a4f4c', nom:'Yhanell Geraldine Luzon Venegas',  rol:'supervisor'},
+  {user:'almartinez',ph:'dd49709d60ec857eb7b36c064fab2f503932a07cb4886748ab8c6c8b26127072', nom:'Alexander Martinez Juarez',rol:'supervisor'},
+  {user:'sviera',    ph:'3ac149490f8323a78e705d93822379f4fd25992a1fe30316ed6904944c56d23b', nom:'Sergio Viera Giron',       rol:'supervisor'},
+  {user:'rmolero',   ph:'f092afac2e770b2bb3cb6dd42bafdf83d9e8c24128923159df96ee78bb259cc5', nom:'Roberto Molero Abad',      rol:'supervisor'},
+  {user:'fzapata',   ph:'12726376f6fdbd99fb9fbd953a843acc7cd6cdf82239a55a217081eb3719c5a7', nom:'Alex Zapata Suarez',       rol:'supervisor'},
+  {user:'javendano', ph:'aa11312079638c37c8add0b925295a3cd3303a69550d095d9105b9b938eaa9ea', nom:'Jhonny Avendaño Granda',   rol:'supervisor'},
+  {user:'mmechato',  ph:'836e237814f0a9c145d0877415a0a252a336458c4d6046ac9294ce9e281ec158', nom:'Muriel Mechato Navarro',   rol:'supervisor'},
+  {user:'fpulache',  ph:'1c82f85c06c76defd066a6b024056d2c3319cc6d87744f93013c82b87e9493b7', nom:'Flor Pulache Viera',       rol:'supervisor'},
+  {user:'atineo',    ph:'7e7243e75b90837aa0a7246bc5b716c0ecb622c50c91dccccc7d9b47695af9aa', nom:'Alex Tineo Ramos',         rol:'supervisor'},
+  {user:'glucia',    ph:'178642466f441d2c95f6604f576d7ae4c3f013219dfb9827806b805f87a871ae', nom:'Lucia (Asistente)',        rol:'supervisor'},
+  {user:'ovilela',   ph:'a4058bf9d3a7e75eed5f35bd673969e4e022bb092e3f92340090594d18d31ea6', nom:'Olga Vilela Ludeña',       rol:'supervisor'},
+  {user:'jchavez',   ph:'d7817f54685be778b1523c966ea6d47c3d1fa321a2a19130b163b99ac0cdbaee', nom:'Jorge Chavez Coordova',    rol:'supervisor'},
+  {user:'ptamayo',   ph:'44b4a64dd6dce957955e0f801ac451140471c0f14996497595940f8588385d9f', nom:'Pool Tamayo Rodriguez',    rol:'supervisor'},
 ];
 
 // Cargar usuarios extras agregados por admin
@@ -1376,17 +1385,28 @@ if(SESSION) setTimeout(()=>{
 },50);
 
 // ── LOGIN ──
-function doLogin(){
+async function doLogin(){
   const u=document.getElementById('linput').value.trim();
   const p=document.getElementById('lpwd').value;
   const err=document.getElementById('lerr');
   err.style.display='none';
 
-  const usr=getUsuarios().find(x=>x.user===u && x.pwd===p);
+  // Comparación por huella cifrada (los usuarios "extra" antiguos guardados
+  // con contraseña en texto plano siguen entrando y se actualizan solos).
+  let h='';
+  try{ h=await etiHash(u,p); }catch(e){ console.error('hash',e); }
+  const usr=getUsuarios().find(x=>x.user===u && ((x.ph&&x.ph===h)||(x.pwd&&x.pwd===p)));
   if(!usr){
     err.style.display='block';
     document.getElementById('lpwd').value='';
     return;
+  }
+  if(usr.pwd&&h){ // migrar usuario extra antiguo a huella cifrada
+    try{
+      const extras=JSON.parse(localStorage.getItem('eti_usuarios_extra')||'[]');
+      const ex=extras.find(x=>x.user===usr.user);
+      if(ex){ ex.ph=h; delete ex.pwd; localStorage.setItem('eti_usuarios_extra',JSON.stringify(extras)); }
+    }catch(e){}
   }
 
   SESSION={user:usr.user, nom:usr.nom, rol:usr.rol};
@@ -1702,7 +1722,7 @@ function renderAdminUsers(){
     </table>`;
 }
 
-function addUser(){
+async function addUser(){
   const u=document.getElementById('nu-user').value.trim();
   const p=document.getElementById('nu-pwd').value.trim();
   const n=document.getElementById('nu-nom').value.trim();
@@ -1710,7 +1730,7 @@ function addUser(){
   const todos=getUsuarios();
   if(todos.find(x=>x.user===u)){toast('Ese usuario ya existe','e');return;}
   const extras=JSON.parse(localStorage.getItem('eti_usuarios_extra')||'[]');
-  extras.push({user:u,pwd:p,nom:n,rol:'supervisor'});
+  extras.push({user:u,ph:await etiHash(u,p),nom:n,rol:'supervisor'});
   localStorage.setItem('eti_usuarios_extra',JSON.stringify(extras));
   document.getElementById('nu-user').value='';
   document.getElementById('nu-pwd').value='';
