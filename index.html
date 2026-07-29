@@ -1409,6 +1409,11 @@ async function doLogin(){
     }catch(e){}
   }
 
+  iniciarSesionCon(usr);
+}
+
+// Arranque de sesión (lo usa el login normal y el ingreso directo SSO desde RR.LL)
+function iniciarSesionCon(usr){
   SESSION={user:usr.user, nom:usr.nom, rol:usr.rol};
   sessionStorage.setItem('eti_session',JSON.stringify(SESSION));
   escucharNube(); // sincronizar programaciones y evaluaciones desde la nube
@@ -1502,6 +1507,27 @@ function togglePwd(){
   const i=document.getElementById('lpwd');
   i.type=i.type==='password'?'text':'password';
 }
+
+// ── SSO desde el Sistema RR.LL: pase de un solo uso en la dirección ──
+// Si la página llega con #sso=<pase>.<firma> válido y vigente (90 s), entra
+// directo sin mostrar el login. El pase se borra de la barra de direcciones
+// al instante: copiar la URL a otro monitor lleva al login normal.
+(async function(){
+  try{
+    const m=location.hash.match(/#sso=([^.]+)\.([a-f0-9]{64})/);
+    if(!m) return;
+    history.replaceState(null,'',location.pathname+location.search);  // borrar el pase
+    const firmaBuf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(m[1]+'|RL-SSO-VERFRUT-2026'));
+    const firma=Array.from(new Uint8Array(firmaBuf)).map(x=>x.toString(16).padStart(2,'0')).join('');
+    if(firma!==m[2]) return;                                           // pase adulterado
+    const d=JSON.parse(decodeURIComponent(escape(atob(m[1]))));
+    if(!d||!d.u||!d.exp||Date.now()>Number(d.exp)) return;             // pase caducado
+    const u=String(d.u).toLowerCase();
+    const usr=getUsuarios().find(x=>String(x.user||'').toLowerCase()===u);
+    if(!usr) return;                                                   // usuario no existe aquí → login normal
+    iniciarSesionCon(usr);
+  }catch(e){}
+})();
 
 // Guardar historial por usuario al calcular
 function guardarHistorialUsuario(nuevosRegistros){
