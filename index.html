@@ -378,6 +378,15 @@ input.psel{-moz-appearance:textfield;appearance:textfield;cursor:text;}
       <button class="btn bout bsm" id="atab5" onclick="adminTab('dash')">📈 Mi Dashboard</button>
       <button class="btn bout bsm" id="atab6" onclick="adminTab('prog')">📅 Programación</button>
       <button class="btn bout bsm" id="atab7" onclick="adminTab('conectados')">🟢 Conectados <span id="pres-count" style="display:none;background:#1DB954;color:#fff;border-radius:999px;font-size:.65rem;font-weight:800;padding:.1rem .4rem;margin-left:.2rem;">0</span></button>
+      <button class="btn bout bsm" id="atab8" onclick="adminTab('cumplimiento')">🎯 Cumplimiento</button>
+    </div>
+
+    <!-- TAB CUMPLIMIENTO POR SUPERVISOR -->
+    <div id="admin-cumplimiento" style="display:none;">
+      <div class="ptit" style="margin-bottom:.3rem;">🎯 Cumplimiento de Evaluaciones por Supervisor</div>
+      <div style="font-size:.78rem;color:var(--text2);margin-bottom:.9rem;">Cruza las programaciones de checklist (de ambas fuentes) con las evaluaciones registradas. Se actualiza en tiempo real.</div>
+      <div id="cum-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.6rem;margin-bottom:1rem;"></div>
+      <div id="cum-lista"></div>
     </div>
 
     <!-- TAB CONECTADOS -->
@@ -1300,17 +1309,51 @@ function escucharNube(){
       _progsNube=snap.docs.map(d=>({id:d.id,...d.data()}));
       const el=document.getElementById('admin-prog');
       if(el && el.style.display!=='none') renderPgLista();
+      _cumRefrescarSiVisible();
     },e=>console.error('Nube prog:',e));
+    // FIX: las programaciones de EVALUACIONES DE CHECKLIST se registran desde el
+    // Sistema ETI (Capacitaciones) en la colección programaciones_eti. Antes este
+    // sistema solo leía programaciones_eval (vacía) y no las veía. Ahora se
+    // escuchan también y se normalizan al mismo formato.
+    fbdb.collection('programaciones_eti').onSnapshot(snap=>{
+      _progsEtiChk=snap.docs
+        .map(d=>({id:d.id,...d.data()}))
+        .filter(p=>String(p.tema||'').toUpperCase().indexOf('CHECKLIST')>=0)
+        .map(p=>({id:p.id,_col:'programaciones_eti',sup:p.supervisor||'',sector:p.sector||'',
+          estado:p.estado||'pendiente',
+          fechas:(Array.isArray(p.fechas)&&p.fechas.length?p.fechas.slice().sort()
+                 :[p.fechaProgramada,p.fechaFin||p.fechaProgramada].filter(Boolean).sort()),
+          fechasEjecutadas:p.fechasEjecutadas||[]}));
+      const el=document.getElementById('admin-prog');
+      if(el && el.style.display!=='none') renderPgLista();
+      _cumRefrescarSiVisible();
+    },e=>console.error('Nube prog eti:',e));
     fbdb.collection(COL_EVAL).orderBy('ts','desc').limit(800).onSnapshot(snap=>{
       _evalsNube=snap.docs.map(d=>({id:d.id,...d.data()}));
       const reg=document.getElementById('admin-registros');
       if(reg && reg.style.display!=='none') renderAdminRegistros();
       const st=document.getElementById('admin-stats');
       if(st && st.style.display!=='none') renderAdminStats();
+      _cumRefrescarSiVisible();
       // Cada usuario ve SUS registros desde cualquier dispositivo
       sincronizarHistorialNube();
     },e=>console.error('Nube eval:',e));
   }catch(e){console.error(e);}
+}
+let _progsEtiChk=null;   // programaciones de CHECKLIST registradas en programaciones_eti (normalizadas)
+function _cumRefrescarSiVisible(){
+  try{ const el=document.getElementById('admin-cumplimiento');
+       if(el && el.style.display!=='none') renderCumplimiento(); }catch(e){}
+}
+// Coincidencia laxa de nombres (tolera orden distinto y variantes: ZAPATA SUAREZ ~ ZAPATA JUAREZ)
+function _cumCoincide(a,b){
+  const N=s=>String(s||'').toUpperCase().replace(/\s+/g,' ').trim();
+  a=N(a); b=N(b);
+  if(!a||!b) return false;
+  if(a===b) return true;
+  const A=a.split(' ').filter(w=>w.length>2), B=b.split(' ').filter(w=>w.length>2);
+  const ig=(x,y)=>x===y||(x.length>=4&&y.length>=4&&(x.indexOf(y)===0||y.indexOf(x)===0));
+  return A.filter(w=>B.some(v=>ig(w,v))).length>=2;
 }
 
 // ── HISTORIAL PERSONAL DESDE LA NUBE ──
@@ -1563,13 +1606,13 @@ function guardarHistorialUsuario(nuevosRegistros){
 
 // ── PANEL ADMINISTRADOR ──
 function adminTab(tab){
-  ['admin-stats','admin-users','admin-registros','admin-eval','admin-dash','admin-prog','admin-conectados']
+  ['admin-stats','admin-users','admin-registros','admin-eval','admin-dash','admin-prog','admin-conectados','admin-cumplimiento']
     .forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
   const el=document.getElementById('admin-'+tab);
   if(el) el.style.display='block';
 
-  const tabs=['stats','users','registros','eval','dash','prog','conectados'];
-  ['atab1','atab2','atab3','atab4','atab5','atab6','atab7'].forEach((id,i)=>{
+  const tabs=['stats','users','registros','eval','dash','prog','conectados','cumplimiento'];
+  ['atab1','atab2','atab3','atab4','atab5','atab6','atab7','atab8'].forEach((id,i)=>{
     const btn=document.getElementById(id);
     if(btn) btn.className=tab===tabs[i]?'btn bpri bsm':'btn bout bsm';
   });
@@ -1577,6 +1620,7 @@ function adminTab(tab){
   if(tab==='dash') renderAdminDash();
   if(tab==='eval') updAdminUltReporte();
   if(tab==='prog') renderProgEval();
+  if(tab==='cumplimiento') renderCumplimiento();
   if(tab==='conectados') renderConectados();
 }
 
@@ -3605,13 +3649,21 @@ ${contenido}
 // PROGRAMACIÓN DE EVALUACIONES (admin)
 // ══════════════════════════════════════════
 function getProgs(){
-  if(_progsNube!==null) return _progsNube; // fuente: Firestore (compartido)
-  try{return JSON.parse(localStorage.getItem('eti_prog_evals')||'[]');}catch(e){return [];}
+  let base;
+  if(_progsNube!==null) base=_progsNube; // fuente: Firestore (compartido)
+  else { try{base=JSON.parse(localStorage.getItem('eti_prog_evals')||'[]');}catch(e){base=[];} }
+  // Unión con las programaciones de CHECKLIST registradas desde Capacitaciones
+  return base.concat(_progsEtiChk||[]);
+}
+// Colección correcta según el origen de la programación
+function _progColeccion(id){
+  const p=getProgs().find(x=>x.id===id);
+  return (p&&p._col)||COL_PROG_EV;
 }
 function saveProgs(l){ localStorage.setItem('eti_prog_evals',JSON.stringify(l)); }
 function progPendienteDe(sup){
   return getProgs()
-    .filter(p=>p.sup===sup && p.estado!=='ejecutada' && Array.isArray(p.fechas) && p.fechas.length)
+    .filter(p=>_cumCoincide(p.sup,sup) && p.estado!=='ejecutada' && Array.isArray(p.fechas) && p.fechas.length)
     .slice()
     .sort((a,b)=>a.fechas[0].localeCompare(b.fechas[0]))[0]||null;
 }
@@ -3623,7 +3675,7 @@ function marcarProgEjecutada(id, fechaEjec){
   const cambios={fechasEjecutadas:ejec, estado:pend.length?'pendiente':'ejecutada'};
   if(!pend.length) cambios.ejecutadaEn=new Date().toISOString();
   if(fbdb && _progsNube!==null){
-    fbdb.collection(COL_PROG_EV).doc(id).update(cambios).catch(e=>console.error('Nube:',e));
+    fbdb.collection(_progColeccion(id)).doc(id).update(cambios).catch(e=>console.error('Nube:',e));
     return;
   }
   const l=getProgs().slice(); const pl=l.find(x=>x.id===id);
@@ -3681,7 +3733,7 @@ function pgGuardar(){
 function pgEliminar(id){
   confMod('¿Eliminar programación?','Se eliminará esta programación de evaluación.',()=>{
     if(fbdb && _progsNube!==null){
-      fbdb.collection(COL_PROG_EV).doc(id).delete()
+      fbdb.collection(_progColeccion(id)).doc(id).delete()
         .then(()=>toast('Programación eliminada','i'))
         .catch(e=>{ console.error(e); toast('Error al eliminar','e'); });
     } else {
@@ -3747,7 +3799,7 @@ function mreprGuardar(){
     vecesReprogramada:(_reprProg.vecesReprogramada||0)+1,
     reprogramaciones:[...(_reprProg.reprogramaciones||[]),registro]};
   if(fbdb && _progsNube!==null){
-    fbdb.collection(COL_PROG_EV).doc(_reprProg.id).update(cambios)
+    fbdb.collection(_progColeccion(_reprProg.id)).doc(_reprProg.id).update(cambios)
       .then(()=>toast('🔄 Evaluación reprogramada correctamente','s'))
       .catch(e=>{console.error(e);toast('Error al reprogramar','e');});
   } else {
@@ -4054,6 +4106,85 @@ function actualizarBadgeConectados(){
   const b=document.getElementById('pres-count');
   if(b){ b.textContent=_presOnline.length; b.style.display=_presOnline.length?'':'none'; }
 }
+/* ══════════ 🎯 CUMPLIMIENTO DE EVALUACIONES POR SUPERVISOR ══════════ */
+function renderCumplimiento(){
+  const kpis=document.getElementById('cum-kpis'), lista=document.getElementById('cum-lista');
+  if(!kpis||!lista) return;
+  const hoyIso=hoy();
+  const progs=getProgs().filter(p=>Array.isArray(p.fechas)&&p.fechas.length);
+  const evals=(_evalsNube||[]).filter(ev=>ev&&ev.fecha&&Array.isArray(ev.rutas)&&ev.rutas.length); // ignora registros basura
+  const grupos=[];
+  function grupoDe(nombre){
+    let g=grupos.find(x=>_cumCoincide(x.nombre,nombre));
+    if(!g){ g={nombre:nombre, sectores:new Set(), fechasProg:[], evals:[], destiempo:0}; grupos.push(g); }
+    return g;
+  }
+  progs.forEach(p=>{
+    if(!p.sup) return;
+    const g=grupoDe(p.sup);
+    if(p.sector) g.sectores.add(p.sector);
+    p.fechas.forEach(f=>g.fechasProg.push({f:f, ejec:(p.fechasEjecutadas||[]).indexOf(f)>=0}));
+  });
+  evals.forEach(ev=>{
+    const nom=ev.sup||ev.nomUsuario||ev.usuario; if(!nom) return;
+    const g=grupoDe(nom);
+    g.evals.push(ev);
+    if(ev.destiempo&&ev.destiempo.tipo) g.destiempo++;
+  });
+  const filas=grupos.map(g=>{
+    const fechas=g.fechasProg.slice().sort((a,b)=>a.f.localeCompare(b.f));
+    let ejec=0,venc=0,prox=0;
+    fechas.forEach(x=>{
+      x.hecha=x.ejec||g.evals.some(ev=>ev.fecha===x.f);
+      if(x.hecha)ejec++; else if(x.f<hoyIso)venc++; else prox++;
+    });
+    const pasadas=ejec+venc;
+    const pct=pasadas?Math.round(ejec/pasadas*100):(fechas.length?100:0);
+    const evaluados=g.evals.reduce((a,ev)=>a+(ev.rutas?ev.rutas.length:0),0);
+    const ult=g.evals.map(ev=>ev.fecha).sort().pop()||'';
+    const estado=venc>0?'rojo':(fechas.length||g.evals.length?'verde':'gris');
+    return {g:g,fechas:fechas,ejec:ejec,venc:venc,prox:prox,pct:pct,evaluados:evaluados,ult:ult,estado:estado};
+  }).sort((a,b)=>(b.venc-a.venc)||(a.pct-b.pct)||a.g.nombre.localeCompare(b.g.nombre));
+
+  const tot=filas.length, alDia=filas.filter(f=>f.estado!=='rojo').length, atras=filas.filter(f=>f.estado==='rojo').length;
+  const vencTot=filas.reduce((a,f)=>a+f.venc,0), evalTot=evals.length;
+  const kpi=(n,l,c)=>`<div style="background:linear-gradient(135deg,${c}22,${c}0d);border:1px solid ${c}55;border-radius:14px;padding:.8rem;text-align:center;">
+    <div style="font-size:1.5rem;font-weight:800;color:${c};">${n}</div>
+    <div style="font-size:.66rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;">${l}</div></div>`;
+  kpis.innerHTML=kpi(tot,'Supervisores','#3b82f6')+kpi(alDia,'Al día','#22c55e')+kpi(atras,'Atrasados','#ef4444')+
+                 kpi(vencTot,'Fechas vencidas','#f59e0b')+kpi(evalTot,'Evaluaciones registradas','#8b5cf6');
+
+  if(!filas.length){ lista.innerHTML='<div style="text-align:center;color:var(--text2);padding:2rem;">Aún no hay programaciones ni evaluaciones registradas.</div>'; return; }
+  lista.innerHTML=filas.map(f=>{
+    const col=f.estado==='rojo'?'#ef4444':f.estado==='verde'?'#22c55e':'#94a3b8';
+    const etiqueta=f.estado==='rojo'?('🔴 ATRASADO — '+f.venc+' fecha(s) vencida(s)')
+                  :f.estado==='verde'?'🟢 AL DÍA':'⚪ SIN PROGRAMACIÓN';
+    const chips=f.fechas.map(x=>{
+      const c=x.hecha?['#16a34a','#dcfce7','✓']:(x.f<hoyIso?['#dc2626','#fee2e2','✗']:['#64748b','#f1f5f9','•']);
+      return `<span title="${x.f}" style="background:${c[1]};color:${c[0]};font-size:.68rem;font-weight:800;padding:.15rem .5rem;border-radius:999px;">${c[2]} ${x.f.slice(8,10)}/${x.f.slice(5,7)}</span>`;
+    }).join(' ');
+    return `<div style="border:1px solid var(--bd,#e2e8f0);border-left:5px solid ${col};border-radius:14px;padding:.9rem 1rem;margin-bottom:.7rem;background:var(--sf,#fff);box-shadow:0 2px 10px rgba(0,0,0,.05);">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.4rem;">
+        <div style="font-weight:800;font-size:.95rem;">${f.g.nombre}${f.g.sectores.size?` <span style="font-weight:400;color:var(--text2);font-size:.72rem;">· ${[...f.g.sectores].join(' · ')}</span>`:''}</div>
+        <span style="color:${col};font-weight:800;font-size:.72rem;">${etiqueta}</span>
+      </div>
+      <div style="height:8px;background:#f1f5f9;border-radius:999px;overflow:hidden;margin:.45rem 0;">
+        <div style="height:100%;width:${f.pct}%;background:linear-gradient(90deg,${col},${col}bb);border-radius:999px;transition:width .6s;"></div>
+      </div>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;font-size:.72rem;color:var(--text2);margin-bottom:.45rem;">
+        <span>Cumplimiento: <b style="color:${col}">${f.pct}%</b></span>
+        <span>✅ Ejecutadas: <b>${f.ejec}</b></span>
+        <span>❌ Vencidas: <b style="color:#dc2626">${f.venc}</b></span>
+        <span>📅 Próximas: <b>${f.prox}</b></span>
+        <span>👷 Evaluados: <b>${f.evaluados}</b></span>
+        <span>⏰ A destiempo: <b style="color:#b45309">${f.g.destiempo}</b></span>
+        <span>Última evaluación: <b>${f.ult||'—'}</b></span>
+      </div>
+      <div style="display:flex;gap:.3rem;flex-wrap:wrap;">${chips}</div>
+    </div>`;
+  }).join('');
+}
+
 function renderConectados(){
   const box=document.getElementById('admin-conectados-lista');
   if(!box) return;
