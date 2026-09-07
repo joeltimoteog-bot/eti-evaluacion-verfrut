@@ -360,7 +360,7 @@ input.psel{-moz-appearance:textfield;appearance:textfield;cursor:text;}
         </div>
       </div>
       <div id="lerr" style="display:none;background:#FCE4E7;border-left:3px solid #C8102E;border-radius:0 6px 6px 0;padding:.6rem .9rem;font-size:.8rem;color:#C8102E;margin-bottom:.8rem;">Usuario o contraseña incorrectos</div>
-      <button class="btn bpri" style="width:100%;padding:.8rem;font-size:.95rem;font-weight:800;" onclick="doLogin()">Ingresar →</button>
+      <button class="btn bpri" id="lbtn" style="width:100%;padding:.8rem;font-size:.95rem;font-weight:800;" onclick="doLogin()">Ingresar →</button>
       <a href="#" onclick="volverRRLL();return false;" style="display:block;text-align:center;margin-top:1rem;font-size:.8rem;color:#003DA5;font-weight:700;text-decoration:none;">← Volver al Sistema RR.LL</a>
       <div style="text-align:center;margin-top:1.2rem;font-size:.72rem;color:#C0CEEA;">Sistema – Departamento de Gestión Humana – Área de Relaciones Laborales</div>
     </div>
@@ -1252,21 +1252,21 @@ async function etiHash(user,pwd){
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 const USUARIOS_BASE = [
-  {user:'jtimoteo',  ph:'4144313f138f53a9a7a81c5f855a70e754df61c61eb6a8c1d5bcf90b296ee068', nom:'Joel Timoteo Gonza',       rol:'admin'},
-  {user:'ecastro',   ph:'70a4cd0e782ab93b256fcc13282cd919ee8e6ef54644e5867f2685d33cc0c3a8', nom:'Elberth Castro Bayona',    rol:'supervisor'},
-  {user:'yluzon',    ph:'49088035e18ec7329132e6e20678a7eeb4e292c508ce03e2e69eef3a364a4f4c', nom:'Yhanell Geraldine Luzon Venegas',  rol:'supervisor'},
-  {user:'almartinez',ph:'dd49709d60ec857eb7b36c064fab2f503932a07cb4886748ab8c6c8b26127072', nom:'Alexander Martinez Juarez',rol:'supervisor'},
-  {user:'sviera',    ph:'3ac149490f8323a78e705d93822379f4fd25992a1fe30316ed6904944c56d23b', nom:'Sergio Viera Giron',       rol:'supervisor'},
-  {user:'rmolero',   ph:'f092afac2e770b2bb3cb6dd42bafdf83d9e8c24128923159df96ee78bb259cc5', nom:'Roberto Molero Abad',      rol:'supervisor'},
-  {user:'fzapata',   ph:'12726376f6fdbd99fb9fbd953a843acc7cd6cdf82239a55a217081eb3719c5a7', nom:'Alex Zapata Suarez',       rol:'supervisor'},
-  {user:'javendano', ph:'aa11312079638c37c8add0b925295a3cd3303a69550d095d9105b9b938eaa9ea', nom:'Jhonny Avendaño Granda',   rol:'supervisor'},
-  {user:'mmechato',  ph:'836e237814f0a9c145d0877415a0a252a336458c4d6046ac9294ce9e281ec158', nom:'Muriel Mechato Navarro',   rol:'supervisor'},
-  {user:'fpulache',  ph:'1c82f85c06c76defd066a6b024056d2c3319cc6d87744f93013c82b87e9493b7', nom:'Flor Pulache Viera',       rol:'supervisor'},
-  {user:'atineo',    ph:'7e7243e75b90837aa0a7246bc5b716c0ecb622c50c91dccccc7d9b47695af9aa', nom:'Alex Tineo Ramos',         rol:'supervisor'},
-  {user:'glucia',    ph:'178642466f441d2c95f6604f576d7ae4c3f013219dfb9827806b805f87a871ae', nom:'Lucia (Asistente)',        rol:'supervisor'},
-  {user:'ovilela',   ph:'a4058bf9d3a7e75eed5f35bd673969e4e022bb092e3f92340090594d18d31ea6', nom:'Olga Vilela Ludeña',       rol:'supervisor'},
-  {user:'jchavez',   ph:'d7817f54685be778b1523c966ea6d47c3d1fa321a2a19130b163b99ac0cdbaee', nom:'Jorge Chavez Coordova',    rol:'supervisor'},
-  {user:'ptamayo',   ph:'44b4a64dd6dce957955e0f801ac451140471c0f14996497595940f8588385d9f', nom:'Pool Tamayo Rodriguez',    rol:'supervisor'},
+  {user:'jtimoteo',  nom:'Joel Timoteo Gonza',       rol:'admin'},
+  {user:'ecastro',   nom:'Elberth Castro Bayona',    rol:'supervisor'},
+  {user:'yluzon',    nom:'Yhanell Geraldine Luzon Venegas',  rol:'supervisor'},
+  {user:'almartinez',nom:'Alexander Martinez Juarez',rol:'supervisor'},
+  {user:'sviera',    nom:'Sergio Viera Giron',       rol:'supervisor'},
+  {user:'rmolero',   nom:'Roberto Molero Abad',      rol:'supervisor'},
+  {user:'fzapata',   nom:'Alex Zapata Suarez',       rol:'supervisor'},
+  {user:'javendano', nom:'Jhonny Avendaño Granda',   rol:'supervisor'},
+  {user:'mmechato',  nom:'Muriel Mechato Navarro',   rol:'supervisor'},
+  {user:'fpulache',  nom:'Flor Pulache Viera',       rol:'supervisor'},
+  {user:'atineo',    nom:'Alex Tineo Ramos',         rol:'supervisor'},
+  {user:'glucia',    nom:'Lucia (Asistente)',        rol:'supervisor'},
+  {user:'ovilela',   nom:'Olga Vilela Ludeña',       rol:'supervisor'},
+  {user:'jchavez',   nom:'Jorge Chavez Coordova',    rol:'supervisor'},
+  {user:'ptamayo',   nom:'Pool Tamayo Rodriguez',    rol:'supervisor'},
 ];
 
 // Cargar usuarios extras agregados por admin
@@ -1456,39 +1456,92 @@ if(SESSION) setTimeout(()=>{
 },50);
 
 // ── LOGIN ──
+/* ═══════════════════════════════════════════════════════════════════════════
+   _LOGIN_SERVIDOR_V1 (06-set-2026)
+   ---------------------------------------------------------------------------
+   ANTES: la contrasena se verificaba AQUI, en el navegador, contra una lista
+   de huellas escritas en este mismo archivo. Como esta pagina es publica,
+   cualquiera podia leer la lista completa del personal con sus huellas, y
+   quien supiera del tema entraba sin contrasena saltandose la comparacion.
+
+   AHORA: la contrasena viaja al MISMO servidor que valida el Sistema RR.LL.
+   Este archivo ya no guarda ninguna huella: no hay nada que leer ni que
+   saltarse. La decision de dejar entrar la toma el servidor.
+
+   SI EL SERVIDOR NO RESPONDE no se abre ninguna puerta de emergencia a
+   proposito. La via alterna es la de siempre y no necesita contrasena aqui:
+   entrar por el Sistema RR.LL. y hacer clic en la tarjeta de Evaluaciones,
+   que emite un pase firmado.
+
+   Se agrega ademas limite de intentos, que este sistema no tenia.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const ETI_LOGIN_URL = 'https://rl-functions-verfrut-c0ctfjc0cjf5f0hz.brazilsouth-01.azurewebsites.net/api/auth/login';
+const ETI_MAX_INTENTOS = 5;
+let _etiIntentos = 0;
+
+function _etiError(msg){
+  const err = document.getElementById('lerr');
+  if(!err) return;
+  err.textContent = msg;
+  err.style.display = 'block';
+}
+
 async function doLogin(){
-  const u=document.getElementById('linput').value.trim();
-  const p=document.getElementById('lpwd').value;
-  const err=document.getElementById('lerr');
-  err.style.display='none';
+  const u = document.getElementById('linput').value.trim();
+  const p = document.getElementById('lpwd').value;
+  const err = document.getElementById('lerr');
+  if(err) err.style.display = 'none';
 
-  // Comparación por huella cifrada (los usuarios "extra" antiguos guardados
-  // con contraseña en texto plano siguen entrando y se actualizan solos).
-  let h='';
-  try{ h=await etiHash(u,p); }catch(e){ console.error('hash',e); }
-  const usr=getUsuarios().find(x=>x.user===u && ((x.ph&&x.ph===h)||(x.pwd&&x.pwd===p)));
-  if(!usr){
-    err.style.display='block';
-    document.getElementById('lpwd').value='';
+  if(_etiIntentos >= ETI_MAX_INTENTOS){
+    _etiError('Demasiados intentos. Ingresa desde el Sistema RR.LL. o avisa al administrador.');
     return;
   }
-  if(usr.pwd&&h){ // migrar usuario extra antiguo a huella cifrada
-    try{
-      const extras=JSON.parse(localStorage.getItem('eti_usuarios_extra')||'[]');
-      const ex=extras.find(x=>x.user===usr.user);
-      if(ex){ ex.ph=h; delete ex.pwd; localStorage.setItem('eti_usuarios_extra',JSON.stringify(extras)); }
-    }catch(e){}
-  }
+  if(!u || !p){ _etiError('Ingresa tu usuario y contrasena.'); return; }
 
-  // 🔐 Los supervisores ya NO entran por este login: su puerta es el Sistema
-  // RR.LL (un clic en la tarjeta = ingreso directo con pase SSO). Solo el
-  // administrador conserva el login manual como respaldo.
-  if(usr.rol!=='admin'){
-    document.getElementById('lpwd').value='';
-    mostrarAvisoIngresoRRLL();
-    return;
+  const btn = document.getElementById('lbtn');
+  const txtBtn = btn ? btn.textContent : '';
+  if(btn){ btn.disabled = true; btn.textContent = 'Verificando...'; }
+
+  try{
+    const r = await fetch(ETI_LOGIN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usuario: u, password: p })
+    });
+    const dd = await r.json();
+
+    if(!dd || !dd.success || !dd.user){
+      _etiIntentos++;
+      const quedan = ETI_MAX_INTENTOS - _etiIntentos;
+      _etiError('Datos incorrectos.' + (quedan > 0 ? ' Te quedan ' + quedan + ' intento(s).' : ''));
+      document.getElementById('lpwd').value = '';
+      return;
+    }
+
+    _etiIntentos = 0;
+    const su = dd.user;
+    const usuario = String(su.usuario || u).toLowerCase().trim();
+
+    /* El rol de ESTE sistema no es el del RR.LL.: aqui solo el administrador
+       tiene login manual. Se resuelve con la lista de siempre, que ya no
+       guarda contrasenas: solo nombre y rol. */
+    const ficha = getUsuarios().find(x => String(x.user||'').toLowerCase() === usuario);
+    const rolEti = ficha ? ficha.rol : 'supervisor';
+
+    if(rolEti !== 'admin'){
+      document.getElementById('lpwd').value = '';
+      mostrarAvisoIngresoRRLL();
+      return;
+    }
+
+    iniciarSesionCon({ user: usuario, nom: (ficha && ficha.nom) || su.nombre || usuario, rol: rolEti });
+
+  }catch(e){
+    console.error('[_LOGIN_SERVIDOR_V1]', e);
+    _etiError('No se pudo verificar tu usuario. Revisa tu conexion, o ingresa desde el Sistema RR.LL.');
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = txtBtn || 'Ingresar'; }
   }
-  iniciarSesionCon(usr);
 }
 
 function mostrarAvisoIngresoRRLL(){
