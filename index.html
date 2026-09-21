@@ -1544,6 +1544,33 @@ async function doLogin(){
   }
 }
 
+/* _SSO_RECEPTOR_V1 (20-set-2026)
+   Este sistema NUNCA leia el pase que emite el login del Sistema RR.LL
+   (#sso=<pase>.<firma>, vigente 90 s). El supervisor llegaba al login, su
+   clave del RR.LL no sirve aqui y el aviso lo mandaba de vuelta: un rebote.
+   Ahora: si el pase esta firmado y vigente, entra directo. El rol lo decide la
+   ficha local (solo los admin listados son admin); los demas, supervisor. */
+async function ssoDesdeRRLL(){
+  try{
+    const m = location.hash.match(/#sso=([^.]+)\.([a-f0-9]{64})/);
+    if(!m) return false;
+    history.replaceState(null, '', location.pathname + location.search);
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(m[1] + '|RL-SSO-VERFRUT-2026'));
+    const firma = Array.from(new Uint8Array(buf)).map(x => x.toString(16).padStart(2,'0')).join('');
+    if(firma !== m[2]) return false;
+    const d = JSON.parse(decodeURIComponent(escape(atob(m[1]))));
+    if(!d || !d.u || !d.exp || Date.now() > Number(d.exp)) return false;
+    const usuario = String(d.u).toLowerCase().trim();
+    const ficha = getUsuarios().find(x => String(x.user||'').toLowerCase() === usuario);
+    const rolEti = ficha ? ficha.rol : 'supervisor';
+    iniciarSesionCon({ user: usuario, nom: (ficha && ficha.nom) || d.n || usuario, rol: rolEti });
+    console.log('[SSO] ingreso directo desde RR.LL:', usuario, rolEti);
+    return true;
+  }catch(e){ console.warn('[SSO]', e); return false; }
+}
+if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ssoDesdeRRLL);
+else ssoDesdeRRLL();
+
 function mostrarAvisoIngresoRRLL(){
   let ov=document.getElementById('avisoSSO');
   if(!ov){
