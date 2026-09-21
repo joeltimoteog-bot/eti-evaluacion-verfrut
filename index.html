@@ -5170,6 +5170,32 @@ function guia(){
 }
 function lista(h,p,c,tip){var items=[],ok=0,first=-1;c.forEach(function(x,i){if(x[1])ok++;else if(first<0)first=i;items.push([x[1]?'ok':(first===i?'now':''),x[0]]);});return {h:h,p:p,items:items,prog:Math.round(100*ok/c.length),nota:ok+' de '+c.length+' completados',tip:tip};}
 
+/* ── Mi cumplimiento (supervisor) ── */
+function miCumplimiento(){
+  try{
+    if(!SESSION||SESSION.rol==='admin')return;
+    var sm=$('sm'); if(!sm||!sm.classList.contains('active'))return;
+    var grid=sm.querySelector('.mgrid'); if(!grid)return;
+    var card=$('gMiCumpl');
+    if(!card){card=document.createElement('div');card.id='gMiCumpl';card.style.cssText='margin:14px auto 0;max-width:1100px;background:#fff;border:1px solid #D9E0EC;border-left:6px solid #003DA5;border-radius:14px;padding:14px 16px;font-family:Barlow,sans-serif;color:#14213D;box-shadow:0 6px 20px rgba(11,30,69,.08)';grid.parentNode.insertBefore(card,grid.nextSibling);}
+    var progs=(typeof getProgs==='function'?getProgs():[]).filter(function(p){return p.sup&&_cumCoincide(p.sup,SESSION.nom)&&Array.isArray(p.fechas)&&p.fechas.length;});
+    var evals=(_evalsNube||[]).filter(function(ev){return ev&&ev.fecha&&_cumCoincide(ev.sup||ev.nomUsuario||ev.usuario||'',SESSION.nom);});
+    var h=hoy(), fechas=[];
+    progs.forEach(function(p){p.fechas.forEach(function(f){fechas.push({f:f,hecha:(p.fechasEjecutadas||[]).indexOf(f)>=0||evals.some(function(ev){return ev.fecha===f;})});});});
+    fechas.sort(function(a,b){return a.f.localeCompare(b.f);});
+    var ejec=0,venc=0,prox=0;fechas.forEach(function(x){if(x.hecha)ejec++;else if(x.f<h)venc++;else prox++;});
+    var pas=ejec+venc, pct=pas?Math.round(100*ejec/pas):(fechas.length?100:0);
+    var col=venc>0?'#C8102E':(fechas.length?'#007A3D':'#64748b');
+    var etiqueta=venc>0?'🔴 Tienes '+venc+' fecha(s) vencida(s)':(fechas.length?'🟢 Al día con lo programado':'⚪ Sin programación asignada');
+    var chips=fechas.slice(-8).map(function(x){var c=x.hecha?['#16a34a','#dcfce7','✓']:(x.f<h?['#dc2626','#fee2e2','✗']:['#64748b','#f1f5f9','•']);return '<span style="background:'+c[1]+';color:'+c[0]+';font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px">'+c[2]+' '+x.f.slice(8,10)+'/'+x.f.slice(5,7)+'</span>';}).join(' ');
+    var prox1=fechas.filter(function(x){return !x.hecha&&x.f>=h;})[0];
+    card.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><div><div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#C8102E;font-weight:700">Mi cumplimiento</div><div style="font:800 20px \'Barlow Condensed\',Barlow;color:#0B1E45">'+etiqueta+'</div></div><div style="font:800 30px \'Barlow Condensed\';color:'+col+'">'+pct+'%</div></div>'+
+      '<div style="height:8px;background:#EAEFF6;border-radius:6px;overflow:hidden;margin:8px 0"><div style="height:100%;width:'+pct+'%;background:'+col+'"></div></div>'+
+      '<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:#5B6B85"><span>✅ Ejecutadas: <b style="color:#14213D">'+ejec+'</b></span><span>❌ Vencidas: <b style="color:#dc2626">'+venc+'</b></span><span>📅 Próximas: <b style="color:#14213D">'+prox+'</b></span><span>📝 Evaluaciones registradas: <b style="color:#14213D">'+evals.length+'</b></span>'+(prox1?'<span>⏰ Siguiente fecha: <b style="color:#003DA5">'+prox1.f.slice(8,10)+'/'+prox1.f.slice(5,7)+'</b></span>':'')+'</div>'+
+      (chips?'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:8px">'+chips+'</div>':'')+
+      (venc>0?'<div style="margin-top:8px;font-size:12px;color:#7f1d1d;background:#fee2e2;border-radius:8px;padding:7px 10px">Registra la evaluación pendiente hoy: al guardarla con la fecha programada, la fecha se marca como ejecutada y tu cumplimiento se actualiza solo.</div>':'');
+  }catch(e){}
+}
 /* ── tarjeta ── */
 function crear(){
   if($('gDock'))return;
@@ -5180,7 +5206,7 @@ function crear(){
   try{if(localStorage.getItem('eti_guia_min')==='1'){d.classList.add('min');$('gDockT').textContent='▴';}}catch(e){}
   var f=document.createElement('button');f.id='gFab';f.innerHTML='💬 ¿Necesitas ayuda?';f.onclick=toggleChat;document.body.appendChild(f);
   var c=document.createElement('div');c.id='gChat';c.setAttribute('role','dialog');c.setAttribute('aria-label','Asistente ETI');
-  c.innerHTML='<div class="ch"><div class="av">🤖</div><div><b>Asistente ETI</b><small>Guía paso a paso · respuestas del área</small></div><button onclick="document.getElementById(\'gChat\').classList.remove(\'on\')" aria-label="Cerrar">✕</button></div><div class="cl" id="gLog"></div><div class="cf">Elige una opción. Si tu duda no está aquí, escribe a Joel Timoteo (960 853 224).</div>';
+  c.innerHTML='<div class="ch"><div class="av">🤖</div><div><b>Asistente ETI</b><small>Guía paso a paso · respuestas del área</small></div><button onclick="window._etiChatMenu()" title="Volver al menú" style="font-size:12px;font-weight:700;margin-left:auto;background:rgba(255,255,255,.15);border-radius:8px;padding:4px 8px">🏠 Menú</button><button onclick="document.getElementById(\'gChat\').classList.remove(\'on\')" aria-label="Cerrar" style="margin-left:6px">✕</button></div><div class="cl" id="gLog"></div><div class="cf">Elige una opción. Si tu duda no está aquí, escribe a Joel Timoteo (960 853 224).</div>';
   document.body.appendChild(c);
   var tr=document.createElement('div');tr.id='gTour';tr.innerHTML='<div class="tb"><div class="te">Bienvenido a la nueva versión</div><h3 id="gTourT"></h3><p id="gTourP"></p><div class="td" id="gTourD"></div><div class="tc"><button class="ts" id="gTourS">Saltar</button><button class="tn" id="gTourN">Siguiente →</button></div></div>';
   document.body.appendChild(tr);$('gTourS').onclick=tourEnd;$('gTourN').onclick=tourNext;
@@ -5190,6 +5216,7 @@ function pintar(){
   var id=activa(), logueado=false;try{logueado=!!SESSION;}catch(e){}
   if(!logueado||id==='slogin'||!id){d.classList.remove('on');if(f)f.classList.remove('on');return;}
   if(f)f.classList.add('on');
+  try{miCumplimiento();}catch(e){}
   var g=guia();if(!g){d.classList.remove('on');return;}
   d.classList.add('on');
   var h='<h4>'+g.h+'</h4><p>'+g.p+'</p><ul>'+g.items.map(function(x){return '<li class="'+x[0]+'"><i>'+(x[0]==='ok'?'✓':'')+'</i><span>'+x[1]+'</span></li>';}).join('')+'</ul>';
@@ -5212,11 +5239,14 @@ var FLOW={
   login2:{t:'Abre la tarjeta desde el RR.LL en la <b>misma pestaña</b> y entra dentro de 90 segundos. Si persiste, avisa a Joel Timoteo (960 853 224) con tu usuario.',o:[['Volver','inicio']]},
   enviar:{t:'Al terminar el paso 3 pulsa <b>Calcular Resultados</b>. En la pantalla de resultado tienes <b>Enviar Correo</b>, <b>Ver Reporte</b> y <b>Copiar</b>.',o:[['Volver','inicio']]}
 };
-function toggleChat(){var c=$('gChat');if(!c)return;c.classList.toggle('on');if(c.classList.contains('on')&&!$('gLog').children.length)bot('inicio');}
+function toggleChat(){var c=$('gChat');if(!c)return;c.classList.toggle('on');if(c.classList.contains('on')){var log=$('gLog');var libres=log.querySelectorAll('.o button:not(:disabled)').length;if(!log.children.length||!libres)bot('inicio');}}
+window._etiChatMenu=function(){var log=$('gLog');if(log){log.innerHTML='';}bot('inicio');};
 function bot(k){var f=FLOW[k],log=$('gLog');if(!f||!log)return;var m=document.createElement('div');m.className='m b';m.innerHTML=f.t;log.appendChild(m);var o=document.createElement('div');o.className='o';
   f.o.forEach(function(p){var b=document.createElement('button');b.textContent=p[0];b.onclick=function(){o.querySelectorAll('button').forEach(function(x){x.disabled=true;});b.classList.add('a');var me=document.createElement('div');me.className='m u';me.textContent=p[0];log.appendChild(me);
-    if(p[1].indexOf('go:')===0){try{go(p[1].slice(3));}catch(e){}$('gChat').classList.remove('on');setTimeout(pintar,50);}else bot(p[1]);log.scrollTop=log.scrollHeight;};o.appendChild(b);});
-  log.appendChild(o);log.scrollTop=log.scrollHeight;}
+    if(p[1].indexOf('go:')===0){try{go(p[1].slice(3));}catch(e){}setTimeout(pintar,50);var ok=document.createElement('div');ok.className='m b';ok.innerHTML='Listo, ya estás en esa pantalla ✅ ¿Algo más?';log.appendChild(ok);bot('inicio');}else bot(p[1]);log.scrollTop=log.scrollHeight;};o.appendChild(b);});
+  log.appendChild(o);log.scrollTop=log.scrollHeight;
+  /* si la respuesta no ofrece volver al menu, se agrega siempre una salida */
+  if(k!=='inicio'&&!f.o.some(function(p){return p[1]==='inicio';})){var v=document.createElement('div');v.className='o';var vb=document.createElement('button');vb.textContent='Volver al menú';vb.onclick=function(){bot('inicio');};v.appendChild(vb);log.appendChild(v);}}
 /* ── tour ── */
 var T=[['Así funciona Evaluaciones ETI','Registrar una evaluación toma 3 pasos guiados. En cada pantalla, la tarjeta “¿Qué hago ahora?” te dice exactamente qué sigue.'],['Tu avance siempre visible','La barra de pasos y el checklist muestran qué completaste y qué falta. Puedes salir y retomar donde quedaste.'],['Ayuda en cualquier momento','El botón 💬 abre el asistente con preguntas frecuentes y te lleva a la pantalla correcta.']],ti=0;
 function tourStart(){ti=0;tourPaint();$('gTour').classList.add('on');}
