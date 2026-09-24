@@ -450,10 +450,20 @@ input.psel{-moz-appearance:textfield;appearance:textfield;cursor:text;}
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.8rem;flex-wrap:wrap;gap:.5rem;">
         <div class="ptit">Todos los Registros del Sistema</div>
         <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
-          <select class="fc" id="filtro-sup" onchange="renderAdminRegistros()" style="font-size:.8rem;padding:.4rem .7rem;">
+          <select class="fc" id="filtro-anio" onchange="_regPag=0;renderAdminRegistros()" style="font-size:.8rem;padding:.4rem .7rem;">
+            <option value="">Todos los años</option>
+          </select>
+          <select class="fc" id="filtro-mes" onchange="_regPag=0;renderAdminRegistros()" style="font-size:.8rem;padding:.4rem .7rem;">
+            <option value="">Todos los meses</option>
+            <option value="01">Enero</option><option value="02">Febrero</option><option value="03">Marzo</option>
+            <option value="04">Abril</option><option value="05">Mayo</option><option value="06">Junio</option>
+            <option value="07">Julio</option><option value="08">Agosto</option><option value="09">Septiembre</option>
+            <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+          </select>
+          <select class="fc" id="filtro-sup" onchange="_regPag=0;renderAdminRegistros()" style="font-size:.8rem;padding:.4rem .7rem;">
             <option value="">Todos los supervisores</option>
           </select>
-          <select class="fc" id="filtro-est" onchange="renderAdminRegistros()" style="font-size:.8rem;padding:.4rem .7rem;">
+          <select class="fc" id="filtro-est" onchange="_regPag=0;renderAdminRegistros()" style="font-size:.8rem;padding:.4rem .7rem;">
             <option value="">Todos los estados</option>
             <option value="aprobado">✅ Aprobados</option>
             <option value="refuerzo">⚠️ En Refuerzo</option>
@@ -961,9 +971,10 @@ input.psel{-moz-appearance:textfield;appearance:textfield;cursor:text;}
   </header>
   <div class="dlayout">
     <div class="rhdr">
-      <div><div class="ptit">Dashboard de Grupos</div><div class="psub">Ranking acumulado de todas las evaluaciones registradas</div></div>
+      <div><div class="ptit">Dashboard de Grupos</div><div class="psub" id="dsub">Ranking de las evaluaciones registradas por ti</div></div>
       <div style="display:flex;gap:.55rem;flex-wrap:wrap;">
-        <button class="btn bdng bsm" onclick="limpH()">🗑 Limpiar</button>
+        <select class="fc" id="dfiltro-anio" onchange="renderDash()" style="font-size:.8rem;padding:.4rem .7rem;width:auto;"><option value="">Todos los años</option></select>
+        <button class="btn bdng bsm" id="btn-limpH" onclick="limpH()">🗑 Limpiar</button>
         <button class="btn bout bsm" onclick="exportDashTxt()">📄 Exportar .txt</button>
         <button class="btn bout bsm" onclick="exportDashCsv()">📊 Exportar .csv</button>
         <button class="btn bpri bsm" onclick="exportarExcelCompleto()">📊 Excel Completo</button>
@@ -1330,7 +1341,9 @@ let _evalsNube=null;  // cache en vivo de evaluaciones (Firestore)
 
 let _nubeEscuchando=false;
 function escucharNube(){
-  if(!fbdb || _nubeEscuchando) return; // evitar listeners duplicados
+  if(!fbdb) return;
+  escucharEvalsNube();          // _HIST_ROL_V1: evaluaciones segun rol (se re-suscribe si cambia el usuario)
+  if(_nubeEscuchando) return;   // evitar listeners duplicados
   _nubeEscuchando=true;
   try{
     fbdb.collection(COL_PROG_EV).onSnapshot(snap=>{
@@ -1356,22 +1369,66 @@ function escucharNube(){
       if(el && el.style.display!=='none') renderPgLista();
       _cumRefrescarSiVisible();
     },e=>console.error('Nube prog eti:',e));
-    fbdb.collection(COL_EVAL).orderBy('ts','desc').limit(800).onSnapshot(snap=>{
-      _evalsNube=snap.docs.map(d=>({id:d.id,...d.data()}));
-      const reg=document.getElementById('admin-registros');
-      if(reg && reg.style.display!=='none') renderAdminRegistros();
-      const st=document.getElementById('admin-stats');
-      if(st && st.style.display!=='none') renderAdminStats();
-      _cumRefrescarSiVisible();
-      // Cada usuario ve SUS registros desde cualquier dispositivo
-      sincronizarHistorialNube();
-    },e=>console.error('Nube eval:',e));
   }catch(e){console.error(e);}
 }
 let _progsEtiChk=null;   // programaciones de CHECKLIST registradas en programaciones_eti (normalizadas)
 function _cumRefrescarSiVisible(){
   try{ const el=document.getElementById('admin-cumplimiento');
        if(el && el.style.display!=='none') renderCumplimiento(); }catch(e){}
+}
+/* ═══ _HIST_ROL_V1 (24-set-2026) — historial completo por rol ═══
+   ANTES: orderBy('ts').limit(800) sobre TODAS las evaluaciones, para todos.
+          Lo antiguo desaparecia y cada supervisor descargaba las de todos.
+   AHORA: Admin      → todas las evaluaciones, sin tope (todos los años).
+          Supervisor → solo las suyas: registradas por el (usuario) o a su
+                       nombre (sup), de todos los años. Nada de otros equipos. */
+let _evalsUnsub=[], _evalsPara=null;
+function detenerEvalsNube(){
+  _evalsUnsub.forEach(f=>{try{f();}catch(e){}});
+  _evalsUnsub=[]; _evalsPara=null; _evalsNube=null;
+}
+function _alRecibirEvals(){
+  const reg=document.getElementById('admin-registros');
+  if(reg && reg.style.display!=='none') renderAdminRegistros();
+  const st=document.getElementById('admin-stats');
+  if(st && st.style.display!=='none') renderAdminStats();
+  const us=document.getElementById('admin-users');
+  if(us && us.style.display!=='none') renderAdminUsers();
+  _cumRefrescarSiVisible();
+  sincronizarHistorialNube();   // cada usuario ve SUS registros desde cualquier dispositivo
+  try{ miCumplimiento(); }catch(e){}
+}
+function escucharEvalsNube(){
+  if(!fbdb || !SESSION) return;
+  const clave=SESSION.rol+'|'+SESSION.user;
+  if(_evalsPara===clave) return;            // ya escuchando para este usuario
+  detenerEvalsNube();
+  _evalsPara=clave;
+  const col=fbdb.collection(COL_EVAL);
+  const err=e=>console.error('Nube eval:',e);
+  if(SESSION.rol==='admin'){
+    _evalsUnsub.push(col.orderBy('ts','desc').onSnapshot(snap=>{
+      _evalsNube=snap.docs.map(d=>({id:d.id,...d.data()}));
+      _alRecibirEvals();
+    },err));
+    return;
+  }
+  // Supervisor: dos consultas simples (sin indices compuestos) unidas por id
+  const partes={u:[],s:[]};
+  const unir=()=>{
+    const m=new Map(); [...partes.u,...partes.s].forEach(d=>m.set(d.id,d));
+    _evalsNube=[...m.values()].sort((a,b)=>(b.ts||0)-(a.ts||0));
+    _alRecibirEvals();
+  };
+  _evalsUnsub.push(col.where('usuario','==',SESSION.user).onSnapshot(snap=>{
+    partes.u=snap.docs.map(d=>({id:d.id,...d.data()})); unir();
+  },err));
+  const noms=[...new Set([SESSION.nom,
+    ...(typeof SUPERVISORES!=='undefined'?SUPERVISORES:[]).map(x=>x.nom).filter(n=>_cumCoincide(n,SESSION.nom))
+  ])].filter(Boolean).slice(0,10);
+  if(noms.length) _evalsUnsub.push(col.where('sup','in',noms).onSnapshot(snap=>{
+    partes.s=snap.docs.map(d=>({id:d.id,...d.data()})); unir();
+  },err));
 }
 // Coincidencia laxa de nombres (tolera orden distinto y variantes: ZAPATA SUAREZ ~ ZAPATA JUAREZ)
 function _cumCoincide(a,b){
@@ -1671,6 +1728,7 @@ function iniciarSesionCon(usr){
 function doLogout(){
   detenerPresencia();  // marcar fuera de línea antes de salir
   detenerChat();
+  detenerEvalsNube();  // _HIST_ROL_V1: no dejar datos del usuario anterior
   SESSION=null;
   sessionStorage.removeItem('eti_session');
   hist=[];
@@ -1903,13 +1961,13 @@ function renderAdminChartSup(supList){
 
 function renderAdminUsers(){
   const usuarios=getUsuarios();
+  const _todosH=getAllHist();   // _HIST_ROL_V1: conteo real desde la nube
   document.getElementById('admin-user-list').innerHTML=`
     <table class="rtbl">
       <thead><tr><th>#</th><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Registros</th><th>Acción</th></tr></thead>
       <tbody>
         ${usuarios.map((u,i)=>{
-          const key=u.rol==='admin'?'eti_v4':'eti_v4_'+u.user;
-          const regs=JSON.parse(localStorage.getItem(key)||'[]').length;
+          const regs=_todosH.filter(r=>r.usuario===u.user).length;
           const esBase=USUARIOS_BASE.find(b=>b.user===u.user);
           return `<tr>
             <td>${i+1}</td>
@@ -1952,6 +2010,8 @@ function delUser(userKey){
   });
 }
 
+let _regPag=0;                                   // _HIST_ROL_V1
+function _regIr(p){ _regPag=p; renderAdminRegistros(); }
 function renderAdminRegistros(){
   const todos=getAllHist();
   const filtro=document.getElementById('filtro-sup')?.value||'';
@@ -1970,10 +2030,31 @@ function renderAdminRegistros(){
   if(fEst==='aprobado') filtrados=filtrados.filter(r=>r.resGrupo>=0.7);
   if(fEst==='refuerzo') filtrados=filtrados.filter(r=>r.resGrupo<0.7);
   if(fEst==='destiempo') filtrados=filtrados.filter(r=>r.destiempo);
+  // _HIST_ROL_V1: filtros por año / mes
+  const selA=document.getElementById('filtro-anio');
+  if(selA){
+    const act=selA.value;
+    const anios=[...new Set(todos.map(r=>String(r.fecha||'').slice(0,4)).filter(a=>/^\d{4}$/.test(a)))].sort().reverse();
+    selA.innerHTML='<option value="">Todos los años</option>'+anios.map(a=>`<option value="${a}" ${a===act?'selected':''}>${a}</option>`).join('');
+  }
+  const fAn=selA?.value||'', fMes=document.getElementById('filtro-mes')?.value||'';
+  if(fAn)  filtrados=filtrados.filter(r=>String(r.fecha||'').slice(0,4)===fAn);
+  if(fMes) filtrados=filtrados.filter(r=>String(r.fecha||'').slice(5,7)===fMes);
   const ordenados=[...filtrados].sort((a,b)=>new Date(b.fecha||0)-new Date(a.fecha||0));
+  // _HIST_ROL_V1: paginación de 50 filas
+  const POR_PAG=50, totPag=Math.max(1,Math.ceil(ordenados.length/POR_PAG));
+  if(_regPag>=totPag) _regPag=totPag-1; if(_regPag<0) _regPag=0;
+  const desde=_regPag*POR_PAG, pagina=ordenados.slice(desde,desde+POR_PAG);
+  const pagHtml=totPag>1?`<div style="display:flex;justify-content:center;align-items:center;gap:.5rem;margin:.8rem 0;">
+      <button class="btn bout bsm" ${_regPag===0?'disabled':''} onclick="_regIr(0)">⏮</button>
+      <button class="btn bout bsm" ${_regPag===0?'disabled':''} onclick="_regIr(${_regPag-1})">◀ Anterior</button>
+      <span style="font-size:.8rem;font-weight:700;color:var(--text2);">Página ${_regPag+1} de ${totPag}</span>
+      <button class="btn bout bsm" ${_regPag>=totPag-1?'disabled':''} onclick="_regIr(${_regPag+1})">Siguiente ▶</button>
+      <button class="btn bout bsm" ${_regPag>=totPag-1?'disabled':''} onclick="_regIr(${totPag-1})">⏭</button>
+    </div>`:'';
 
   document.getElementById('admin-registros-tabla').innerHTML=ordenados.length?`
-    <div style="font-size:.75rem;color:var(--text2);margin-bottom:.5rem;font-weight:700;">Mostrando ${ordenados.length} de ${todos.length} registros ${_evalsNube!==null?'· ☁️ sincronizado con la nube':'· 💾 datos locales'}</div>
+    <div style="font-size:.75rem;color:var(--text2);margin-bottom:.5rem;font-weight:700;">Mostrando ${desde+1}–${desde+pagina.length} de ${ordenados.length} filtrados (${todos.length} en total) ${_evalsNube!==null?'· ☁️ sincronizado con la nube':'· 💾 datos locales'}</div>
     <div style="overflow-x:auto;">
     <table class="rtbl">
       <thead><tr>
@@ -1982,10 +2063,10 @@ function renderAdminRegistros(){
         <th>⏰ Destiempo</th><th>Reportó</th>
       </tr></thead>
       <tbody>
-        ${ordenados.map((r,i)=>{
+        ${pagina.map((r,i)=>{
           const rp=(r.resGrupo*100).toFixed(1), rok=r.resGrupo>=0.7;
           return `<tr>
-            <td>${i+1}</td>
+            <td>${desde+i+1}</td>
             <td style="font-weight:700;">${r.nomUsuario||r.usuario||'—'}</td>
             <td>${r.emp||'—'}</td>
             <td>${r.sector||'—'}</td>
@@ -2000,7 +2081,7 @@ function renderAdminRegistros(){
           </tr>`;
         }).join('')}
       </tbody>
-    </table></div>` : '<div style="color:var(--text2);font-size:.85rem;padding:1rem;">Sin registros que coincidan con los filtros.</div>';
+    </table></div>${pagHtml}` : '<div style="color:var(--text2);font-size:.85rem;padding:1rem;">Sin registros que coincidan con los filtros.</div>';
 }
 
 function exportAdminExcel(){
@@ -2891,13 +2972,23 @@ ${new Date().toLocaleString('es-PE')}
 // ══════════════════════════════════════════
 function irDash(){renderDash();go('sdash');}
 function renderDash(){
-  const h=hist;
+  // _HIST_ROL_V1: filtro por año + subtítulo + botón Limpiar solo para admin
+  const selA=document.getElementById('dfiltro-anio');
+  if(selA){
+    const act=selA.value;
+    const anios=[...new Set(hist.map(r=>String(r.fecha||'').slice(0,4)).filter(a=>/^\d{4}$/.test(a)))].sort().reverse();
+    selA.innerHTML='<option value="">Todos los años</option>'+anios.map(a=>`<option value="${a}" ${a===act?'selected':''}>${a}</option>`).join('');
+  }
+  const fAn=selA?.value||'';
+  const h=fAn?hist.filter(r=>String(r.fecha||'').slice(0,4)===fAn):hist;
+  const bl=document.getElementById('btn-limpH'); if(bl) bl.style.display=(SESSION&&SESSION.rol==='admin')?'':'none';
+  const sb=document.getElementById('dsub'); if(sb) sb.textContent='Ranking de las evaluaciones registradas por ti · '+(fAn?'año '+fAn:'todos los años');
   document.getElementById('dkpis').innerHTML=`
     <div class="kcard"><div class="klbl">Rutas Registradas</div><div class="kval">${h.length}</div><div class="ksub">acumulado</div></div>
     <div class="kcard kg"><div class="klbl">Promedio</div><div class="kval">${h.length?((h.reduce((a,x)=>a+x.resGrupo,0)/h.length)*100).toFixed(1)+'%':'—'}</div><div class="ksub">todas las rutas</div></div>
     <div class="kcard kr"><div class="klbl">En Refuerzo</div><div class="kval" style="color:var(--red)">${h.filter(x=>x.resGrupo<0.7).length}</div><div class="ksub">< 70%</div></div>`;
   if(!h.length){document.getElementById('dlist').innerHTML='<div class="demp"><div style="font-size:3rem;margin-bottom:1rem">📊</div>Sin datos. Calcule una evaluación primero.</div>';const bx=document.getElementById('dchart-box');if(bx)bx.style.display='none';return;}
-  renderDashChart();
+  renderDashChart(h);
   document.getElementById('dlist').innerHTML=[...h].sort((a,b)=>b.resGrupo-a.resGrupo).map(r=>{
     const p=(r.resGrupo*100).toFixed(1),ok=r.resGrupo>=0.7;
     return `<div class="grow">
@@ -2911,13 +3002,14 @@ function renderDash(){
 // ── GRÁFICO: Evolución de resultados (Dashboard) ──
 let _dChart=null;
 function fmtFCorta(iso){const d=new Date(iso+'T12:00:00');return d.toLocaleDateString('es-PE',{day:'2-digit',month:'short'});}
-function renderDashChart(){
+function renderDashChart(hh){
+  const src=hh||hist;   // _HIST_ROL_V1: respeta el filtro de año
   const box=document.getElementById('dchart-box');
   const cv=document.getElementById('dchart');
   if(!box||!cv||typeof Chart==='undefined') return;
   // Agrupar por fecha → promedio del día
   const porFecha={};
-  hist.forEach(r=>{ if(!r.fecha) return; (porFecha[r.fecha]=porFecha[r.fecha]||[]).push(r.resGrupo*100); });
+  src.forEach(r=>{ if(!r.fecha) return; (porFecha[r.fecha]=porFecha[r.fecha]||[]).push(r.resGrupo*100); });
   const fechas=Object.keys(porFecha).sort();
   if(fechas.length<2){ box.style.display='none'; return; }
   box.style.display='block';
