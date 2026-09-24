@@ -1765,10 +1765,27 @@ async function _ssoEntrar(){
   history.replaceState(null,'',location.pathname+location.search);   // borrar el pase
   const fichaDe = u => getUsuarios().find(x=>String(x.user||'').toLowerCase()===u);
 
-  // 1) Pase del servidor
+  // 0) _SSO_RAPIDO_V1: supervisor con pase antiguo valido → entra AL INSTANTE (sin esperar al servidor)
+  if(m && ETI_ACEPTA_PASE_ANTIGUO){
+    try{
+      const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(m[1]+'|RL-SSO-VERFRUT-2026'));
+      const firma=Array.from(new Uint8Array(buf)).map(x=>x.toString(16).padStart(2,'0')).join('');
+      const d=(firma===m[2])?JSON.parse(decodeURIComponent(escape(atob(m[1])))):null;
+      if(d&&d.u&&d.exp&&Date.now()<=Number(d.exp)){
+        const usr=fichaDe(String(d.u).toLowerCase().trim());
+        if(usr && usr.rol!=='admin'){
+          sessionStorage.removeItem('eti_token');
+          iniciarSesionCon(usr);
+          return true;
+        }
+      }
+    }catch(e){}
+  }
+
+  // 1) Pase del servidor (admin, o quien no traiga pase antiguo)
   if(m2){
     try{
-      const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(),8000);
+      const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(),6000);
       const r=await fetch(ETI_SSO_URL,{method:'POST',signal:ctl.signal,
         headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:'verificar',pase:m2[1]})});
       clearTimeout(t);
