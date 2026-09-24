@@ -1294,6 +1294,19 @@ function saveUsuariosExtra(lista){
 
 // Usuario activo en sesión
 let SESSION = JSON.parse(sessionStorage.getItem('eti_session')||'null');
+/* _SEG_SESION_V1 (24-set-2026): el rol NUNCA se toma de lo guardado en el
+   navegador (se podia editar a mano). Se recalcula con la lista de usuarios.
+   El admin ademas necesita el token que entrego el servidor al ingresar. */
+(function(){
+  if(!SESSION) return;
+  try{
+    const f=getUsuarios().find(x=>String(x.user||'').toLowerCase()===String(SESSION.user||'').toLowerCase());
+    SESSION = f ? {user:f.user, nom:f.nom, rol:f.rol} : null;
+    if(SESSION && SESSION.rol==='admin' && !sessionStorage.getItem('eti_token')) SESSION=null;
+  }catch(e){ SESSION=null; }
+  if(SESSION) sessionStorage.setItem('eti_session',JSON.stringify(SESSION));
+  else { sessionStorage.removeItem('eti_session'); sessionStorage.removeItem('eti_token'); }
+})();
 
 // ══════════════════════════════════════════
 // FIREBASE (nube) + GOOGLE SHEETS
@@ -1505,6 +1518,7 @@ function enviarASheets(p){
 }
 
 // Si hay sesión activa (recarga de página), sincronizar de inmediato
+if(SESSION && SESSION.rol==='admin') setTimeout(_etiRevalidarAdmin,300);  // _SEG_SESION_V1
 if(SESSION) setTimeout(()=>{
   escucharNube();
   iniciarPresencia();
@@ -1576,6 +1590,8 @@ async function doLogin(){
     }
 
     _etiIntentos = 0;
+    if(dd.token) sessionStorage.setItem('eti_token', dd.token);   // _SEG_SESION_V1
+    else sessionStorage.removeItem('eti_token');
     const su = dd.user;
     const usuario = String(su.usuario || u).toLowerCase().trim();
 
@@ -1607,24 +1623,7 @@ async function doLogin(){
    clave del RR.LL no sirve aqui y el aviso lo mandaba de vuelta: un rebote.
    Ahora: si el pase esta firmado y vigente, entra directo. El rol lo decide la
    ficha local (solo los admin listados son admin); los demas, supervisor. */
-async function ssoDesdeRRLL(){
-  try{
-    const m = location.hash.match(/#sso=([^.]+)\.([a-f0-9]{64})/);
-    if(!m) return false;
-    history.replaceState(null, '', location.pathname + location.search);
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(m[1] + '|RL-SSO-VERFRUT-2026'));
-    const firma = Array.from(new Uint8Array(buf)).map(x => x.toString(16).padStart(2,'0')).join('');
-    if(firma !== m[2]) return false;
-    const d = JSON.parse(decodeURIComponent(escape(atob(m[1]))));
-    if(!d || !d.u || !d.exp || Date.now() > Number(d.exp)) return false;
-    const usuario = String(d.u).toLowerCase().trim();
-    const ficha = getUsuarios().find(x => String(x.user||'').toLowerCase() === usuario);
-    const rolEti = ficha ? ficha.rol : 'supervisor';
-    iniciarSesionCon({ user: usuario, nom: (ficha && ficha.nom) || d.n || usuario, rol: rolEti });
-    console.log('[SSO] ingreso directo desde RR.LL:', usuario, rolEti);
-    return true;
-  }catch(e){ console.warn('[SSO]', e); return false; }
-}
+async function ssoDesdeRRLL(){ return _ssoEntrar(); }   // _SSO_SERVIDOR_V1: un solo receptor
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ssoDesdeRRLL);
 else ssoDesdeRRLL();
 
@@ -1731,6 +1730,7 @@ function doLogout(){
   detenerEvalsNube();  // _HIST_ROL_V1: no dejar datos del usuario anterior
   SESSION=null;
   sessionStorage.removeItem('eti_session');
+  sessionStorage.removeItem('eti_token');   // _SEG_SESION_V1
   hist=[];
   go('slogin');
   toast('Sesión cerrada','i');
@@ -1745,22 +1745,86 @@ function togglePwd(){
 // Si la página llega con #sso=<pase>.<firma> válido y vigente (90 s), entra
 // directo sin mostrar el login. El pase se borra de la barra de direcciones
 // al instante: copiar la URL a otro monitor lleva al login normal.
-(async function(){
+/* ═══ _SSO_SERVIDOR_V1 (24-set-2026) ═══════════════════════════════════════
+   1) #…&sso2=<pase>  → lo verifica el SERVIDOR Azure (/api/auth/sso). Vale
+      para todos, incluido el admin. El secreto no esta en esta pagina.
+   2) #sso=<pase>.<firma> (antiguo, firmado en el navegador) → se acepta SOLO
+      para supervisores mientras dure la transicion. El admin NUNCA entra con
+      el: se le muestra el login para que use su contraseña.
+      Cuando el pase del servidor este probado, poner ETI_ACEPTA_PASE_ANTIGUO=false.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const ETI_SSO_URL = 'https://rl-functions-verfrut-c0ctfjc0cjf5f0hz.brazilsouth-01.azurewebsites.net/api/auth/sso';
+const ETI_ACEPTA_PASE_ANTIGUO = true;
+async function _ssoEntrar(){
+  if(window._ssoHecho) return false;
+  const h = location.hash || '';
+  const m2 = h.match(/[#&]sso2=([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)/);
+  const m  = h.match(/#sso=([^.&]+)\.([a-f0-9]{64})/);
+  if(!m2 && !m) return false;
+  window._ssoHecho = true;
+  history.replaceState(null,'',location.pathname+location.search);   // borrar el pase
+  const fichaDe = u => getUsuarios().find(x=>String(x.user||'').toLowerCase()===u);
+
+  // 1) Pase del servidor
+  if(m2){
+    try{
+      const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(),8000);
+      const r=await fetch(ETI_SSO_URL,{method:'POST',signal:ctl.signal,
+        headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:'verificar',pase:m2[1]})});
+      clearTimeout(t);
+      const j=await r.json();
+      if(j && j.success && j.user && j.user.usuario){
+        const usr=fichaDe(String(j.user.usuario).toLowerCase().trim());
+        if(usr){
+          if(j.token) sessionStorage.setItem('eti_token', j.token);
+          iniciarSesionCon(usr);
+          console.log('[SSO] ingreso validado por el servidor:', usr.user, usr.rol);
+          return true;
+        }
+        return false;   // usuario no existe aqui → login normal
+      }
+    }catch(e){ console.warn('[SSO] servidor no disponible, se usa el pase antiguo', e&&e.name); }
+  }
+
+  // 2) Pase antiguo (transicion): solo supervisores
+  if(m && ETI_ACEPTA_PASE_ANTIGUO){
+    try{
+      const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(m[1]+'|RL-SSO-VERFRUT-2026'));
+      const firma=Array.from(new Uint8Array(buf)).map(x=>x.toString(16).padStart(2,'0')).join('');
+      if(firma!==m[2]) return false;                                     // pase adulterado
+      const d=JSON.parse(decodeURIComponent(escape(atob(m[1]))));
+      if(!d||!d.u||!d.exp||Date.now()>Number(d.exp)) return false;       // pase caducado
+      const usr=fichaDe(String(d.u).toLowerCase().trim());
+      if(!usr) return false;                                             // usuario no existe aqui
+      if(usr.rol==='admin'){
+        const li=document.getElementById('linput'); if(li) li.value=usr.user;
+        setTimeout(()=>toast('🔐 Por seguridad, el administrador ingresa con su contraseña','i'),400);
+        return false;
+      }
+      sessionStorage.removeItem('eti_token');
+      iniciarSesionCon(usr);
+      return true;
+    }catch(e){ return false; }
+  }
+  return false;
+}
+
+// Revalida la sesion del admin al recargar. Si el servidor dice que el token
+// no vale → cierra la sesion. Si no hay red, no bloquea (se reintenta al recargar).
+async function _etiRevalidarAdmin(){
   try{
-    const m=location.hash.match(/#sso=([^.]+)\.([a-f0-9]{64})/);
-    if(!m) return;
-    history.replaceState(null,'',location.pathname+location.search);  // borrar el pase
-    const firmaBuf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(m[1]+'|RL-SSO-VERFRUT-2026'));
-    const firma=Array.from(new Uint8Array(firmaBuf)).map(x=>x.toString(16).padStart(2,'0')).join('');
-    if(firma!==m[2]) return;                                           // pase adulterado
-    const d=JSON.parse(decodeURIComponent(escape(atob(m[1]))));
-    if(!d||!d.u||!d.exp||Date.now()>Number(d.exp)) return;             // pase caducado
-    const u=String(d.u).toLowerCase();
-    const usr=getUsuarios().find(x=>String(x.user||'').toLowerCase()===u);
-    if(!usr) return;                                                   // usuario no existe aquí → login normal
-    iniciarSesionCon(usr);
-  }catch(e){}
-})();
+    const tk=sessionStorage.getItem('eti_token');
+    if(!SESSION || SESSION.rol!=='admin') return;
+    if(!tk){ doLogout(); return; }
+    const r=await fetch(ETI_SSO_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({accion:'sesion',token:tk})});
+    if(r.status===503) return;                        // servidor sin SSO configurado: no bloquear
+    const j=await r.json().catch(()=>null);
+    const ok = j && j.success && j.user && String(j.user.usuario).toLowerCase()===String(SESSION.user).toLowerCase();
+    if(!ok){ doLogout(); toast('🔐 Tu sesión venció. Ingresa de nuevo.','i'); }
+  }catch(e){ /* sin red: no bloquear */ }
+}
+_ssoEntrar();   // recibir el pase (despues de declarar las constantes)
 
 // Guardar historial por usuario al calcular
 function guardarHistorialUsuario(nuevosRegistros){
