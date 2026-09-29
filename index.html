@@ -15,6 +15,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script>window.qrcode||document.write('<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"><\/script>');</script>
 <style>
 :root{
   /* _IMAGEN_V1: el logo vivia repetido 9 veces en el HTML. Ahora se define
@@ -334,36 +336,47 @@ input.psel{-moz-appearance:textfield;appearance:textfield;cursor:text;}
 
 <!-- ══ LOGIN ══ -->
 <div class="screen active" id="slogin">
-  <div style="min-height:100vh;background:radial-gradient(1100px 550px at 75% -10%,rgba(200,16,46,.28),transparent 60%),radial-gradient(900px 500px at -10% 110%,rgba(255,153,168,.12),transparent 55%),linear-gradient(160deg,#001a4d 0%,#003DA5 55%,#001233 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;position:relative;overflow:hidden;">
-    <canvas id="loginCanvas" style="position:absolute;inset:0;pointer-events:none;"></canvas>
-    <div class="logo-uni" role="img" aria-label="Unifrutti" style="height:92px;margin:0 auto 1.3rem;border-radius:12px;filter:drop-shadow(0 6px 18px rgba(0,0,0,.3));"></div>
-    <div style="text-align:center;margin-bottom:2.2rem;">
-      <div style="display:inline-block;color:#FF99A8;font-size:.7rem;font-weight:800;letter-spacing:.28em;text-transform:uppercase;margin-bottom:.9rem;border:1px solid rgba(255,153,168,.4);border-radius:20px;padding:.35rem 1.1rem;background:rgba(200,16,46,.15);">✦ Sistema de Evaluación ✦</div>
-      <div style="color:#fff;font-size:clamp(2rem,9vw,3rem);font-weight:800;line-height:1.05;letter-spacing:.04em;text-shadow:0 6px 30px rgba(0,0,0,.45);">ÉTICA<span style="color:#FF3B57;text-shadow:0 0 18px rgba(255,59,87,.8);">·</span>SOCIAL</div>
-      <div style="width:70px;height:3px;background:linear-gradient(90deg,transparent,#C8102E,transparent);margin:.8rem auto;border-radius:2px;"></div>
-      <div style="color:rgba(255,255,255,.65);font-size:.8rem;letter-spacing:.14em;font-weight:600;">VERFRUT S.A.C · RAPEL S.A.C — UNIFRUTTI GROUP</div>
-    </div>
-    <div class="login-card" style="background:rgba(255,255,255,.96);backdrop-filter:blur(14px);border-radius:20px;border:1px solid rgba(255,255,255,.6);border-top:5px solid #C8102E;padding:2rem;width:100%;max-width:380px;box-shadow:0 28px 70px rgba(0,0,0,.45);position:relative;z-index:2;">
-      <div style="font-size:1rem;font-weight:800;color:#003DA5;margin-bottom:1rem;text-align:center;">Iniciar Sesión</div>
-      <div style="background:#F5F7FA;border-left:3px solid #003DA5;border-radius:0 6px 6px 0;padding:.7rem .85rem;font-size:.78rem;color:#1A2340;line-height:1.45;margin-bottom:1.2rem;font-family:'Barlow','Segoe UI',Tahoma,Arial,sans-serif;">
-        Estás ingresando al sistema de evaluaciones de Ética Social, el cual genera reportes en base a la información registrada.
+  <!-- _LOGIN_V2 (29-set-2026): panel de marca a la izquierda, formulario a la derecha -->
+  <div class="lg2">
+    <aside class="lg2-brand">
+      <canvas id="loginCanvas" style="position:absolute;inset:0;pointer-events:none;"></canvas>
+      <div class="lg2-top"><div class="logo-uni" role="img" aria-label="Unifrutti"></div>
+        <div><small>Unifrutti Group · Perú</small><b>VERFRUT S.A.C. · RAPEL S.A.C.</b></div></div>
+      <div class="lg2-hero">
+        <span class="lg2-tag">Gestión Humana · Relaciones Laborales</span>
+        <h1>Evaluación<br>Ética <span>·</span> Social</h1>
+        <p>Mide el conocimiento de nuestros trabajadores sobre legislación laboral, bienestar, sustentabilidad, ética, seguridad y medio ambiente.</p>
       </div>
-      <div class="fg">
-        <label class="fl">Usuario</label>
-        <input class="fc" type="text" id="linput" placeholder="Ingrese su usuario" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('lpwd').focus()">
+      <div class="lg2-pts">
+        <div><b>6</b><span>temas evaluados con peso propio</span></div>
+        <div><b>QR</b><span>el trabajador responde desde su celular</span></div>
+        <div><b>100%</b><span>cálculo automático y en la nube</span></div>
       </div>
-      <div class="fg">
-        <label class="fl">Contraseña</label>
-        <div style="position:relative;">
-          <input class="fc" type="password" id="lpwd" placeholder="Ingrese su contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:2.5rem;">
-          <span onclick="togglePwd()" style="position:absolute;right:.75rem;top:50%;transform:translateY(-50%);cursor:pointer;font-size:.9rem;color:#4A5A80;" id="lpwdico">👁</span>
+      <div class="lg2-foot">Departamento de Gestión Humana — Área de Relaciones Laborales</div>
+    </aside>
+    <main class="lg2-form">
+      <div class="lg2-card login-card">
+        <div class="lg2-mlogo"><div class="logo-uni" role="img" aria-label="Unifrutti"></div></div>
+        <h2>Bienvenido 👋</h2>
+        <p class="lg2-sub">Ingresa con tu usuario de administrador para gestionar las evaluaciones ETI.</p>
+        <div class="fg">
+          <label class="fl">Usuario</label>
+          <input class="fc" type="text" id="linput" placeholder="Tu usuario" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('lpwd').focus()">
         </div>
+        <div class="fg">
+          <label class="fl">Contraseña</label>
+          <div style="position:relative;">
+            <input class="fc" type="password" id="lpwd" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:2.6rem;">
+            <span onclick="togglePwd()" style="position:absolute;right:.85rem;top:50%;transform:translateY(-50%);cursor:pointer;font-size:.95rem;color:#4A5A80;" id="lpwdico">👁</span>
+          </div>
+        </div>
+        <div id="lerr" style="display:none;background:#FCE4E7;border-left:3px solid #C8102E;border-radius:0 8px 8px 0;padding:.6rem .9rem;font-size:.8rem;color:#C8102E;margin-bottom:.8rem;">Usuario o contraseña incorrectos</div>
+        <button class="btn bpri" id="lbtn" style="width:100%;font-weight:800;" onclick="doLogin()">Ingresar →</button>
+        <div class="lg2-sso"><span style="font-size:1.1rem">🔑</span><div><b style="color:var(--text)">¿Eres supervisor?</b><br>Ingresa desde el Sistema RR.LL; tu acceso se abre automáticamente, sin contraseña.</div></div>
+        <a href="#" class="lg2-back" onclick="volverRRLL();return false;">← Volver al Sistema RR.LL</a>
+        <div class="lg2-legal">© Unifrutti Group · Uso interno</div>
       </div>
-      <div id="lerr" style="display:none;background:#FCE4E7;border-left:3px solid #C8102E;border-radius:0 6px 6px 0;padding:.6rem .9rem;font-size:.8rem;color:#C8102E;margin-bottom:.8rem;">Usuario o contraseña incorrectos</div>
-      <button class="btn bpri" id="lbtn" style="width:100%;padding:.8rem;font-size:.95rem;font-weight:800;" onclick="doLogin()">Ingresar →</button>
-      <a href="#" onclick="volverRRLL();return false;" style="display:block;text-align:center;margin-top:1rem;font-size:.8rem;color:#003DA5;font-weight:700;text-decoration:none;">← Volver al Sistema RR.LL</a>
-      <div style="text-align:center;margin-top:1.2rem;font-size:.72rem;color:#C0CEEA;">Sistema – Departamento de Gestión Humana – Área de Relaciones Laborales</div>
-    </div>
+    </main>
   </div>
 </div>
 
@@ -570,7 +583,7 @@ input.psel{-moz-appearance:textfield;appearance:textfield;cursor:text;}
   <div class="mhero">
     <div class="mey">Sistema de Evaluación de Conocimiento</div>
     <h1 class="mt">Evaluaciones<br><span>ETI</span> Capacitación</h1>
-    <p class="ms">35 preguntas oficiales · 6 temas · Cálculo automático · Reporte gerencial</p>
+    <p class="ms"><span class="n-pregs">36</span> preguntas oficiales · 6 temas · Cálculo automático · Reporte gerencial</p>
     <div class="mgrid">
       <div class="mc pri" onclick="iniciar()">
         <span class="mci">📋</span>
@@ -836,7 +849,7 @@ input.psel{-moz-appearance:textfield;appearance:textfield;cursor:text;}
             <option value="10">10</option><option value="12">12</option><option value="15">15</option>
             <option value="20">20</option><option value="25">25</option>
           </select>
-          <span class="fh" id="p2-hint-tipo">Se generará un cuestionario completo (35 preguntas) por cada ruta</span>
+          <span class="fh" id="p2-hint-tipo">Se generará un cuestionario completo (<span class="n-pregs">36</span> preguntas) por cada ruta</span>
         </div>
 
         <!-- Panel de áreas (solo para empleado agrario) -->
@@ -877,7 +890,7 @@ input.psel{-moz-appearance:textfield;appearance:textfield;cursor:text;}
     <div class="wcard" style="max-width:800px;">
       <div class="whdr">
         <div class="wstep">Paso 3 de 3 — Rutas y Cuestionarios</div>
-        <div class="wtit">Complete cada ruta con las 35 preguntas</div>
+        <div class="wtit">Complete cada ruta con las <span class="n-pregs">36</span> preguntas</div>
         <div class="wsub">Un evaluado por columna — seleccione el puntaje obtenido en cada pregunta</div>
       </div>
       <div class="wbody" style="padding:1.1rem 1.4rem;">
@@ -1496,6 +1509,7 @@ function guardarEvalNube(res){
     resGen:res.resGen,
     usuario:SESSION?.user||'—', nomUsuario:SESSION?.nom||'—',
     destiempo:res.destiempo||null,
+    modalidad:res.modalidad||'Manual', sesionQR:res.sesionQR||null,   // _MODULOS_V1
     rutas:res.rutas.map(r=>({nom:r.nom, cod:r.cod, ne:r.ne, resGrupo:r.resGrupo,
       secs:r.secs.map(s=>({nom:s.nom, pct:s.cum, pond:s.pond, promSec:s.promSec}))})),
     creadoEn:new Date().toISOString(), ts:Date.now()
@@ -2202,7 +2216,7 @@ function exportAdminExcel(){
   ws['!cols']=[{wch:5},{wch:28},{wch:14},{wch:12},{wch:14},{wch:16},{wch:28},{wch:9},{wch:12},{wch:14},{wch:18},{wch:24},{wch:34},{wch:12}];
   if(ws['A1']) ws['A1'].s={font:{bold:true,sz:13,color:{rgb:'003DA5'}}};
   XLSX.utils.book_append_sheet(wb, ws, 'Registros Globales');
-  XLSX.writeFile(wb, `ETI-Global-${new Date().toISOString().split('T')[0]}.xlsx`);
+  XLSX.writeFile(wb, `ETI-Global-${hoy()}.xlsx`);
   toast('Excel global exportado','s');
 }
 let tipo = '';
@@ -2293,8 +2307,8 @@ function selT(t){
   if(lbl2) lbl2.textContent = t==='obrero' ? 'Número de rutas evaluadas' : 'Número de áreas evaluadas';
   const hint2 = document.getElementById('p2-hint-tipo');
   if(hint2) hint2.textContent = t==='obrero'
-    ? 'Se generará un cuestionario completo (35 preguntas) por cada ruta'
-    : 'Se generará un cuestionario completo (35 preguntas) por cada área';
+    ? 'Se generará un cuestionario completo ('+etiNPregs()+' preguntas) por cada ruta'
+    : 'Se generará un cuestionario completo ('+etiNPregs()+' preguntas) por cada área';
 }
 
 function p1next(){
@@ -2350,8 +2364,8 @@ function p1continue(){
   if(lbl2) lbl2.textContent = tipo==='obrero' ? 'Número de rutas evaluadas' : 'Número de áreas evaluadas';
   const hint2 = document.getElementById('p2-hint-tipo');
   if(hint2) hint2.textContent = tipo==='obrero'
-    ? 'Se generará un cuestionario completo (35 preguntas) por cada ruta'
-    : 'Se generará un cuestionario completo (35 preguntas) por cada área';
+    ? 'Se generará un cuestionario completo ('+etiNPregs()+' preguntas) por cada ruta'
+    : 'Se generará un cuestionario completo ('+etiNPregs()+' preguntas) por cada área';
   // Actualizar título paso 2
   const wt2=document.getElementById('p2-wtit');
   const ws2=document.getElementById('p2-wsub');
@@ -2378,7 +2392,7 @@ function p2ch(){
   b.style.display='block';
   const palabra=S.tipo==='obrero'?(n===1?'ruta':'rutas'):(n===1?'área':'áreas');
   document.getElementById('p2pv').textContent=`${n} ${palabra}`;
-  document.getElementById('p2ps').textContent=`${n} cuestionario${n>1?'s':''} de 35 preguntas cada uno`;
+  document.getElementById('p2ps').textContent=`${n} cuestionario${n>1?'s':''} de ${etiNPregs()} preguntas cada uno`;
 }
 
 function p2next(){
@@ -2402,7 +2416,8 @@ function maxEv(t){
   if(S.tipo==='empleado') return Math.min(250, Math.max(1, t||5));
   return Math.min(10,Math.max(1,Math.ceil(t*0.1)));
 }
-function hoy(){return new Date().toISOString().split('T')[0];}
+/* _FIX_FECHA_V1: fecha LOCAL (antes usaba UTC y despues de las 7 pm daba el dia siguiente) */
+function hoy(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 
 function renderP3(){
   const tl=S.tipo==='obrero'?'👷 Obrero':'💼 Empleado';
@@ -2413,7 +2428,7 @@ function renderP3(){
   // Paso 3 título dinámico
   const wt=document.querySelector('#sp3 .wtit');
   const ws=document.querySelector('#sp3 .wsub');
-  if(wt) wt.textContent=`Complete cada ${S.tipo==='obrero'?'ruta':'área'} con las 35 preguntas`;
+  if(wt) wt.textContent=`Complete cada ${S.tipo==='obrero'?'ruta':'área'} con las ${etiNPregs()} preguntas`;
   if(ws) ws.textContent=`Un evaluado por columna — seleccione el puntaje obtenido en cada pregunta`;
   document.getElementById('p3list').innerHTML=S.rutas.map((_,i)=>mkAc(i)).join('');
   updP3();
@@ -3142,7 +3157,7 @@ N   Codigo   Ruta                           Tipo           Supervisor           
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Sistema – Departamento de Gestión Humana – Área de Relaciones Laborales
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
-  descargar(txt, `dashboard-eti-${new Date().toISOString().split('T')[0]}.txt`, 'text/plain');
+  descargar(txt, `dashboard-eti-${hoy()}.txt`, 'text/plain');
   toast('Dashboard exportado en .txt','s');
 }
 
@@ -3156,7 +3171,7 @@ function exportDashCsv(){
     const tipo=r.tipo==='obrero'?'Obrero':'Empleado';
     csv+=`${i+1},${enc(r.cod)},${enc(r.nom)},${enc(tipo)},${enc(r.sup)},${enc(r.emp)},${enc(r.fecha)},${p},${ok?'APROBADO':'REFUERZO'}\n`;
   });
-  descargar('\uFEFF'+csv, `dashboard-eti-${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
+  descargar('\uFEFF'+csv, `dashboard-eti-${hoy()}.csv`, 'text/csv');
   toast('Dashboard exportado en .csv (Excel)','s');
 }
 
@@ -3549,7 +3564,7 @@ function exportarExcel(){
   }
 
   // Descargar
-  const fecha=res.fecha||new Date().toISOString().split('T')[0];
+  const fecha=res.fecha||hoy();
   const nombre=`Reporte-ETI-${res.emp}-${res.sector||'sector'}-${fecha}.xlsx`
     .replace(/\s+/g,'-').replace(/[^\w\-\.]/g,'');
 
@@ -3690,7 +3705,7 @@ function exportarExcelCompleto(){
   XLSX.utils.book_append_sheet(wb, ws2, 'Ranking');
 
   // Descargar
-  const nombre=`Dashboard-ETI-${new Date().toISOString().split('T')[0]}.xlsx`;
+  const nombre=`Dashboard-ETI-${hoy()}.xlsx`;
   XLSX.writeFile(wb, nombre);
   toast('Excel con Dashboard exportado: 2 hojas','s');
 }
@@ -5329,7 +5344,7 @@ function guia(){
     sel.forEach(function(s){if(String(s.value||'')!=='')ok++;});
     var items=rutas.map(function(r,i){var nom=val('rn'+i)||(r&&r.nom)||(t.charAt(0).toUpperCase()+t.slice(1)+' '+(i+1));var tt=val('rt'+i)||(r&&r.tot)||'';return [tt?'ok':'', esc(nom)+(tt?' · '+tt+' personas':' · falta cantidad')];});
     var first=-1;items.forEach(function(x,i){if(first<0&&x[0]!=='ok')first=i;});if(first>=0)items[first][0]='now';
-    return {h:'Carga las respuestas por '+t,p:'Selecciona el puntaje de cada pregunta por evaluado. Las 35 preguntas están en 6 temas; lo que dejes en blanco cuenta como 0.',
+    return {h:'Carga las respuestas por '+t,p:'Selecciona el puntaje de cada pregunta por evaluado. Las '+(window.etiNPregs?etiNPregs():36)+' preguntas están en '+(typeof SECS!=='undefined'?SECS.length:6)+' temas; lo que dejes en blanco cuenta como 0.',
       items:items.length?items:[['now','Completa los datos de cada '+t]],prog:tot?Math.round(100*ok/tot):0,nota:tot?ok+' de '+tot+' respuestas · faltan '+(tot-ok):'',
       tip:'<b>Atajo:</b> usa <b>Tab</b> para saltar a la siguiente pregunta. Al terminar pulsa <b>Calcular Resultados</b>.'};
   }
@@ -5422,7 +5437,7 @@ function bot(k){var f=FLOW[k],log=$('gLog');if(!f||!log)return;var m=document.cr
   if(k!=='inicio'&&!f.o.some(function(p){return p[1]==='inicio';})){var v=document.createElement('div');v.className='o';var vb=document.createElement('button');vb.textContent='Volver al menú';vb.onclick=function(){bot('inicio');};v.appendChild(vb);log.appendChild(v);}}
 /* ── tour ── */
 var T=[['Así funciona Evaluaciones ETI','Registrar una evaluación toma 3 pasos guiados. En cada pantalla, la tarjeta “¿Qué hago ahora?” te dice exactamente qué sigue.'],['Tu avance siempre visible','La barra de pasos y el checklist muestran qué completaste y qué falta. Puedes salir y retomar donde quedaste.'],['Ayuda en cualquier momento','El botón 💬 abre el asistente con preguntas frecuentes y te lleva a la pantalla correcta.']],ti=0;
-function tourStart(){ti=0;tourPaint();$('gTour').classList.add('on');}
+function tourStart(){try{if(!SESSION||activa()==='slogin')return;}catch(e){return;}ti=0;tourPaint();$('gTour').classList.add('on');}
 function tourPaint(){$('gTourT').textContent=T[ti][0];$('gTourP').textContent=T[ti][1];$('gTourD').innerHTML=T.map(function(_,i){return '<i class="'+(i===ti?'on':'')+'"></i>';}).join('');$('gTourN').textContent=ti===T.length-1?'Empezar ✓':'Siguiente →';}
 function tourNext(){if(ti<T.length-1){ti++;tourPaint();}else tourEnd();}
 function tourEnd(){$('gTour').classList.remove('on');try{localStorage.setItem('eti_tour_v1','1');}catch(e){}}
@@ -5482,5 +5497,739 @@ window.RLTrafico = (function () {
 })();
 </script>
 
+<style>
+/* ══ _VISUAL_V2 + _MODULOS_V1 (29-set-2026) ══ */
+/* Correcciones de capas */
+#gTour .tc{position:static;top:auto;right:auto;z-index:auto;flex-direction:row}
+#chat-fab{right:auto!important;left:18px!important}
+.btn:disabled{opacity:.5;cursor:not-allowed;animation:none}
+body:has(#sqr.active) #gDock,body:has(#sqr.active) #gFab{display:none!important}
+#chat-panel{right:auto!important;left:18px!important}
+
+/* Barra de pestañas del administrador: una sola fila deslizable, fija arriba */
+#admin-tabs{position:sticky;top:56px;z-index:50;flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:thin;
+  background:rgba(245,247,250,.92);backdrop-filter:blur(10px);padding:.6rem .2rem;margin:-.4rem 0 1.2rem!important;border-bottom:1px solid var(--bdr)}
+#admin-tabs .btn{flex:0 0 auto;border-radius:999px;white-space:nowrap}
+#admin-tabs .m-tabcreador{border-style:dashed}
+#admin-tabs .m-tabcreador.bpri{border-style:solid}
+
+/* Tarjetas del menú */
+#sm .mgrid .mc{transition:transform .18s ease,box-shadow .18s ease}
+#sm .mgrid .mc:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(0,20,70,.35)}
+
+/* ── Componentes de los módulos nuevos ── */
+.m-wrap{max-width:1180px;margin:0 auto;padding:1.4rem 1rem 3rem}
+.m-card{background:#fff;border:1px solid var(--bdr);border-radius:16px;padding:1.3rem 1.4rem;box-shadow:0 6px 24px rgba(0,40,120,.06)}
+.m-head{display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}
+.m-tit{font-size:1.35rem;font-weight:800;color:var(--text);margin:0 0 .2rem}
+.m-tit2{font-size:1rem;font-weight:800;color:var(--text);margin:0 0 .8rem}
+.m-sub{color:var(--text2);font-size:.85rem;line-height:1.5;margin:0;max-width:720px}
+.m-mut{color:#8593B0;font-size:.78rem}
+.m-acts{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+.m-buscar{min-width:220px;padding:.5rem .8rem!important;font-size:.82rem!important}
+.m-empty{padding:1.4rem;text-align:center;color:var(--text2);background:var(--surf);border:1px dashed var(--bdr);border-radius:12px;font-size:.88rem}
+.m-aviso{width:100%;max-width:860px;margin:0 auto 1rem;background:#FFF4E5;color:#8A4B00;border:1px solid #FFD9A8;border-radius:12px;padding:.9rem 1rem;font-weight:700;text-align:center}
+.logo .m-crumb,.m-crumb{color:rgba(255,255,255,.6)!important;font-size:.72rem;letter-spacing:.06em;opacity:.6;font-weight:600;margin-left:.4rem}
+.m-resumen{display:grid;grid-template-columns:repeat(4,1fr);gap:.7rem;margin-bottom:1rem}
+.m-kpi{background:#fff;border:1px solid var(--bdr);border-radius:12px;padding:.75rem .9rem;display:flex;flex-direction:column}
+.m-kpi b{font-size:1.4rem;color:var(--navy)}.m-kpi span{font-size:.72rem;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.m-kpi.ok b{color:var(--green)}.m-kpi.bad b{color:var(--red)}.m-kpi.warn b{color:#E08A00}
+.m-pesobar{grid-column:1/-1;display:flex;height:10px;border-radius:99px;overflow:hidden;background:var(--surf2)}
+.m-pesobar i{display:block;height:100%}
+.m-sec{background:#fff;border:1px solid var(--bdr);border-radius:16px;margin-bottom:1rem;overflow:hidden}
+.m-sechead{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;padding:.8rem 1rem;background:linear-gradient(90deg,var(--navy),var(--navy3));color:#fff}
+.m-secnom{flex:1;min-width:200px;font-weight:800!important;background:rgba(255,255,255,.12)!important;color:#fff!important;border-color:rgba(255,255,255,.25)!important}
+.m-peso{display:flex;align-items:center;gap:.35rem;font-size:.8rem;font-weight:700}
+.m-peso input{width:80px;background:#fff!important;padding:.35rem .5rem!important}
+.m-chip{background:rgba(255,255,255,.16);border-radius:99px;padding:.25rem .7rem;font-size:.72rem;font-weight:700}
+.m-ico{background:transparent;border:1px solid transparent;border-radius:8px;cursor:pointer;padding:.3rem .45rem;font-size:.85rem;color:inherit}
+.m-ico:hover{background:rgba(0,61,165,.08);border-color:var(--bdr)}
+.m-sechead .m-ico:hover{background:rgba(255,255,255,.18)}
+.m-preg{display:flex;gap:.8rem;padding:1rem;border-top:1px solid var(--surf2)}
+.m-preg.rev{background:linear-gradient(90deg,#FFF8EC,transparent 40%)}
+.m-pnum{flex:0 0 34px;height:34px;border-radius:10px;background:var(--surf2);color:var(--navy);font-weight:800;display:flex;align-items:center;justify-content:center}
+.m-pbody{flex:1;min-width:0}.m-pbody textarea{width:100%;resize:vertical;font-size:.85rem!important}
+.m-pacts{display:flex;flex-direction:column;gap:.2rem}
+.m-lbl{display:block;font-size:.7rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin:.5rem 0 .25rem}
+.m-prow{display:flex;gap:.8rem;flex-wrap:wrap;align-items:flex-end}
+.m-num{width:90px}.m-sel{min-width:260px}
+.m-rev{border:1px solid #BFE3CF;background:#EAF7F0;color:var(--green);border-radius:99px;padding:.4rem .8rem;font-weight:700;font-size:.75rem;cursor:pointer;margin-bottom:.1rem}
+.m-rev.on{border-color:#FFD9A8;background:#FFF4E5;color:#B86E00}
+.m-ops{margin-top:.6rem;display:flex;flex-direction:column;gap:.4rem}
+.m-op{display:flex;gap:.5rem;align-items:center;border:1px solid var(--bdr);border-radius:10px;padding:.3rem .4rem;background:#fff}
+.m-op.ok{border-color:#7CC8A0;background:#F1FAF5}
+.m-op input.fc{flex:1;border:none!important;box-shadow:none!important;padding:.4rem .5rem!important;font-size:.85rem!important;background:transparent!important}
+.m-okbox{display:flex;align-items:center;gap:.3rem;font-size:.7rem;font-weight:800;color:#8593B0;min-width:100px;cursor:pointer}
+.m-op.ok .m-okbox{color:var(--green)}
+.m-addp{margin:.6rem 1rem 1rem}
+.pulso{animation:mPulso 1.6s infinite}
+@keyframes mPulso{0%,100%{box-shadow:0 0 0 0 rgba(0,61,165,.45)}50%{box-shadow:0 0 0 8px rgba(0,61,165,0)}}
+.m-tablewrap{overflow-x:auto}
+.m-table{width:100%;border-collapse:collapse;font-size:.83rem}
+.m-table th{background:var(--surf);color:var(--text2);font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;padding:.6rem .6rem;text-align:left;border-bottom:1px solid var(--bdr)}
+.m-table td{padding:.6rem;border-bottom:1px solid var(--surf2);vertical-align:middle}
+.m-table tr:hover td{background:#FAFBFE}
+.m-table tr.off td{opacity:.55}
+.m-table th small{font-weight:600;text-transform:none;letter-spacing:0}
+.m-sw{display:inline-flex;align-items:center;gap:.45rem;cursor:pointer;font-size:.78rem;font-weight:700;color:var(--text2)}
+.m-sw input{display:none}
+.m-sw i{width:38px;height:22px;border-radius:99px;background:#CBD3E3;position:relative;transition:.2s;flex:0 0 auto}
+.m-sw i:after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.m-sw input:checked+i{background:var(--green)}.m-sw input:checked+i:after{left:19px}
+.m-sw input:disabled+i{opacity:.4}
+/* QR */
+#sqr{background:var(--surf);min-height:100vh}
+.m-qrgrid{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:1rem;align-items:start}
+.m-f2{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
+.m-qrvacio{text-align:center;padding:3rem 1rem;color:var(--text2)}.m-qrvacio h3{color:var(--text);margin:.5rem 0}
+.m-qrtop{display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;flex-wrap:wrap}
+.m-eyebrow{font-size:.7rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--green);display:flex;align-items:center;gap:.4rem}
+.m-live{width:9px;height:9px;border-radius:50%;background:#1DB954;box-shadow:0 0 0 0 rgba(29,185,84,.6);animation:mLive 1.4s infinite}
+@keyframes mLive{0%{box-shadow:0 0 0 0 rgba(29,185,84,.6)}100%{box-shadow:0 0 0 10px rgba(29,185,84,0)}}
+.m-codigo{font:800 1.1rem/1 ui-monospace,Consolas,monospace;letter-spacing:.18em;background:var(--navy);color:#fff;padding:.55rem .8rem;border-radius:10px}
+.m-qrbox{width:min(300px,100%);margin:1rem auto;padding:12px;background:#fff;border:1px solid var(--bdr);border-radius:18px;box-shadow:0 10px 30px rgba(0,40,120,.1)}
+.m-qrbox svg,.m-fullqr svg{width:100%;height:auto;display:block}
+.m-link{display:flex;gap:.5rem;margin:.2rem 0 .6rem}.m-link input{font-size:.75rem!important;color:var(--text2)!important}
+.m-kpis3{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-top:.6rem}
+.m-kpis3>div{background:var(--surf);border-radius:12px;padding:.7rem;text-align:center}
+.m-kpis3 b{display:block;font-size:1.5rem;color:var(--navy)}.m-kpis3 span{font-size:.7rem;color:var(--text2);font-weight:700;text-transform:uppercase}
+.m-resp{max-height:360px;overflow:auto;border-top:1px solid var(--surf2);padding-top:.6rem}
+.m-est{font-size:.72rem;font-weight:800;padding:.2rem .55rem;border-radius:99px;background:var(--surf2);color:var(--text2)}
+.m-btnrojo{background:var(--red)!important;border-color:var(--red)!important;color:#fff!important}
+.m-est.ab{background:#E6F7EE;color:var(--green)}
+.m-full{position:fixed;inset:0;z-index:9500;background:rgba(0,26,77,.94);display:none;overflow:auto;align-items:safe center;justify-content:center;padding:1rem}
+.m-full.on{display:flex}
+.m-fullin{background:#fff;border-radius:24px;padding:1.6rem 2rem;text-align:center;max-width:620px;width:100%;position:relative}
+.m-fullin h2{font-size:1.5rem;color:var(--text);margin:.3rem 0 .8rem}
+.m-fullqr{width:min(62vh,440px,78vw);margin:0 auto}
+.m-fullinfo{margin-top:.8rem;color:var(--text2)}
+.m-fullcount{margin-top:.6rem;display:inline-block;background:#E6F7EE;color:var(--green);border-radius:99px;padding:.4rem 1rem;font-weight:700}
+.m-fullcount b{font-size:1.2rem}
+.m-fullx{position:absolute;top:.8rem;right:.9rem;border:none;background:var(--surf);border-radius:50%;width:36px;height:36px;cursor:pointer;font-size:1rem}
+#sqr{overflow-x:hidden}#sqr>*,.m-wrap{min-width:0;width:100%;box-sizing:border-box}.m-qrgrid>*,.m-card{min-width:0}
+@media(max-width:860px){.m-crumb{display:none}.m-wrap{padding:1rem .75rem 3rem}.m-card{padding:1rem}.m-fullin{padding:1.2rem 1rem}.m-fullin h2{font-size:1.15rem}.m-qrgrid{grid-template-columns:1fr}.m-resumen{grid-template-columns:1fr 1fr}.m-f2{grid-template-columns:1fr}.m-preg{flex-wrap:wrap}.m-pacts{flex-direction:row}}
+
+/* ── LOGIN v2: panel de marca + formulario ── */
+#slogin{background:#F4F6FB}
+.lg2{min-height:100vh;display:grid;grid-template-columns:1.1fr 1fr}
+.lg2-brand{position:relative;overflow:hidden;color:#fff;padding:3rem 3.2rem;display:flex;flex-direction:column;justify-content:space-between;
+  background:radial-gradient(900px 500px at 85% 0%,rgba(200,16,46,.35),transparent 60%),radial-gradient(700px 500px at 0% 100%,rgba(0,122,61,.22),transparent 60%),linear-gradient(155deg,#001A4D 0%,#003DA5 55%,#0050C8 100%)}
+.lg2-brand:after{content:'';position:absolute;inset:0;background:var(--hero-foto) center/cover no-repeat;opacity:.18;pointer-events:none}
+.lg2-brand>*{position:relative;z-index:1}
+.lg2-top{display:flex;align-items:center;gap:.9rem}
+.lg2-top .logo-uni{height:58px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.lg2-top small{display:block;font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;opacity:.7;font-weight:700}
+.lg2-top b{font-size:1rem;letter-spacing:.04em}
+.lg2-hero h1{font-size:clamp(2.2rem,4.2vw,3.6rem);line-height:1.02;margin:.6rem 0 1rem;font-weight:800;letter-spacing:.01em}
+.lg2-hero h1 span{color:#FF5C73}
+.lg2-hero p{max-width:460px;color:rgba(255,255,255,.78);font-size:.98rem;line-height:1.6;margin:0}
+.lg2-tag{display:inline-block;font-size:.68rem;font-weight:800;letter-spacing:.24em;text-transform:uppercase;color:#FFB3BE;border:1px solid rgba(255,179,190,.45);border-radius:99px;padding:.35rem .9rem}
+.lg2-pts{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;max-width:560px}
+.lg2-pts div{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:.8rem .9rem;backdrop-filter:blur(6px)}
+.lg2-pts b{display:block;font-size:1.25rem}.lg2-pts span{font-size:.72rem;opacity:.75;line-height:1.35;display:block}
+.lg2-foot{font-size:.72rem;opacity:.55;letter-spacing:.06em}
+.lg2-form{display:flex;align-items:center;justify-content:center;padding:2rem 1.2rem}
+.lg2-card{width:100%;max-width:400px}
+.lg2-card h2{font-size:1.7rem;color:var(--text);margin:0 0 .3rem;font-weight:800}
+.lg2-card .lg2-sub{color:var(--text2);font-size:.88rem;margin:0 0 1.6rem;line-height:1.5}
+.lg2-card .fc{padding:.8rem .95rem!important;border-radius:12px!important;background:#fff!important}
+.lg2-card #lbtn{border-radius:12px;padding:.9rem!important;font-size:1rem!important;box-shadow:0 10px 24px rgba(0,61,165,.25)}
+.lg2-sso{margin-top:1.4rem;display:flex;gap:.7rem;align-items:flex-start;background:#EEF3FB;border:1px solid #D6E1F5;border-radius:12px;padding:.8rem .9rem;font-size:.8rem;color:var(--text2);line-height:1.45}
+.lg2-back{display:block;text-align:center;margin-top:1.1rem;font-size:.84rem;color:var(--navy);font-weight:700;text-decoration:none}
+.lg2-back:hover{text-decoration:underline}
+.lg2-legal{text-align:center;margin-top:1.8rem;font-size:.7rem;color:#9AA7C2}
+.lg2-mlogo{display:none}
+@media(max-width:900px){.lg2{grid-template-columns:1fr}.lg2-brand{display:none}.lg2-mlogo{display:flex;justify-content:center;margin-bottom:1.2rem}.lg2-mlogo .logo-uni{height:70px}
+  .lg2-form{min-height:100vh;background:linear-gradient(180deg,#003DA5 0 190px,#F4F6FB 190px)}.lg2-card{background:#fff;border-radius:20px;padding:1.6rem 1.4rem;box-shadow:0 20px 50px rgba(0,30,90,.18)}}
+</style>
+<script>
+/* ══════════════════════════════════════════════════════════════
+   _BANCO_V1 (29-set-2026) — Alternativas y respuesta correcta de
+   cada pregunta, para la calificación AUTOMÁTICA de la evaluación
+   por QR. tq = texto que ve el trabajador (si difiere del original).
+   tipo 'unica'    → una sola correcta: acierto = puntaje completo.
+   tipo 'multiple' → varias correctas: puntaje proporcional
+                     (aciertos − errores) / correctas, mínimo 0.
+   revisar:true    → respuesta propia de la empresa: confírmala en
+                     el panel 🧩 Banco de Preguntas.
+   ══════════════════════════════════════════════════════════════ */
+const ETI_OPS_BASE = {
+ 1:{tq:'¿Dónde puedes verificar cuánto te pagan al mes y tus descuentos?',tipo:'unica',ops:[
+   ['En mi boleta de pago mensual',1],['Preguntando a un compañero',0],['En el contrato de otro trabajador',0],['No es posible saberlo',0]]},
+ 2:{tq:'¿Cuál es la jornada legal de trabajo?',tipo:'unica',ops:[
+   ['8 horas diarias o 48 horas a la semana',1],['10 horas diarias o 60 horas a la semana',0],['6 horas diarias o 36 horas a la semana',0],['12 horas diarias sin límite semanal',0]]},
+ 3:{tq:'Si el jefe solicita trabajar horas extras (sobretiempo), ¿qué es lo correcto?',tipo:'unica',revisar:true,ops:[
+   ['Es voluntario y se debe pagar o compensar',1],['Es obligatorio y no se paga',0],['Solo se paga si pasa de 12 horas',0],['Se descuenta del refrigerio',0]]},
+ 4:{tq:'¿Cómo debes registrar tu asistencia?',tipo:'unica',revisar:true,ops:[
+   ['Marcando en el registro de asistencia al ingresar y al salir',1],['Solo marcando al ingresar',0],['Avisando por teléfono al supervisor',0],['No es necesario marcar',0]]},
+ 5:{tq:'¿Cuánto tiempo mínimo de refrigerio te corresponde por ley?',tipo:'unica',ops:[
+   ['45 minutos',1],['15 minutos',0],['2 horas',0],['No me corresponde refrigerio',0]]},
+ 6:{tq:'Además de las vacaciones, ¿qué beneficios de ley te otorga la empresa? (Marca todas las correctas)',tipo:'multiple',ops:[
+   ['Gratificaciones',1],['CTS (Compensación por Tiempo de Servicios)',1],['Seguro de salud EsSalud',1],['Asignación familiar (si tengo hijos menores)',1],['Pago de días no trabajados sin justificación',0],['Préstamos sin devolución',0]]},
+ 7:{tq:'¿Dónde encuentras el Reglamento Interno de Trabajo y tu boleta mensual de pago?',tipo:'unica',revisar:true,ops:[
+   ['El Reglamento lo entrega/publica la empresa y la boleta la recibo cada mes (física o digital)',1],['Solo los tiene el sindicato',0],['No existen en la empresa',0],['Solo se pueden ver en la municipalidad',0]]},
+ 8:{tq:'¿Quién es la asistenta social?',tipo:'unica',revisar:true,ops:[
+   ['La profesional de Gestión Humana que ve temas de bienestar de los trabajadores',1],['La persona que controla la producción',0],['La encargada de seguridad de la puerta',0],['No existe en la empresa',0]]},
+ 9:{tq:'¿Cómo se llama el grupo que representa a los trabajadores ante la empresa?',tipo:'unica',revisar:true,ops:[
+   ['Comité / delegados de representantes de los trabajadores',1],['Comité de compras',0],['Grupo de supervisores de producción',0],['Área de logística',0]]},
+ 10:{tq:'Las quejas o sugerencias se dejan en los buzones azules, ¿dónde están?',tipo:'unica',revisar:true,ops:[
+   ['En zonas comunes del fundo/planta (comedores, ingresos o áreas de descanso)',1],['Dentro de la oficina del gerente',0],['Solo en Lima',0],['No hay buzones',0]]},
+ 11:{tq:'Si tienes una queja o sugerencia, ¿con quién puedes hablar?',tipo:'unica',ops:[
+   ['Con la asistenta social o el supervisor de Gestión Humana',1],['Con nadie, debo quedarme callado',0],['Solo con mis compañeros',0],['Con una persona ajena a la empresa',0]]},
+ 12:{tq:'¿Quién revisa los buzones de quejas y sugerencias?',tipo:'unica',revisar:true,ops:[
+   ['El área de Gestión Humana, en los días establecidos por la empresa',1],['Cualquier trabajador cuando quiera',0],['Nadie los revisa',0],['El personal de vigilancia',0]]},
+ 13:{tq:'¿Dónde se publican las respuestas a las quejas o sugerencias?',tipo:'unica',revisar:true,ops:[
+   ['En el periódico mural o panel informativo',1],['No se publican',0],['Solo se dicen en voz baja',0],['En las redes sociales personales',0]]},
+ 14:{tq:'Si un compañero te hace bromas de connotación sexual o te acosa, ¿a quién pides ayuda y denuncias?',tipo:'unica',ops:[
+   ['A Gestión Humana / Comité de intervención frente al hostigamiento sexual',1],['A nadie, debo aguantar',0],['Solo a mis compañeros de ruta',0],['Al chofer del bus',0]]},
+ 15:{tq:'¿Cuántos días pagados de licencia por paternidad le corresponden al trabajador?',tipo:'unica',ops:[
+   ['10 días calendario',1],['2 días',0],['30 días',0],['No le corresponde',0]]},
+ 16:{tq:'¿Cuántos días pagados de licencia por maternidad le corresponden a la trabajadora?',tipo:'unica',ops:[
+   ['98 días',1],['30 días',0],['45 días',0],['15 días',0]]},
+ 17:{tq:'¿Cuántos días pagados puedes faltar por accidente grave o enfermedad terminal de un familiar directo?',tipo:'unica',ops:[
+   ['Hasta 7 días calendario',1],['1 día',0],['30 días',0],['No existe esa licencia',0]]},
+ 18:{tq:'¿Cuántos días pagados puedes faltar si fallece un familiar directo?',tipo:'unica',ops:[
+   ['5 días hábiles',1],['1 día',0],['15 días',0],['No existe esa licencia',0]]},
+ 19:{tq:'¿Qué beneficios adicionales (no obligatorios por ley) te otorga la empresa? (Marca todas las correctas)',tipo:'multiple',revisar:true,ops:[
+   ['Celebración del Día de la Madre / del Padre',1],['Actividades por fiestas (Navidad, aniversario)',1],['Campañas de salud y bienestar',1],['Préstamos sin devolución',0],['Doble sueldo todos los meses',0]]},
+ 20:{tq:'¿Qué quiere decir que una empresa es "sustentable"?',tipo:'unica',ops:[
+   ['Que produce cuidando el medio ambiente, a las personas y la economía, sin afectar a las futuras generaciones',1],['Que solo busca ganar más dinero',0],['Que tiene muchos trabajadores',0],['Que exporta a muchos países',0]]},
+ 21:{tq:'¿Cuántos son los Objetivos de Desarrollo Sostenible (ODS)?',tipo:'unica',ops:[
+   ['17',1],['10',0],['5',0],['25',0]]},
+ 22:{tq:'¿Cuáles de estos son Objetivos de Desarrollo Sostenible (ODS)? (Marca todas las correctas)',tipo:'multiple',ops:[
+   ['Fin de la pobreza',1],['Hambre cero',1],['Salud y bienestar',1],['Agua limpia y saneamiento',1],['Igualdad de género',1],['Más horas de trabajo',0],['Uso libre de plásticos',0]]},
+ 23:{tq:'Las ideas para cuidar el planeta y la sociedad se dejan en los buzones verdes, ¿dónde están?',tipo:'unica',revisar:true,ops:[
+   ['En zonas comunes del fundo/planta junto a los paneles informativos',1],['En la oficina del gerente',0],['No existen',0],['Solo en la ciudad',0]]},
+ 24:{tq:'¿Quiénes revisan los buzones de ideas verdes?',tipo:'unica',revisar:true,ops:[
+   ['El equipo de Sustentabilidad / Gestión Humana, en los días establecidos',1],['Cualquier trabajador',0],['Nadie los revisa',0],['El personal de vigilancia',0]]},
+ 25:{tq:'¿Qué otro nombre tienen las políticas de ética y buenas prácticas laborales?',tipo:'unica',revisar:true,ops:[
+   ['Código de Conducta / Código de Ética',1],['Reglamento de tránsito',0],['Manual de cosecha',0],['Contrato de trabajo',0]]},
+ 26:{tq:'¿Cuáles son principios del Código de Conducta? (Marca todas las correctas)',tipo:'multiple',revisar:true,ops:[
+   ['Honestidad e integridad',1],['Respeto a las personas',1],['Cumplimiento de la ley',1],['Transparencia',1],['Favoritismo',0],['Ocultar los errores',0]]},
+ 27:{tq:'¿Cómo demuestra una empresa que es ética?',tipo:'unica',ops:[
+   ['Previniendo y reportando posibles delitos como fraude, corrupción o favoritismos',1],['Ocultando los problemas',0],['Pagando favores a funcionarios',0],['Contratando solo a familiares',0]]},
+ 28:{tq:'¿En qué momentos debes lavarte las manos? (Marca todas las correctas)',tipo:'multiple',ops:[
+   ['Antes de comer',1],['Después de ir al baño',1],['Antes de iniciar labores o manipular la fruta',1],['Después de manipular químicos o residuos',1],['Solo una vez por semana',0]]},
+ 29:{tq:'¿Qué equipos de protección personal (EPP) se usan en el trabajo? (Marca todas las correctas)',tipo:'multiple',revisar:true,ops:[
+   ['Guantes',1],['Botas o calzado de seguridad',1],['Mascarilla / protector respiratorio',1],['Lentes de seguridad',1],['Sandalias',0],['Ropa de fiesta',0]]},
+ 30:{tq:'¿Dónde se encuentran el tópico y el lactario?',tipo:'unica',revisar:true,ops:[
+   ['En mi fundo/planta; el supervisor y los paneles indican su ubicación',1],['Solo en la ciudad',0],['No existen en la empresa',0],['En la casa de un compañero',0]]},
+ 31:{tq:'Si ocurre un accidente o te sientes mal de salud, ¿qué debes hacer?',tipo:'unica',ops:[
+   ['Comunicar de inmediato a mi jefe o supervisor y acudir al tópico',1],['Seguir trabajando sin avisar',0],['Irme a casa sin decir nada',0],['Esperar al día siguiente',0]]},
+ 32:{tq:'¿Qué haces para cuidar el medio ambiente en tu área de trabajo? (Marca todas las correctas)',tipo:'multiple',ops:[
+   ['Separar los residuos en los tachos correctos',1],['Ahorrar agua',1],['No quemar basura',1],['Botar residuos en el campo',0],['Dejar los caños abiertos',0]]},
+ 33:{tq:'¿Qué consecuencias trae el cambio climático? (Marca todas las correctas)',tipo:'multiple',ops:[
+   ['Sequías y escasez de agua',1],['Lluvias intensas e inundaciones',1],['Aumento de la temperatura',1],['Pérdida de cultivos',1],['Más agua para todos siempre',0]]},
+ 34:{tq:'¿Cómo podemos proteger la biodiversidad de la empresa (animales, plantas nativas, reservorios)? (Marca todas las correctas)',tipo:'multiple',ops:[
+   ['No cazar ni molestar a los animales',1],['No arrancar plantas nativas',1],['No contaminar los reservorios ni jardines',1],['Botar basura en los reservorios',0],['Cortar árboles sin permiso',0]]},
+ 35:{tq:'¿Qué debemos hacer para que los residuos estén bien manejados? (Marca todas las correctas)',tipo:'multiple',ops:[
+   ['Separarlos según el color del tacho',1],['No mezclar residuos peligrosos con los comunes',1],['Reciclar lo que se pueda',1],['Quemarlos',0],['Enterrarlos en el campo',0]]},
+ 36:{tq:'¿Cómo podemos ahorrar energía en la empresa? (Marca todas las correctas)',tipo:'multiple',ops:[
+   ['Apagar las luces que no se usan',1],['Desconectar equipos al terminar',1],['Aprovechar la luz natural',1],['Dejar equipos encendidos toda la noche',0],['Abrir la refrigeradora sin necesidad',0]]}
+};
+
+/* ══════════════════════════════════════════════════════════════
+   _MODULOS_V1 (29-set-2026)
+   1) 🧩 Banco de Preguntas y pesos  → solo el creador (jtimoteo)
+   2) 🔐 Control de accesos por módulo → solo el creador
+   3) 📱 Evaluación por QR (el trabajador responde desde su celular
+      en evaluar.html; calificación automática; consolidado al cerrar)
+   ══════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+const ETI_CREADOR='jtimoteo';
+const COL_CFG='config_eti', DOC_BANCO='banco', DOC_ACC='accesos';
+const COL_SES='sesiones_qr', COL_RESP='respuestas_qr', COL_BHIST='banco_historial';
+const QR_SAL='ETI-QR';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const clon=o=>JSON.parse(JSON.stringify(o));
+const pct=v=>(Math.round((v||0)*1000)/10).toFixed(1)+'%';
+const esCreador=()=>!!(SESSION&&SESSION.rol==='admin'&&String(SESSION.user).toLowerCase()===ETI_CREADOR);
+const hoyL=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+async function sha(txt){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(txt));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('').slice(0,16);}
+
+/* ════════════════ 1) BANCO DE PREGUNTAS ════════════════ */
+const SECS_ORIG=clon(SECS);
+function bancoBase(){
+  return SECS_ORIG.map(s=>({id:s.id,nom:s.nom,peso:s.peso,pregs:s.pregs.map(p=>{
+    const b=(typeof ETI_OPS_BASE!=='undefined'&&ETI_OPS_BASE[p.n])||{};
+    return {n:p.n,t:p.t,tq:b.tq||'',max:p.max,tipo:b.tipo||'unica',revisar:!!b.revisar,
+      ops:(b.ops||[['Sí',1],['No',0]]).map(o=>({t:o[0],ok:!!o[1]}))};
+  })}));
+}
+let BANCO=bancoBase(), bancoMeta=null;
+function nPregs(){return SECS.reduce((a,s)=>a+s.pregs.length,0);}
+function aplicarBanco(secs){
+  SECS.length=0;
+  secs.forEach(s=>{const c=clon(s);c.maxSec=c.pregs.reduce((a,p)=>a+(+p.max||0),0);SECS.push(c);});
+  document.querySelectorAll('.n-pregs').forEach(e=>e.textContent=nPregs());
+}
+window.etiNPregs=nPregs;
+aplicarBanco(BANCO);
+
+function validarBanco(secs){
+  const err=[];
+  const tot=secs.reduce((a,s)=>a+(+s.peso||0),0);
+  if(Math.abs(tot-1)>0.0005) err.push(`Los pesos suman ${(tot*100).toFixed(1)}% (deben sumar 100%).`);
+  secs.forEach(s=>{
+    if(!String(s.nom).trim()) err.push('Hay una sección sin nombre.');
+    if(!s.pregs.length) err.push(`La sección "${s.nom}" no tiene preguntas.`);
+    s.pregs.forEach((p,i)=>{
+      const q=`${s.nom} · pregunta ${i+1}`;
+      if(!String(p.t).trim()) err.push(`${q}: falta el texto.`);
+      if(!(+p.max>0)) err.push(`${q}: el puntaje debe ser mayor a 0.`);
+      const ops=p.ops.filter(o=>String(o.t).trim());
+      if(ops.length<2) err.push(`${q}: necesita al menos 2 alternativas.`);
+      const ok=ops.filter(o=>o.ok).length;
+      if(!ok) err.push(`${q}: marca cuál es la respuesta correcta.`);
+      if(p.tipo==='unica'&&ok>1) err.push(`${q}: es de respuesta única pero tiene ${ok} correctas.`);
+    });
+  });
+  return err;
+}
+
+let draft=null, draftSucio=false, bkFiltro='';
+function bkMarcar(){draftSucio=true;const b=$('bk-guardar');if(b){b.disabled=false;b.classList.add('pulso');}bkResumen();}
+function bkResumen(){
+  const el=$('bk-resumen'); if(!el||!draft) return;
+  const tot=draft.reduce((a,s)=>a+(+s.peso||0),0)*100, np=draft.reduce((a,s)=>a+s.pregs.length,0);
+  const rev=draft.reduce((a,s)=>a+s.pregs.filter(p=>p.revisar).length,0);
+  const okP=Math.abs(tot-100)<0.05;
+  el.innerHTML=`
+    <div class="m-kpi"><b>${draft.length}</b><span>Secciones</span></div>
+    <div class="m-kpi"><b>${np}</b><span>Preguntas</span></div>
+    <div class="m-kpi ${okP?'ok':'bad'}"><b>${tot.toFixed(1)}%</b><span>Suma de pesos ${okP?'✓':'(debe ser 100%)'}</span></div>
+    <div class="m-kpi ${rev?'warn':'ok'}"><b>${rev}</b><span>Por confirmar</span></div>
+    <div class="m-pesobar">${draft.map((s,i)=>`<i style="width:${(+s.peso||0)*100}%;background:${['#003DA5','#C8102E','#007A3D','#7A4FD0','#E08A00','#0096A6','#555'][i%7]}" title="${esc(s.nom)} ${((+s.peso||0)*100).toFixed(1)}%"></i>`).join('')}</div>`;
+}
+function renderBanco(){
+  const box=$('admin-banco'); if(!box) return;
+  if(!esCreador()){box.innerHTML='<div class="m-empty">🔒 Solo el creador del sistema puede modificar el banco de preguntas.</div>';return;}
+  if(!draft){draft=clon(BANCO);draftSucio=false;}
+  const f=bkFiltro.toLowerCase();
+  box.innerHTML=`
+  <div class="m-head">
+    <div><h2 class="m-tit">🧩 Banco de Preguntas</h2>
+      <p class="m-sub">Preguntas, alternativas, respuesta correcta, puntaje y peso (%) de cada tema. Los cambios se aplican a la evaluación manual y a la evaluación por QR.
+      ${bancoMeta?`<br><span class="m-mut">Versión ${bancoMeta.version||1} · guardada por ${esc(bancoMeta.por||'—')} · ${bancoMeta.en?new Date(bancoMeta.en).toLocaleString('es-PE'):''}</span>`:'<br><span class="m-mut">Usando el banco base (aún no guardado en la nube).</span>'}</p></div>
+    <div class="m-acts">
+      <input class="fc m-buscar" placeholder="🔎 Buscar pregunta…" value="${esc(bkFiltro)}" oninput="ETIM.bkBuscar(this.value)">
+      <button class="btn bout bsm" onclick="ETIM.bkRestaurar()">↺ Restaurar base</button>
+      <button class="btn bout bsm" onclick="ETIM.bkAddSec()">➕ Sección</button>
+      <button class="btn bpri bsm" id="bk-guardar" onclick="ETIM.bkGuardar()" ${draftSucio?'':'disabled'}>💾 Guardar cambios</button>
+    </div>
+  </div>
+  <div class="m-resumen" id="bk-resumen"></div>
+  ${draft.map((s,si)=>{
+    const pregs=s.pregs.map((p,pi)=>({p,pi})).filter(x=>!f||(x.p.t+' '+x.p.tq+' '+x.p.ops.map(o=>o.t).join(' ')).toLowerCase().includes(f));
+    if(f&&!pregs.length) return '';
+    const maxSec=s.pregs.reduce((a,p)=>a+(+p.max||0),0);
+    return `<div class="m-sec">
+      <div class="m-sechead">
+        <input class="fc m-secnom" value="${esc(s.nom)}" oninput="ETIM.bkSet(${si},-1,'nom',this.value)">
+        <label class="m-peso">Peso <input class="fc" type="number" min="0" max="100" step="0.5" value="${+((+s.peso||0)*100).toFixed(2)}" oninput="ETIM.bkSet(${si},-1,'peso',this.value)"> %</label>
+        <span class="m-chip">${s.pregs.length} preg. · máx ${maxSec} pts</span>
+        <button class="m-ico" title="Eliminar sección" onclick="ETIM.bkDelSec(${si})">🗑</button>
+      </div>
+      ${pregs.map(({p,pi})=>`
+      <div class="m-preg ${p.revisar?'rev':''}">
+        <div class="m-pnum">${pi+1}</div>
+        <div class="m-pbody">
+          <label class="m-lbl">Texto de la pregunta (evaluación manual)</label>
+          <textarea class="fc" rows="2" oninput="ETIM.bkSet(${si},${pi},'t',this.value)">${esc(p.t)}</textarea>
+          <label class="m-lbl">Texto que ve el trabajador en el QR <span class="m-mut">(vacío = usa el de arriba)</span></label>
+          <textarea class="fc" rows="2" oninput="ETIM.bkSet(${si},${pi},'tq',this.value)">${esc(p.tq)}</textarea>
+          <div class="m-prow">
+            <label class="m-lbl">Puntaje <input class="fc m-num" type="number" min="0.5" step="0.5" value="${p.max}" oninput="ETIM.bkSet(${si},${pi},'max',this.value)"></label>
+            <label class="m-lbl">Tipo
+              <select class="fc m-sel" onchange="ETIM.bkSet(${si},${pi},'tipo',this.value,1)">
+                <option value="unica" ${p.tipo==='unica'?'selected':''}>Una sola respuesta correcta</option>
+                <option value="multiple" ${p.tipo==='multiple'?'selected':''}>Varias correctas (puntaje proporcional)</option>
+              </select></label>
+            <button class="m-rev ${p.revisar?'on':''}" onclick="ETIM.bkSet(${si},${pi},'revisar',${!p.revisar},1)">${p.revisar?'⚠ Por confirmar':'✓ Confirmada'}</button>
+          </div>
+          <div class="m-ops">
+            ${p.ops.map((o,oi)=>`<div class="m-op ${o.ok?'ok':''}">
+              <label class="m-okbox" title="Respuesta correcta"><input type="${p.tipo==='unica'?'radio':'checkbox'}" name="ok-${si}-${pi}" ${o.ok?'checked':''} onchange="ETIM.bkOk(${si},${pi},${oi},this.checked)"><span>${o.ok?'Correcta':'Incorrecta'}</span></label>
+              <input class="fc" value="${esc(o.t)}" placeholder="Texto de la alternativa" oninput="ETIM.bkOpT(${si},${pi},${oi},this.value)">
+              <button class="m-ico" title="Quitar alternativa" onclick="ETIM.bkDelOp(${si},${pi},${oi})">✕</button>
+            </div>`).join('')}
+            <button class="btn bout bsm" onclick="ETIM.bkAddOp(${si},${pi})">+ Alternativa</button>
+          </div>
+        </div>
+        <div class="m-pacts">
+          <button class="m-ico" title="Subir" onclick="ETIM.bkMover(${si},${pi},-1)">▲</button>
+          <button class="m-ico" title="Bajar" onclick="ETIM.bkMover(${si},${pi},1)">▼</button>
+          <button class="m-ico" title="Eliminar" onclick="ETIM.bkDelPreg(${si},${pi})">🗑</button>
+        </div>
+      </div>`).join('')}
+      <button class="btn bout bsm m-addp" onclick="ETIM.bkAddPreg(${si})">➕ Agregar pregunta a ${esc(s.nom)}</button>
+    </div>`;}).join('')}`;
+  bkResumen();
+}
+const BK={
+  bkBuscar(v){bkFiltro=v;renderBanco();const i=document.querySelector('.m-buscar');if(i){i.focus();i.setSelectionRange(v.length,v.length);}},
+  bkSet(si,pi,k,v,re){
+    if(!esCreador()) return;
+    const o=pi<0?draft[si]:draft[si].pregs[pi];
+    if(k==='peso') v=(parseFloat(v)||0)/100;
+    if(k==='max') v=parseFloat(v)||0;
+    o[k]=v;
+    if(k==='tipo'&&v==='unica'){let vis=false;o.ops.forEach(x=>{if(x.ok&&!vis)vis=true;else x.ok=false;});}
+    bkMarcar(); if(re) renderBanco();
+  },
+  bkOk(si,pi,oi,chk){const p=draft[si].pregs[pi];if(p.tipo==='unica')p.ops.forEach((o,i)=>o.ok=i===oi);else p.ops[oi].ok=chk;bkMarcar();renderBanco();},
+  bkOpT(si,pi,oi,v){draft[si].pregs[pi].ops[oi].t=v;bkMarcar();},
+  bkAddOp(si,pi){draft[si].pregs[pi].ops.push({t:'',ok:false});bkMarcar();renderBanco();},
+  bkDelOp(si,pi,oi){const p=draft[si].pregs[pi];if(p.ops.length<=2){toast('Cada pregunta necesita al menos 2 alternativas','e');return;}p.ops.splice(oi,1);bkMarcar();renderBanco();},
+  bkAddPreg(si){draft[si].pregs.push({n:0,t:'',tq:'',max:2,tipo:'unica',revisar:false,ops:[{t:'',ok:true},{t:'',ok:false},{t:'',ok:false}]});bkMarcar();renderBanco();},
+  bkDelPreg(si,pi){confMod('¿Eliminar la pregunta?',draft[si].pregs[pi].t||'(sin texto)',()=>{draft[si].pregs.splice(pi,1);bkMarcar();renderBanco();});},
+  bkMover(si,pi,d){const a=draft[si].pregs,j=pi+d;if(j<0||j>=a.length)return;[a[pi],a[j]]=[a[j],a[pi]];bkMarcar();renderBanco();},
+  bkAddSec(){draft.push({id:'s'+Date.now().toString(36),nom:'Nueva sección',peso:0,pregs:[]});bkMarcar();renderBanco();},
+  bkDelSec(si){confMod('¿Eliminar la sección completa?',`"${draft[si].nom}" y sus ${draft[si].pregs.length} preguntas.`,()=>{draft.splice(si,1);bkMarcar();renderBanco();});},
+  bkRestaurar(){confMod('¿Restaurar el banco base?','Se cargarán las 36 preguntas originales con sus alternativas sugeridas. No se guarda hasta que presiones "Guardar cambios".',()=>{draft=bancoBase();bkMarcar();renderBanco();});},
+  async bkGuardar(){
+    if(!esCreador()){toast('Solo el creador puede guardar el banco','e');return;}
+    draft.forEach(s=>s.pregs.forEach(p=>p.ops=p.ops.filter(o=>String(o.t).trim())));
+    const err=validarBanco(draft);
+    if(err.length){toast('⚠ '+err[0]+(err.length>1?` (+${err.length-1} más)`:''),'e');renderBanco();return;}
+    let n=1; draft.forEach(s=>s.pregs.forEach(p=>p.n=n++));
+    const doc={secs:clon(draft),version:((bancoMeta&&bancoMeta.version)||0)+1,por:SESSION.user,en:new Date().toISOString(),ts:Date.now()};
+    if(!fbdb){toast('Sin conexión a la nube','e');return;}
+    try{
+      await fbdb.collection(COL_CFG).doc(DOC_BANCO).set(doc);
+      fbdb.collection(COL_BHIST).add(doc).catch(()=>{});
+      draftSucio=false; toast(`✅ Banco guardado (versión ${doc.version})`,'s');
+    }catch(e){console.error(e);toast('No se pudo guardar: '+e.message,'e');}
+  }
+};
+
+/* ════════════════ 2) ACCESOS POR MÓDULO ════════════════ */
+const MODS=[{k:'eval',ico:'📋',nom:'Nueva evaluación (manual)'},{k:'qr',ico:'📱',nom:'Evaluación por QR'},{k:'dash',ico:'📊',nom:'Dashboard'},{k:'ult',ico:'📈',nom:'Último reporte'}];
+let ACC={usuarios:{}}, accDraft=null;
+function tiene(k){
+  if(!SESSION) return false;
+  if(SESSION.rol==='admin') return true;
+  const u=ACC.usuarios[String(SESSION.user).toLowerCase()];
+  if(!u) return true;
+  if(u.activo===false) return false;
+  return !(u.mods&&u.mods[k]===false);
+}
+window.etiTieneAcceso=tiene;
+function aplicarAccesosMenu(){
+  const g=document.querySelector('#sm .mgrid'); if(!g||!SESSION||SESSION.rol==='admin') return;
+  const map={'iniciar()':'eval','irDash()':'dash','verUlt()':'ult','ETIM.abrirQR()':'qr'};
+  let vis=0;
+  g.querySelectorAll('.mc').forEach(c=>{const k=map[c.getAttribute('onclick')];if(!k)return;const s=tiene(k);c.style.display=s?'':'none';if(s)vis++;});
+  let av=$('acc-aviso');
+  const u=ACC.usuarios[String(SESSION.user).toLowerCase()];
+  const txt=u&&u.activo===false?'🔒 Tu acceso a Evaluaciones ETI está suspendido. Comunícate con el administrador.':(!vis?'🔒 No tienes módulos asignados. Comunícate con el administrador.':'');
+  if(txt){if(!av){av=document.createElement('div');av.id='acc-aviso';av.className='m-aviso';g.parentNode.insertBefore(av,g);}av.textContent=txt;}
+  else if(av) av.remove();
+}
+function renderAccesos(){
+  const box=$('admin-accesos'); if(!box) return;
+  if(!esCreador()){box.innerHTML='<div class="m-empty">🔒 Solo el creador del sistema puede gestionar accesos.</div>';return;}
+  if(!accDraft) accDraft=clon(ACC);
+  const us=getUsuarios().filter(u=>u.rol!=='admin');
+  const reg=u=>accDraft.usuarios[u]||(accDraft.usuarios[u]={activo:true,mods:{}});
+  box.innerHTML=`
+  <div class="m-head"><div><h2 class="m-tit">🔐 Control de accesos</h2>
+    <p class="m-sub">Define qué módulos ve cada usuario en su menú. Los cambios se aplican al instante en todos los dispositivos. El administrador siempre tiene acceso total.</p></div>
+    <div class="m-acts"><button class="btn bout bsm" onclick="ETIM.accTodos(true)">✓ Todo a todos</button><button class="btn bpri bsm" id="acc-guardar" onclick="ETIM.accGuardar()">💾 Guardar accesos</button></div></div>
+  <div class="m-tablewrap"><table class="m-table">
+    <thead><tr><th>Usuario</th><th>Estado</th>${MODS.map(m=>`<th>${m.ico}<br><small>${m.nom}</small></th>`).join('')}</tr></thead>
+    <tbody>${us.map(u=>{const k=String(u.user).toLowerCase(),r=reg(k);return `<tr class="${r.activo===false?'off':''}">
+      <td><b>${esc(u.nom)}</b><br><span class="m-mut">${esc(u.user)}</span></td>
+      <td><label class="m-sw"><input type="checkbox" ${r.activo!==false?'checked':''} onchange="ETIM.accSet('${k}','activo',this.checked)"><i></i><span>${r.activo!==false?'Activo':'Suspendido'}</span></label></td>
+      ${MODS.map(m=>`<td><label class="m-sw"><input type="checkbox" ${r.activo===false?'disabled':''} ${!(r.mods&&r.mods[m.k]===false)?'checked':''} onchange="ETIM.accSet('${k}','${m.k}',this.checked)"><i></i></label></td>`).join('')}
+    </tr>`;}).join('')}</tbody></table></div>`;
+}
+const AC={
+  accSet(u,k,v){const r=accDraft.usuarios[u]||(accDraft.usuarios[u]={activo:true,mods:{}});if(k==='activo')r.activo=v;else{r.mods=r.mods||{};r.mods[k]=v;}renderAccesos();},
+  accTodos(v){Object.values(accDraft.usuarios).forEach(r=>{r.activo=true;r.mods={};MODS.forEach(m=>r.mods[m.k]=v);});renderAccesos();},
+  async accGuardar(){
+    if(!esCreador()||!fbdb){toast('No autorizado o sin conexión','e');return;}
+    try{await fbdb.collection(COL_CFG).doc(DOC_ACC).set({usuarios:accDraft.usuarios,por:SESSION.user,en:new Date().toISOString()});toast('✅ Accesos guardados','s');}
+    catch(e){toast('No se pudo guardar: '+e.message,'e');}
+  }
+};
+
+/* ════════════════ 3) EVALUACIÓN POR QR ════════════════ */
+function urlEval(id){const u=new URL('evaluar.html',location.href);u.hash='';u.search='?s='+id;return u.href;}
+function idSesion(){const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';const r=crypto.getRandomValues(new Uint8Array(8));r.forEach(b=>s+=a[b%a.length]);return s;}
+async function bancoPublico(id){
+  return Promise.all(SECS.map(async s=>({id:s.id,nom:s.nom,peso:s.peso,maxSec:s.maxSec,
+    pregs:await Promise.all(s.pregs.map(async p=>{
+      const ops=(p.ops||[]).filter(o=>String(o.t).trim());
+      const k=[];for(let i=0;i<ops.length;i++) if(ops[i].ok) k.push(await sha(`${id}|${p.n}|${i}|${QR_SAL}`));
+      return {n:p.n,t:p.tq||p.t,max:p.max,tipo:p.tipo||'unica',ops:ops.map(o=>o.t),k};
+    }))})));
+}
+function miSup(){
+  if(!SESSION) return null;
+  return SUPERVISORES.find(s=>s.nom===SESSION.nom)||SUPERVISORES.find(s=>_cumCoincide(s.nom,SESSION.nom))||null;
+}
+let sesActiva=null, unsubSes=null, unsubResp=null, sesiones=[], respuestas=[];
+
+function crearPantallaQR(){
+  if($('sqr')) return;
+  const d=document.createElement('div'); d.className='screen'; d.id='sqr';
+  d.innerHTML=`
+  <header class="hdr"><div class="logo">ETICA<span>·</span>SOCIAL <span class="m-crumb">› Evaluación por QR</span></div>
+    <div style="display:flex;align-items:center;gap:.6rem;"><button class="btn bgho bsm" onclick="volverAdmin()">← Menú</button><div class="logo-uni" role="img" aria-label="Unifrutti" style="height:36px;"></div></div></header>
+  <div class="m-wrap">
+    <div class="m-qrgrid">
+      <section class="m-card" id="qr-form">
+        <h2 class="m-tit">📱 Nueva sesión de evaluación</h2>
+        <p class="m-sub">Completa los datos, genera el QR y muéstralo a los trabajadores. Cada trabajador responde desde su celular con su DNI; el puntaje se calcula solo.</p>
+        <div class="m-f2">
+          <div class="fg"><label class="fl">Empresa *</label><select class="fc" id="qr-emp"><option value="">— Seleccionar —</option><option>VERFRUT S.A.C.</option><option>RAPEL S.A.C.</option></select></div>
+          <div class="fg"><label class="fl">Fecha *</label><input class="fc" type="date" id="qr-fecha"></div>
+        </div>
+        <div class="fg"><label class="fl">Supervisor *</label><select class="fc" id="qr-sup" onchange="ETIM.qrSupCambio()"></select></div>
+        <div class="fg"><label class="fl" id="qr-sec-lbl">Sector *</label><select class="fc" id="qr-sector"></select></div>
+        <div class="m-f2">
+          <div class="fg"><label class="fl">Tipo de personal *</label><select class="fc" id="qr-tipo" onchange="ETIM.qrTipo()"><option value="obrero">👷 Obrero (por ruta)</option><option value="empleado">💼 Empleado (por área)</option></select></div>
+          <div class="fg"><label class="fl">Código (opcional)</label><input class="fc" id="qr-cod" placeholder="Ej. R-12"></div>
+        </div>
+        <div class="fg"><label class="fl" id="qr-ruta-lbl">Nombre de la ruta / grupo *</label><input class="fc" id="qr-ruta" placeholder="Ej. Ruta 5 – Sullana"></div>
+        <button class="btn bpri" style="width:100%;padding:.85rem;" onclick="ETIM.qrCrear()">⚡ Generar QR</button>
+        <div class="m-mut" style="margin-top:.6rem;font-size:.75rem;">El QR se mantiene activo hasta que cierres la sesión (máximo hasta el final del día elegido).</div>
+      </section>
+      <section class="m-card" id="qr-activo"></section>
+    </div>
+    <section class="m-card" style="margin-top:1rem;"><h3 class="m-tit2">🗂 Mis sesiones</h3><div id="qr-lista"></div></section>
+  </div>
+  <div id="qr-full" class="m-full" onclick="if(event.target===this)ETIM.qrFull(false)"></div>`;
+  document.body.appendChild(d);
+}
+function qrSvg(txt,cell){
+  if(typeof qrcode!=='function') return `<div class="m-empty">No se pudo cargar el generador de QR. Revisa tu conexión.<br><small>${esc(txt)}</small></div>`;
+  const q=qrcode(0,'M'); q.addData(txt); q.make();
+  return q.createSvgTag({cellSize:cell||8,margin:2,scalable:true});
+}
+function prepararFormQR(){
+  const sel=$('qr-sup'); if(!sel) return;
+  const ms=miSup();
+  const lista=SESSION.rol==='admin'?SUPERVISORES.filter(s=>s.rol!=='Administrador'):[ms||{nom:SESSION.nom,sector:'',reemplazante:true}];
+  sel.innerHTML=(SESSION.rol==='admin'?'<option value="">— Seleccionar —</option>':'')+lista.map(s=>`<option>${esc(s.nom)}</option>`).join('');
+  sel.disabled=SESSION.rol!=='admin';
+  if(!$('qr-fecha').value) $('qr-fecha').value=hoyL();
+  QR.qrSupCambio(); QR.qrTipo();
+}
+function escucharSesiones(){
+  if(unsubSes||!fbdb||!SESSION) return;
+  let q=fbdb.collection(COL_SES);
+  q=SESSION.rol==='admin'?q.orderBy('ts','desc').limit(60):q.where('usuario','==',SESSION.user);
+  unsubSes=q.onSnapshot(s=>{
+    sesiones=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.ts||0)-(a.ts||0));
+    if(sesActiva){const x=sesiones.find(v=>v.id===sesActiva.id);if(x)sesActiva=x;}
+    renderListaSes(); renderActiva();
+  },e=>{console.error('QR sesiones:',e);const l=$('qr-lista');if(l)l.innerHTML='<div class="m-empty">No se pudo leer las sesiones: '+esc(e.message)+'</div>';});
+}
+function renderListaSes(){
+  const el=$('qr-lista'); if(!el) return;
+  if(!sesiones.length){el.innerHTML='<div class="m-empty">Aún no tienes sesiones. Genera tu primer QR arriba.</div>';return;}
+  el.innerHTML=`<div class="m-tablewrap"><table class="m-table"><thead><tr><th>Fecha</th><th>Ruta / Área</th><th>Sector</th>${SESSION.rol==='admin'?'<th>Supervisor</th>':''}<th>Estado</th><th>Evaluados</th><th>Resultado</th><th></th></tr></thead><tbody>
+  ${sesiones.slice(0,40).map(s=>{const ab=s.estado==='abierta'&&!(s.expira&&Date.now()>s.expira);return `<tr>
+    <td>${esc(fmtF(s.fecha))}</td><td><b>${esc(s.ruta)}</b>${s.cod?` <span class="m-mut">${esc(s.cod)}</span>`:''}</td><td>${esc(s.sector)}</td>
+    ${SESSION.rol==='admin'?`<td>${esc(s.sup)}</td>`:''}
+    <td><span class="m-est ${ab?'ab':'ce'}">${ab?'● Abierta':(s.estado==='abierta'?'Vencida':'Cerrada')}</span></td>
+    <td>${s.n!=null?s.n:'—'}</td>
+    <td>${s.resultado!=null?`<b style="color:${s.resultado>=0.7?'var(--green)':'var(--red)'}">${pct(s.resultado)}</b>`:'—'}</td>
+    <td style="white-space:nowrap">${ab?`<button class="btn bpri bsm" onclick="ETIM.qrVer('${s.id}')">Mostrar QR</button>`:`<button class="btn bout bsm" onclick="ETIM.qrVer('${s.id}')">Ver</button>`}</td></tr>`;}).join('')}
+  </tbody></table></div>`;
+}
+function escucharResp(id){
+  if(unsubResp){unsubResp();unsubResp=null;}
+  respuestas=[];
+  if(!fbdb||!id) return;
+  unsubResp=fbdb.collection(COL_RESP).where('sesion','==',id).onSnapshot(s=>{
+    respuestas=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.ts||0)-(b.ts||0));
+    renderActiva(); renderFull();
+  },e=>console.error('QR respuestas:',e));
+}
+function abierta(s){return s&&s.estado==='abierta'&&!(s.expira&&Date.now()>s.expira);}
+function renderActiva(){
+  const el=$('qr-activo'); if(!el) return;
+  const s=sesActiva;
+  if(!s){el.innerHTML=`<div class="m-qrvacio"><div style="font-size:3rem">📲</div><h3>Aún no hay un QR activo</h3><p>Genera una sesión o elige una de "Mis sesiones" para mostrar su código.</p></div>`;return;}
+  const n=respuestas.length, prom=n?respuestas.reduce((a,r)=>a+(r.resultado||0),0)/n:0, apr=respuestas.filter(r=>(r.resultado||0)>=0.7).length;
+  const ab=abierta(s), url=urlEval(s.id);
+  el.innerHTML=`
+    <div class="m-qrtop"><div><div class="m-eyebrow">${ab?'<span class="m-live"></span> Sesión abierta':'Sesión '+(s.estado==='abierta'?'vencida':'cerrada')}</div>
+      <h2 class="m-tit" style="margin:.1rem 0">${esc(s.ruta)}</h2>
+      <div class="m-mut">${esc(s.emp)} · ${esc(s.sector)} · ${esc(fmtF(s.fecha))} · ${esc(s.sup)}</div></div>
+      <div class="m-codigo" title="Código de sesión">${esc(s.id)}</div></div>
+    ${ab?`<div class="m-qrbox">${qrSvg(url,8)}</div>
+    <div class="m-link"><input class="fc" readonly value="${esc(url)}" onclick="this.select()"><button class="btn bout bsm" onclick="ETIM.qrCopiar()">📋 Copiar</button></div>`:''}
+    <div class="m-kpis3"><div><b>${n}</b><span>Respondieron</span></div><div><b>${n?pct(prom):'—'}</b><span>Promedio</span></div><div><b>${apr}</b><span>Aprobados (≥70%)</span></div></div>
+    <div class="m-acts" style="justify-content:center;margin:.8rem 0">
+      ${ab?`<button class="btn bout bsm" onclick="ETIM.qrFull(true)">⛶ Pantalla completa</button>
+      <button class="btn bpri bsm m-btnrojo" onclick="ETIM.qrCerrar()">⏹ Cerrar sesión y calcular</button>`
+      :(s.estado==='abierta'?`<button class="btn bpri bsm" onclick="ETIM.qrCerrar()">⏹ Cerrar y calcular</button>`:'')}
+    </div>
+    <div class="m-resp">${n?`<table class="m-table"><thead><tr><th>#</th><th>Trabajador</th><th>DNI</th><th>Hora</th><th>Resultado</th></tr></thead><tbody>
+      ${respuestas.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.nombre)}</td><td>${esc(r.dni)}</td><td>${r.ts?new Date(r.ts).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}):''}</td>
+      <td><b style="color:${(r.resultado||0)>=0.7?'var(--green)':'var(--red)'}">${pct(r.resultado)}</b></td></tr>`).join('')}</tbody></table>`
+      :'<div class="m-empty">Esperando respuestas… aparecerán aquí automáticamente.</div>'}</div>`;
+}
+let fullOn=false;
+function renderFull(){
+  const el=$('qr-full'); if(!el) return;
+  if(!fullOn||!sesActiva){el.classList.remove('on');return;}
+  el.classList.add('on');
+  el.innerHTML=`<div class="m-fullin"><button class="m-fullx" onclick="ETIM.qrFull(false)">✕</button>
+    <div class="m-eyebrow" style="color:#C8102E">Evaluación de conocimiento ETI</div>
+    <h2>Escanea con la cámara de tu celular</h2>
+    <div class="m-fullqr">${qrSvg(urlEval(sesActiva.id),12)}</div>
+    <div class="m-fullinfo"><b>${esc(sesActiva.ruta)}</b> · ${esc(sesActiva.sector)} · Código <b>${esc(sesActiva.id)}</b></div>
+    <div class="m-fullcount"><b>${respuestas.length}</b> trabajador(es) ya respondieron</div></div>`;
+}
+async function consolidar(s,resps){
+  const secs=(s.banco||[]).map(sec=>{
+    const subs=resps.map(r=>{const x=(r.secs||[]).find(y=>y.id===sec.id);return x?x.pts:0;});
+    const promSec=subs.length?subs.reduce((a,b)=>a+b,0)/subs.length:0;
+    const cum=sec.maxSec?promSec/sec.maxSec:0;
+    return {id:sec.id,nom:sec.nom,peso:sec.peso,maxSec:sec.maxSec,promSec,cum,pond:cum*sec.peso,evSubs:subs};
+  });
+  const resGrupo=secs.reduce((a,x)=>a+x.pond,0);
+  return {emp:s.emp,sup:s.sup,sector:s.sector,tipo:s.tipo,fecha:s.fecha,destiempo:null,modalidad:'QR',sesionQR:s.id,
+    rutas:[{nom:s.ruta,cod:s.cod||'',ne:resps.length,tot:resps.length,secs,resGrupo}],resGen:resGrupo};
+}
+const QR={
+  abrirQR(){
+    if(!tiene('qr')){toast('🔒 No tienes acceso a la evaluación por QR','e');return;}
+    crearPantallaQR(); go('sqr'); prepararFormQR(); escucharSesiones(); renderActiva(); renderListaSes();
+  },
+  qrSupCambio(){
+    const nom=$('qr-sup').value, sd=SUPERVISORES.find(s=>s.nom===nom), sel=$('qr-sector');
+    let ops=SECTORES_TODOS, lbl='📍 Sector *';
+    if(sd&&sd.multiSector){ops=sd.sectores;lbl='📍 ¿En qué sector evaluará? *';}
+    else if(sd&&sd.sector&&!sd.reemplazante){ops=[sd.sector];lbl='📍 Sector asignado';}
+    else if(sd&&sd.reemplazante) lbl='📍 Sector que está cubriendo *';
+    sel.innerHTML=(ops.length>1?'<option value="">— Seleccionar —</option>':'')+ops.map(x=>`<option>${esc(x)}</option>`).join('');
+    $('qr-sec-lbl').textContent=lbl;
+  },
+  qrTipo(){const ob=$('qr-tipo').value==='obrero';$('qr-ruta-lbl').textContent=ob?'Nombre de la ruta / grupo *':'Nombre del área *';$('qr-ruta').placeholder=ob?'Ej. Ruta 5 – Sullana':'Ej. Riego';},
+  async qrCrear(){
+    const v=id=>($(id).value||'').trim();
+    const d={emp:v('qr-emp'),sup:v('qr-sup'),sector:v('qr-sector'),tipo:v('qr-tipo'),ruta:v('qr-ruta'),cod:v('qr-cod'),fecha:v('qr-fecha')};
+    const falta=[['emp','la empresa'],['sup','el supervisor'],['sector','el sector'],['ruta','la ruta / área'],['fecha','la fecha']].find(([k])=>!d[k]);
+    if(falta){toast('Completa '+falta[1],'e');return;}
+    if(!fbdb){toast('Sin conexión a la nube: no se puede crear el QR','e');return;}
+    const btn=event&&event.target; if(btn){btn.disabled=true;btn.textContent='Generando…';}
+    try{
+      const id=idSesion(), [y,m,dd]=d.fecha.split('-').map(Number);
+      const doc={...d,id,estado:'abierta',usuario:SESSION.user,nomUsuario:SESSION.nom,creadoEn:new Date().toISOString(),ts:Date.now(),
+        expira:new Date(y,m-1,dd,23,59,59).getTime(),banco:await bancoPublico(id),bancoVersion:(bancoMeta&&bancoMeta.version)||0};
+      await fbdb.collection(COL_SES).doc(id).set(doc);
+      sesActiva=doc; escucharResp(id); renderActiva(); toast('✅ QR generado. Muéstralo a los trabajadores.','s');
+      $('qr-ruta').value=''; $('qr-cod').value='';
+    }catch(e){console.error(e);toast('No se pudo crear la sesión: '+e.message,'e');}
+    finally{if(btn){btn.disabled=false;btn.textContent='⚡ Generar QR';}}
+  },
+  qrVer(id){const s=sesiones.find(x=>x.id===id);if(!s)return;sesActiva=s;escucharResp(id);renderActiva();$('qr-activo').scrollIntoView({behavior:'smooth',block:'start'});},
+  qrCopiar(){const u=urlEval(sesActiva.id);(navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(()=>toast('Enlace copiado','s')).catch(()=>toast(u,'i'));},
+  qrFull(on){fullOn=on;renderFull();if(on&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{});else if(!on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});},
+  qrCerrar(){
+    const s=sesActiva; if(!s) return;
+    confMod('¿Cerrar la sesión QR?',`Ya no se aceptarán más respuestas. Se calculará el resultado de ${respuestas.length} trabajador(es) y se guardará en Registros.`,async()=>{
+      try{
+        const snap=await fbdb.collection(COL_RESP).where('sesion','==',s.id).get();
+        const resps=snap.docs.map(d=>d.data());
+        const upd={estado:'cerrada',cerradaEn:new Date().toISOString(),cerradaPor:SESSION.user,n:resps.length};
+        fullOn=false; renderFull();
+        if(!resps.length){await fbdb.collection(COL_SES).doc(s.id).update(upd);toast('Sesión cerrada sin respuestas','i');return;}
+        const res=await consolidar(s,resps);
+        upd.resultado=res.resGen;
+        await fbdb.collection(COL_SES).doc(s.id).update(upd);
+        guardarEvalNube(res);
+        try{const p=progPendienteDe(s.sup);if(p&&fechasPendientes(p).includes(s.fecha))marcarProgEjecutada(p.id,s.fecha);}catch(e){}
+        try{localStorage.setItem('eti_last_res_'+(SESSION.user||'anon'),JSON.stringify(res));}catch(e){}
+        window._res=res; renderRes(res); go('sres');
+        toast(`✅ Sesión cerrada · ${resps.length} evaluados · ${pct(res.resGen)}`,'s');
+      }catch(e){console.error(e);toast('No se pudo cerrar: '+e.message,'e');}
+    });
+  }
+};
+
+/* ════════════════ ENGANCHES ════════════════ */
+window.ETIM=Object.assign({},BK,AC,QR);
+
+function inyectarAdmin(){
+  const t1=$('atab1'); if(!t1) return;
+  const bar=t1.parentNode; bar.id='admin-tabs';
+  const lay=$('admin-cumplimiento').parentNode;
+  if(!$('atab9')){
+    const b=document.createElement('button');b.className='btn bout bsm';b.id='atab9';b.innerHTML='📱 Evaluación QR';b.onclick=()=>ETIM.abrirQR();bar.appendChild(b);
+  }
+  if(esCreador()&&!$('atab10')){
+    [['atab10','banco','🧩 Banco de Preguntas'],['atab11','accesos','🔐 Accesos']].forEach(([id,k,t])=>{
+      const b=document.createElement('button');b.className='btn bout bsm m-tabcreador';b.id=id;b.innerHTML=t;b.onclick=()=>adminTab(k);bar.appendChild(b);
+      const p=document.createElement('div');p.id='admin-'+k;p.style.display='none';lay.insertBefore(p,$('admin-cumplimiento'));
+    });
+  }
+  if(!esCreador()){['atab10','atab11','admin-banco','admin-accesos'].forEach(i=>{const e=$(i);if(e)e.remove();});}
+}
+function inyectarMenu(){
+  const g=document.querySelector('#sm .mgrid'); if(!g||g.querySelector('[onclick="ETIM.abrirQR()"]')) return;
+  const c=document.createElement('div');c.className='mc';c.setAttribute('onclick','ETIM.abrirQR()');
+  c.innerHTML='<span class="mci">📱</span><div class="mct">Evaluación por QR</div><div class="mcd">El trabajador responde desde su celular</div>';
+  g.insertBefore(c,g.children[1]||null);
+}
+const _adminTab=window.adminTab;
+window.adminTab=function(tab){
+  ['admin-banco','admin-accesos'].forEach(i=>{const e=$(i);if(e)e.style.display='none';});
+  _adminTab(tab);
+  [['atab10','banco'],['atab11','accesos']].forEach(([id,k])=>{const b=$(id);if(b)b.className=(tab===k?'btn bpri bsm':'btn bout bsm')+' m-tabcreador';});
+  if(tab==='banco'||tab==='accesos'){const gd=$('gDock');if(gd)gd.classList.add('min');}
+  if(tab==='banco'){renderBanco();}
+  if(tab==='accesos'){accDraft=null;renderAccesos();}
+};
+['iniciar','irDash','verUlt'].forEach((fn,i)=>{
+  const k=['eval','dash','ult'][i], orig=window[fn]; if(typeof orig!=='function') return;
+  window[fn]=function(){if(!tiene(k)){toast('🔒 No tienes acceso a este módulo','e');return;}return orig.apply(this,arguments);};
+});
+const _renderRes=window.renderRes;
+if(typeof _renderRes==='function') window.renderRes=function(res){const r=_renderRes.apply(this,arguments);
+  const ed=document.querySelector('#sres button[onclick="go(\'sp3\')"]');if(ed)ed.style.display=(res&&res.modalidad==='QR')?'none':'';return r;};
+const _go=window.go;
+window.go=function(id){
+  if(id!=='sqr'&&fullOn){fullOn=false;renderFull();}
+  const r=_go.apply(this,arguments);
+  if(id==='sadmin') inyectarAdmin();
+  if(id==='sm'){inyectarMenu();aplicarAccesosMenu();}
+  return r;
+};
+window.addEventListener('beforeunload',e=>{if(draftSucio){e.preventDefault();e.returnValue='';}});
+
+// Nube: banco y accesos en vivo
+if(fbdb){
+  fbdb.collection(COL_CFG).doc(DOC_BANCO).onSnapshot(d=>{
+    const x=d.exists?d.data():null;
+    if(x&&Array.isArray(x.secs)&&x.secs.length&&!validarBanco(x.secs).length){
+      BANCO=x.secs; bancoMeta={version:x.version,por:x.por,en:x.en}; aplicarBanco(BANCO);
+      if(!draftSucio){draft=null; const p=$('admin-banco'); if(p&&p.style.display!=='none') renderBanco();}
+    }
+  },e=>console.warn('Banco nube:',e));
+  fbdb.collection(COL_CFG).doc(DOC_ACC).onSnapshot(d=>{
+    ACC=(d.exists&&d.data())||{usuarios:{}}; ACC.usuarios=ACC.usuarios||{};
+    aplicarAccesosMenu();
+  },e=>console.warn('Accesos nube:',e));
+}
+function arranque(){
+  inyectarMenu();
+  document.querySelectorAll('.n-pregs').forEach(e=>e.textContent=nPregs());
+  const act=document.querySelector('.screen.active');
+  if(act&&act.id==='sadmin') inyectarAdmin();
+  if(act&&act.id==='sm') aplicarAccesosMenu();
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',arranque); else arranque();
+console.log('[_MODULOS_V1] listo');
+})();
+</script>
 </body>
 </html>
