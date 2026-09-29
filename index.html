@@ -5511,6 +5511,23 @@ body:has(#sqr.active) #gDock,body:has(#sqr.active) #gFab{display:none!important}
   background:rgba(245,247,250,.92);backdrop-filter:blur(10px);padding:.6rem .2rem;margin:-.4rem 0 1.2rem!important;border-bottom:1px solid var(--bdr)}
 #admin-tabs .btn{flex:0 0 auto;border-radius:999px;white-space:nowrap}
 #admin-tabs .m-tabcreador{border-style:dashed}
+.m-navlbl{display:none}
+/* _MENU_VERTICAL_V1 (29-set-2026): en pantallas anchas el menú del admin va en columna a la izquierda */
+@media(min-width:1100px){
+  #sadmin .dlayout{max-width:1380px;display:grid;grid-template-columns:240px minmax(0,1fr);column-gap:1.6rem;align-items:start}
+  #sadmin .dlayout>*{grid-column:2;min-width:0}
+  #sadmin .dlayout>#admin-tabs{grid-column:1;grid-row:1 / span 40;position:sticky;top:76px;align-self:start;
+    display:flex!important;flex-direction:column;flex-wrap:nowrap!important;overflow:visible;gap:.35rem!important;margin:0!important;
+    background:#fff;border:1px solid var(--bdr);border-radius:16px;padding:.9rem .7rem;box-shadow:0 8px 28px rgba(0,40,120,.08)}
+  #admin-tabs:before{content:'Menú del administrador';font-size:.66rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#8593B0;padding:.1rem .6rem .5rem}
+  #admin-tabs .btn{width:100%;justify-content:flex-start;text-align:left;border-radius:10px;padding:.52rem .8rem;border-color:transparent;background:transparent;box-shadow:none;font-size:.8rem}
+  #admin-tabs .btn.bout:hover{background:var(--surf2);border-color:transparent}
+  #admin-tabs .btn.bpri{background:var(--navy);color:#fff;box-shadow:0 6px 16px rgba(0,61,165,.25)}
+  #admin-tabs .m-navlbl{display:block;font-size:.62rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8593B0;padding:.85rem .6rem .3rem;margin-top:.35rem;border-top:1px solid var(--surf2)}
+  #admin-tabs .m-tabcreador{border:none!important;background:#F6F8FD}
+  #admin-tabs .m-tabcreador.bout:hover{background:var(--surf2)}
+  #admin-tabs .m-tabcreador.bpri{background:linear-gradient(90deg,#7A1025,var(--red));color:#fff;box-shadow:0 6px 16px rgba(200,16,46,.25)}
+}
 #admin-tabs .m-tabcreador.bpri{border-style:solid}
 
 /* Tarjetas del menú */
@@ -5570,6 +5587,15 @@ body:has(#sqr.active) #gDock,body:has(#sqr.active) #gFab{display:none!important}
 .m-table td{padding:.6rem;border-bottom:1px solid var(--surf2);vertical-align:middle}
 .m-table tr:hover td{background:#FAFBFE}
 .m-table tr.off td{opacity:.55}
+.m-acc{background:#fff;border:1px solid var(--bdr);border-radius:16px;box-shadow:0 6px 24px rgba(0,40,120,.06)}
+.m-acc .m-table th{position:sticky;top:0;z-index:1}
+.m-acc .m-table th:nth-child(n+3),.m-acc .m-table td:nth-child(n+3){text-align:center}
+.m-acc .m-table th:first-child{border-radius:16px 0 0 0}.m-acc .m-table th:last-child{border-radius:0 16px 0 0}
+.m-acc .m-table th{font-size:.68rem;line-height:1.35}.m-acc .m-table th small{display:block;max-width:110px;margin:0 auto}
+.m-acc .m-table td{padding:.7rem .8rem}
+.m-usr{display:flex;align-items:center;gap:.7rem}
+.m-av{flex:0 0 36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--navy),var(--navy3));color:#fff;font-weight:800;font-size:.78rem;display:flex;align-items:center;justify-content:center}
+.m-acc tr.off .m-av{background:#AAB6CE}
 .m-table th small{font-weight:600;text-transform:none;letter-spacing:0}
 .m-sw{display:inline-flex;align-items:center;gap:.45rem;cursor:pointer;font-size:.78rem;font-weight:700;color:var(--text2)}
 .m-sw input{display:none}
@@ -5938,10 +5964,10 @@ function renderAccesos(){
   <div class="m-head"><div><h2 class="m-tit">🔐 Control de accesos</h2>
     <p class="m-sub">Define qué módulos ve cada usuario en su menú. Los cambios se aplican al instante en todos los dispositivos. El administrador siempre tiene acceso total.</p></div>
     <div class="m-acts"><button class="btn bout bsm" onclick="ETIM.accTodos(true)">✓ Todo a todos</button><button class="btn bpri bsm" id="acc-guardar" onclick="ETIM.accGuardar()">💾 Guardar accesos</button></div></div>
-  <div class="m-tablewrap"><table class="m-table">
+  <div class="m-tablewrap m-acc"><table class="m-table">
     <thead><tr><th>Usuario</th><th>Estado</th>${MODS.map(m=>`<th>${m.ico}<br><small>${m.nom}</small></th>`).join('')}</tr></thead>
     <tbody>${us.map(u=>{const k=String(u.user).toLowerCase(),r=reg(k);return `<tr class="${r.activo===false?'off':''}">
-      <td><b>${esc(u.nom)}</b><br><span class="m-mut">${esc(u.user)}</span></td>
+      <td><div class="m-usr"><span class="m-av">${esc(String(u.nom).split(' ').filter(w=>/^[A-Za-zÁÉÍÓÚÑáéíóúñ]/.test(w)).slice(0,2).map(w=>w[0]).join('').toUpperCase())}</span><div><b>${esc(u.nom)}</b><br><span class="m-mut">${esc(u.user)} · ${r.activo===false?'sin acceso':MODS.filter(m=>!(r.mods&&r.mods[m.k]===false)).length+' de '+MODS.length+' módulos'}</span></div></div></td>
       <td><label class="m-sw"><input type="checkbox" ${r.activo!==false?'checked':''} onchange="ETIM.accSet('${k}','activo',this.checked)"><i></i><span>${r.activo!==false?'Activo':'Suspendido'}</span></label></td>
       ${MODS.map(m=>`<td><label class="m-sw"><input type="checkbox" ${r.activo===false?'disabled':''} ${!(r.mods&&r.mods[m.k]===false)?'checked':''} onchange="ETIM.accSet('${k}','${m.k}',this.checked)"><i></i></label></td>`).join('')}
     </tr>`;}).join('')}</tbody></table></div>`;
@@ -6173,6 +6199,9 @@ function inyectarAdmin(){
     });
   }
   if(!esCreador()){['atab10','atab11','admin-banco','admin-accesos'].forEach(i=>{const e=$(i);if(e)e.remove();});}
+  const lbl=(id,txt,antes)=>{if($(id)||!$(antes))return;const d=document.createElement('div');d.id=id;d.className='m-navlbl';d.textContent=txt;bar.insertBefore(d,$(antes));};
+  lbl('nav-lbl-qr','Evaluación en campo','atab9');
+  lbl('nav-lbl-cr','Configuración · solo creador 🔒','atab10');
 }
 function inyectarMenu(){
   const g=document.querySelector('#sm .mgrid'); if(!g||g.querySelector('[onclick="ETIM.abrirQR()"]')) return;
@@ -6200,7 +6229,7 @@ const _go=window.go;
 window.go=function(id){
   if(id!=='sqr'&&fullOn){fullOn=false;renderFull();}
   const r=_go.apply(this,arguments);
-  if(id==='sadmin') inyectarAdmin();
+  if(id==='sadmin'){inyectarAdmin();if(window.innerWidth>=1100)setTimeout(()=>{const gd=$('gDock');if(gd)gd.classList.add('min');},60);}
   if(id==='sm'){inyectarMenu();aplicarAccesosMenu();}
   return r;
 };
@@ -6224,7 +6253,7 @@ function arranque(){
   inyectarMenu();
   document.querySelectorAll('.n-pregs').forEach(e=>e.textContent=nPregs());
   const act=document.querySelector('.screen.active');
-  if(act&&act.id==='sadmin') inyectarAdmin();
+  if(act&&act.id==='sadmin'){inyectarAdmin();if(window.innerWidth>=1100)setTimeout(()=>{const gd=$('gDock');if(gd)gd.classList.add('min');},600);}
   if(act&&act.id==='sm') aplicarAccesosMenu();
 }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',arranque); else arranque();
