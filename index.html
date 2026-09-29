@@ -5512,22 +5512,6 @@ body:has(#sqr.active) #gDock,body:has(#sqr.active) #gFab{display:none!important}
 #admin-tabs .btn{flex:0 0 auto;border-radius:999px;white-space:nowrap}
 #admin-tabs .m-tabcreador{border-style:dashed}
 .m-navlbl{display:none}
-/* _MENU_VERTICAL_V1 (29-set-2026): en pantallas anchas el menú del admin va en columna a la izquierda */
-@media(min-width:1100px){
-  #sadmin .dlayout{max-width:1380px;display:grid;grid-template-columns:240px minmax(0,1fr);column-gap:1.6rem;align-items:start}
-  #sadmin .dlayout>*{grid-column:2;min-width:0}
-  #sadmin .dlayout>#admin-tabs{grid-column:1;grid-row:1 / span 40;position:sticky;top:76px;align-self:start;
-    display:flex!important;flex-direction:column;flex-wrap:nowrap!important;overflow:visible;gap:.35rem!important;margin:0!important;
-    background:#fff;border:1px solid var(--bdr);border-radius:16px;padding:.9rem .7rem;box-shadow:0 8px 28px rgba(0,40,120,.08)}
-  #admin-tabs:before{content:'Menú del administrador';font-size:.66rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#8593B0;padding:.1rem .6rem .5rem}
-  #admin-tabs .btn{width:100%;justify-content:flex-start;text-align:left;border-radius:10px;padding:.52rem .8rem;border-color:transparent;background:transparent;box-shadow:none;font-size:.8rem}
-  #admin-tabs .btn.bout:hover{background:var(--surf2);border-color:transparent}
-  #admin-tabs .btn.bpri{background:var(--navy);color:#fff;box-shadow:0 6px 16px rgba(0,61,165,.25)}
-  #admin-tabs .m-navlbl{display:block;font-size:.62rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#8593B0;padding:.85rem .6rem .3rem;margin-top:.35rem;border-top:1px solid var(--surf2)}
-  #admin-tabs .m-tabcreador{border:none!important;background:#F6F8FD}
-  #admin-tabs .m-tabcreador.bout:hover{background:var(--surf2)}
-  #admin-tabs .m-tabcreador.bpri{background:linear-gradient(90deg,#7A1025,var(--red));color:#fff;box-shadow:0 6px 16px rgba(200,16,46,.25)}
-}
 #admin-tabs .m-tabcreador.bpri{border-style:solid}
 
 /* Tarjetas del menú */
@@ -6187,19 +6171,20 @@ window.ETIM=Object.assign({},BK,AC,QR);
 
 function inyectarAdmin(){
   const t1=$('atab1'); if(!t1) return;
-  const bar=t1.parentNode; bar.id='admin-tabs';
+  let bar=$('admin-tabs'); if(!bar){bar=t1.parentNode; bar.id='admin-tabs';}
+  const enNav=t1.parentNode&&t1.parentNode.id==='es-nav';
   const lay=$('admin-cumplimiento').parentNode;
   if(!$('atab9')){
-    const b=document.createElement('button');b.className='btn bout bsm';b.id='atab9';b.innerHTML='📱 Evaluación QR';b.onclick=()=>ETIM.abrirQR();bar.appendChild(b);
+    const b=document.createElement('button');b.className='btn bout bsm';b.id='atab9';b.innerHTML='📱 Evaluación QR';b.onclick=()=>ETIM.abrirQR();(enNav?t1.parentNode:bar).appendChild(b);
   }
   if(esCreador()&&!$('atab10')){
     [['atab10','banco','🧩 Banco de Preguntas'],['atab11','accesos','🔐 Accesos']].forEach(([id,k,t])=>{
-      const b=document.createElement('button');b.className='btn bout bsm m-tabcreador';b.id=id;b.innerHTML=t;b.onclick=()=>adminTab(k);bar.appendChild(b);
+      const b=document.createElement('button');b.className='btn bout bsm m-tabcreador';b.id=id;b.innerHTML=t;b.onclick=()=>adminTab(k);(enNav?t1.parentNode:bar).appendChild(b);
       const p=document.createElement('div');p.id='admin-'+k;p.style.display='none';lay.insertBefore(p,$('admin-cumplimiento'));
     });
   }
   if(!esCreador()){['atab10','atab11','admin-banco','admin-accesos'].forEach(i=>{const e=$(i);if(e)e.remove();});}
-  const lbl=(id,txt,antes)=>{if($(id)||!$(antes))return;const d=document.createElement('div');d.id=id;d.className='m-navlbl';d.textContent=txt;bar.insertBefore(d,$(antes));};
+  const lbl=(id,txt,antes)=>{if(enNav||$(id)||!$(antes))return;const d=document.createElement('div');d.id=id;d.className='m-navlbl';d.textContent=txt;bar.insertBefore(d,$(antes));};
   lbl('nav-lbl-qr','Evaluación en campo','atab9');
   lbl('nav-lbl-cr','Configuración · solo creador 🔒','atab10');
 }
@@ -6258,6 +6243,205 @@ function arranque(){
 }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',arranque); else arranque();
 console.log('[_MODULOS_V1] listo');
+})();
+</script>
+<style>
+/* ══ _SHELL_RL_V1 (29-set-2026): mismo modelo visual del Sistema RR.LL
+      barra lateral oscura + barra superior blanca + tarjetas KPI ══ */
+#eti-side,#eti-top{display:none}
+body.shell-on #eti-side{display:flex}
+body.shell-on #eti-top{display:flex}
+body.shell-on .screen>header.hdr{display:none!important}
+body.shell-on .screen{margin-left:272px;padding-top:64px;min-height:100vh;background:#F2F5FB}
+body.shell-on .stbar{position:sticky;top:64px;z-index:40}
+#eti-side{position:fixed;left:0;top:0;bottom:0;width:272px;z-index:1200;flex-direction:column;color:#fff;
+  background:linear-gradient(180deg,#0B1E45 0%,#10275A 55%,#0D2150 100%);box-shadow:4px 0 24px rgba(0,20,60,.18)}
+.es-brand{display:flex;align-items:center;gap:.75rem;padding:1.1rem 1.1rem;border-bottom:1px solid rgba(255,255,255,.08)}
+.es-brand .logo-uni{height:46px;width:46px;border-radius:9px;background-color:#fff;flex:0 0 auto}
+.es-brand b{display:block;font:800 1.05rem/1.1 'Barlow Condensed','Barlow',sans-serif;letter-spacing:.02em}
+.es-brand small{display:block;font-size:.72rem;opacity:.6;margin-top:.15rem}
+.es-user{display:flex;align-items:center;gap:.7rem;padding:1rem 1.1rem;border-bottom:1px solid rgba(255,255,255,.08)}
+.es-av{flex:0 0 40px;height:40px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#E8384F,#A00D24);display:flex;align-items:center;justify-content:center;font-weight:800;box-shadow:0 0 0 3px rgba(200,16,46,.25)}
+.es-user b{display:block;font:800 .86rem/1.15 'Barlow Condensed','Barlow',sans-serif;text-transform:uppercase;letter-spacing:.02em}
+.es-user small{display:block;font-size:.66rem;opacity:.55;text-transform:uppercase;letter-spacing:.03em;margin-top:.15rem;line-height:1.3}
+#es-nav{flex:1;overflow-y:auto;padding:.6rem .7rem 1rem;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.2) transparent}
+.es-sec{font-size:.64rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.4);padding:1rem .6rem .45rem}
+#es-nav .btn,#es-nav .es-it{display:flex!important;align-items:center;gap:.55rem;width:100%;text-align:left;justify-content:flex-start;
+  background:transparent!important;border:none!important;box-shadow:none!important;color:rgba(255,255,255,.82)!important;
+  font:500 .9rem 'Barlow','Segoe UI',sans-serif!important;letter-spacing:0!important;text-transform:none!important;
+  padding:.62rem .8rem!important;border-radius:10px!important;margin:1px 0;cursor:pointer;transition:background .15s}
+#es-nav .btn:hover,#es-nav .es-it:hover{background:rgba(255,255,255,.07)!important;color:#fff!important}
+#es-nav .btn.bpri,#es-nav .es-it.on{background:linear-gradient(90deg,#C8102E,#E0243F)!important;color:#fff!important;font-weight:700!important;box-shadow:0 8px 20px rgba(200,16,46,.35)!important}
+#es-nav #pres-count{margin-left:auto}
+.es-foot{padding:.7rem;border-top:1px solid rgba(255,255,255,.08)}
+.es-foot button{display:flex;align-items:center;gap:.55rem;width:100%;background:transparent;border:none;color:rgba(255,255,255,.75);font:500 .88rem Barlow,sans-serif;padding:.6rem .8rem;border-radius:10px;cursor:pointer;text-align:left}
+.es-foot button:hover{background:rgba(255,255,255,.07);color:#fff}
+.es-foot button.es-home{background:rgba(255,255,255,.07);color:#fff;margin-bottom:.25rem}
+#eti-top{position:fixed;top:0;left:272px;right:0;height:64px;z-index:1100;background:#fff;border-bottom:1px solid #E3E9F4;align-items:center;gap:1rem;padding:0 1.6rem;box-shadow:0 2px 12px rgba(0,30,90,.04)}
+#eti-top .logo-uni{height:40px;width:36px;flex:0 0 auto}
+#es-tit{font:800 1.35rem 'Barlow Condensed','Barlow',sans-serif;text-transform:uppercase;letter-spacing:.04em;color:#0B1E45;margin:0 0 0 .6rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.es-right{margin-left:auto;display:flex;align-items:center;gap:.8rem;font-size:.8rem;color:#5B6B85;white-space:nowrap}
+.es-badge{background:linear-gradient(90deg,#C8102E,#E0243F);color:#fff;font-weight:800;font-size:.68rem;letter-spacing:.08em;border-radius:99px;padding:.35rem .8rem}
+.es-ham{display:none;background:#EEF3FB;border:none;border-radius:10px;width:40px;height:40px;font-size:1.2rem;cursor:pointer;color:#0B1E45}
+.es-back{display:none;position:fixed;inset:0;background:rgba(5,15,40,.45);z-index:1150}
+/* Contenido */
+body.shell-on #sadmin .dlayout,body.shell-on .dlayout{max-width:1500px}
+body.shell-on #admin-tabs{display:none!important}
+.es-hero{position:relative;overflow:hidden;border-radius:22px;padding:2rem 2.2rem;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  background:radial-gradient(700px 300px at 85% 30%,rgba(200,16,46,.35),transparent 60%),linear-gradient(110deg,#0B1E45 0%,#163A8C 60%,#3A2A7A 100%);box-shadow:0 14px 34px rgba(11,30,69,.25)}
+.es-hero h2{margin:0;font:800 2rem/1 'Barlow Condensed','Barlow',sans-serif;text-transform:uppercase;letter-spacing:.03em;display:flex;align-items:center;gap:.7rem;flex-wrap:wrap}
+.es-hero p{margin:.5rem 0 0;opacity:.75;font-size:.9rem}
+.es-live{font:700 .68rem Barlow,sans-serif;text-transform:none;letter-spacing:0;background:#E7F9EE;color:#0B7A3E;border-radius:99px;padding:.25rem .65rem;display:inline-flex;align-items:center;gap:.35rem}
+.es-live i{width:7px;height:7px;border-radius:50%;background:#1DB954}
+.es-hero .logo-uni{height:92px;width:92px;border-radius:16px;background-color:#FDE8EC;flex:0 0 auto;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+/* Tarjetas KPI estilo RR.LL */
+body.shell-on .kcard{background:#fff!important;border:1px solid #E6ECF6!important;border-top:5px solid #3B82F6!important;border-radius:18px!important;padding:1.2rem 1.2rem 1.1rem!important;box-shadow:0 8px 24px rgba(0,40,120,.06)!important}
+body.shell-on .kcard::after{display:none!important}
+body.shell-on .kstrip>.kcard:nth-child(6n+2){border-top-color:#E03A4E!important}
+body.shell-on .kstrip>.kcard:nth-child(6n+3){border-top-color:#F97316!important}
+body.shell-on .kstrip>.kcard:nth-child(6n+4){border-top-color:#22C55E!important}
+body.shell-on .kstrip>.kcard:nth-child(6n+5){border-top-color:#8B5CF6!important}
+body.shell-on .kstrip>.kcard:nth-child(6n){border-top-color:#0EA5A5!important}
+body.shell-on .kcard.kg{border-top-color:#22C55E!important}
+body.shell-on .kcard.kr{border-top-color:#E03A4E!important}
+body.shell-on .kcard .kval{font-family:'Barlow Condensed','Barlow',sans-serif!important;font-size:2.3rem!important;font-weight:800!important;color:#0B1E45}
+/* Inicio del supervisor en claro */
+body.shell-on #sm{background:#F2F5FB!important}
+body.shell-on #sm .mhero{background:transparent!important;align-items:stretch;justify-content:flex-start;text-align:left;padding:1.6rem 2rem 2.5rem}
+body.shell-on #sm .mhero::before,body.shell-on #sm .mhero::after{display:none!important}
+body.shell-on #sm .mhero>.mey,body.shell-on #sm .mhero>.mt,body.shell-on #sm .mhero>.ms{display:none}
+body.shell-on #sm .mgrid{max-width:none;margin-top:1.4rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}
+body.shell-on #sm .mgrid .mc{background:#fff!important;border:1px solid #E6ECF6!important;border-top:5px solid #3B82F6!important;border-radius:18px!important;color:#0B1E45!important;box-shadow:0 8px 24px rgba(0,40,120,.06)!important;text-align:left}
+body.shell-on #sm .mgrid .mc:nth-child(2){border-top-color:#E03A4E!important}
+body.shell-on #sm .mgrid .mc:nth-child(3){border-top-color:#22C55E!important}
+body.shell-on #sm .mgrid .mc:nth-child(4){border-top-color:#F97316!important}
+body.shell-on #sm .mgrid .mc .mct{color:#0B1E45!important;font-family:'Barlow Condensed','Barlow',sans-serif;font-size:1.25rem;font-weight:800}
+body.shell-on #sm .mgrid .mc .mcd{color:#5B6B85!important}
+body.shell-on #sm .mgrid .mc .mci{display:inline-flex;width:52px;height:52px;border-radius:14px;align-items:center;justify-content:center;font-size:1.5rem;background:linear-gradient(135deg,#EEF3FB,#DCE6F8)}
+body.shell-on #sm .mhero>*:not(.mgrid):not(.es-hero):not(.m-aviso){max-width:none!important;width:100%}
+body.shell-on #sm [style*="rgba(255,255,255,.06)"]{background:#fff!important;border-color:#E6ECF6!important}
+body.shell-on #sm .mvis{max-width:none!important}
+body.shell-on #sm .mvis-c{background:#fff!important;border:1px solid #E6ECF6!important;border-top:5px solid #C8102E!important;box-shadow:0 8px 24px rgba(0,40,120,.06)!important}
+body.shell-on #sm .mvis-t{color:#0B1E45!important;font-family:'Barlow Condensed','Barlow',sans-serif}
+body.shell-on #sm .mvis-p{color:#5B6B85!important}
+body.shell-on #sm .mfoot{color:#8593B0!important}
+body.shell-on #chat-fab{left:290px!important}
+body.shell-on #chat-panel{left:290px!important}
+body.side-open #gDock,body.side-open #gFab,body.side-open #chat-fab{display:none!important}
+@media(max-width:1000px){body.shell-on #chat-fab,body.shell-on #chat-panel{left:18px!important}}
+@media(max-width:1000px){
+  body.shell-on .screen{margin-left:0}
+  #eti-top{left:0;padding:0 .9rem}
+  .es-ham{display:inline-flex;align-items:center;justify-content:center}
+  #eti-side{transform:translateX(-100%);transition:transform .25s}
+  body.side-open #eti-side{transform:none}
+  body.side-open .es-back{display:block}
+  .es-right .es-fecha{display:none}
+  #es-tit{font-size:1.1rem}
+  .es-hero{padding:1.3rem}.es-hero h2{font-size:1.45rem}.es-hero .logo-uni{height:60px;width:60px}
+  body.shell-on #sm .mhero{padding:1rem .8rem 2rem}
+}
+</style>
+<script>
+/* ══ _SHELL_RL_V1 (29-set-2026): barra lateral + barra superior como el Sistema RR.LL ══ */
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const TIT={sm:'Inicio',sp1:'Nueva Evaluación',sp2:'Nueva Evaluación',sp3:'Nueva Evaluación',sres:'Resultados',sdash:'Dashboard',sqr:'Evaluación por QR'};
+const TAB_TIT={stats:'Estadísticas',users:'Usuarios',registros:'Registros',eval:'Nueva Evaluación',dash:'Mi Dashboard',prog:'Programación',conectados:'Conectados',cumplimiento:'Cumplimiento',banco:'Banco de Preguntas',accesos:'Control de Accesos'};
+let tabActual='stats';
+function crear(){
+  if($('eti-side')) return;
+  const a=document.createElement('aside'); a.id='eti-side';
+  a.innerHTML=`<div class="es-brand"><div class="logo-uni" role="img" aria-label="Unifrutti"></div><div><b>Evaluaciones ETI</b><small>Ética Social · Relaciones Laborales</small></div></div>
+    <div class="es-user"><span class="es-av" id="es-av">?</span><div><b id="es-nom">—</b><small id="es-rol">—</small></div></div>
+    <nav id="es-nav"></nav>
+    <div class="es-foot"><button class="es-home" onclick="volverRRLL()">🏠 Sistema RR.LL</button><button onclick="doLogout()">🚪 Cerrar Sesión</button></div>`;
+  document.body.appendChild(a);
+  const t=document.createElement('div'); t.id='eti-top';
+  t.innerHTML=`<button class="es-ham" onclick="document.body.classList.toggle('side-open')">☰</button><div class="logo-uni" role="img" aria-label="Unifrutti"></div><h1 id="es-tit">—</h1>
+    <div class="es-right"><span class="es-fecha">${new Date().toLocaleDateString('es-PE',{weekday:'long',day:'numeric',month:'short',year:'numeric'})}</span><span class="es-badge" id="es-badge">ETI</span></div>`;
+  document.body.appendChild(t);
+  const bk=document.createElement('div'); bk.className='es-back'; bk.onclick=()=>document.body.classList.remove('side-open'); document.body.appendChild(bk);
+}
+function sec(nav,txt){const d=document.createElement('div');d.className='es-sec';d.textContent=txt;nav.appendChild(d);}
+function mover(nav,id){const b=$(id);if(!b)return;nav.appendChild(b);
+  if(!b.dataset.es){b.dataset.es='1';b.addEventListener('click',()=>{document.body.classList.remove('side-open');const act=document.querySelector('.screen.active');if(id!=='atab9'&&act&&act.id!=='sadmin')go('sadmin');},true);}}
+function it(nav,ico,txt,fn,key){const b=document.createElement('button');b.className='es-it';b.dataset.k=key;b.innerHTML=`<span>${ico}</span><span>${txt}</span>`;b.onclick=()=>{document.body.classList.remove('side-open');fn();};nav.appendChild(b);}
+function armarNav(){
+  const nav=$('es-nav'); if(!nav||!SESSION) return;
+  const rol=SESSION.rol==='admin'?'admin':'sup';
+  const a10=$('atab10');
+  if(nav.dataset.rol===rol+'|'+SESSION.user && (rol!=='admin'||($('atab1')&&$('atab1').parentNode===nav&&(!a10||(a10.previousElementSibling&&a10.previousElementSibling.classList.contains('es-sec')))))) return;
+  nav.dataset.rol=rol+'|'+SESSION.user;
+  if(rol==='admin'){
+    // devolver botones previos por si se rearma
+    nav.innerHTML='';
+    sec(nav,'Principal');['atab1','atab5','atab4','atab3'].forEach(i=>mover(nav,i));
+    sec(nav,'Gestión');['atab6','atab8','atab7','atab2'].forEach(i=>mover(nav,i));
+    sec(nav,'Evaluación en campo');mover(nav,'atab9');
+    if($('atab10')){sec(nav,'Configuración 🔒');['atab10','atab11'].forEach(i=>mover(nav,i));}
+  }else{
+    nav.innerHTML='';
+    sec(nav,'Principal');
+    it(nav,'🏠','Inicio',()=>go('sm'),'sm');
+    const T=k=>(window.etiTieneAcceso?etiTieneAcceso(k):true);
+    if(T('eval')) it(nav,'📋','Nueva Evaluación',()=>iniciar(),'eval');
+    if(T('qr')) it(nav,'📱','Evaluación por QR',()=>ETIM.abrirQR(),'qr');
+    sec(nav,'Reportes');
+    if(T('dash')) it(nav,'📊','Dashboard',()=>irDash(),'dash');
+    if(T('ult')) it(nav,'📈','Último Reporte',()=>verUlt(),'ult');
+  }
+}
+function heroAdmin(){
+  const st=$('admin-stats'); if(!st||$('es-hero-adm')) return;
+  const h=document.createElement('div'); h.id='es-hero-adm'; h.className='es-hero'; h.style.marginBottom='1.4rem';
+  st.insertBefore(h,st.firstChild);
+}
+function heroSup(){
+  const mh=document.querySelector('#sm .mhero'); if(!mh) return;
+  let h=$('es-hero-sup'); if(!h){h=document.createElement('div');h.id='es-hero-sup';h.className='es-hero';mh.insertBefore(h,mh.firstChild);}
+}
+function pintarHero(id,sub){
+  const h=$(id); if(!h||!SESSION) return;
+  const n=String(SESSION.nom||'').split(' ')[0];
+  h.innerHTML=`<div><h2>Bienvenido, ${esc(n)} <span class="es-live"><i></i>En vivo</span></h2><p>${sub}</p></div><div class="logo-uni" role="img" aria-label="Unifrutti"></div>`;
+}
+function actualizar(){
+  const act=document.querySelector('.screen.active');
+  const on=!!(SESSION&&act&&act.id!=='slogin');
+  document.body.classList.toggle('shell-on',on);
+  if(!on){document.body.classList.remove('side-open');return;}
+  crear(); armarNav();
+  if(window.innerWidth<1000&&!window._esDockMin){window._esDockMin=1;setTimeout(()=>{const gd=$('gDock');if(gd)gd.classList.add('min');},900);}
+  const ini=String(SESSION.nom||'?').trim().charAt(0).toUpperCase();
+  $('es-av').textContent=ini; $('es-nom').textContent=SESSION.nom||SESSION.user;
+  $('es-rol').textContent=SESSION.rol==='admin'?'Administrador del sistema':'Supervisor de Gestión Humana';
+  $('es-badge').textContent=SESSION.rol==='admin'?'ADMIN':'SUPERVISOR';
+  let tit=TIT[act.id]||'Evaluaciones ETI';
+  if(act.id==='sadmin') tit=TAB_TIT[tabActual]||'Administración';
+  $('es-tit').textContent=tit;
+  // resaltar item activo
+  if(SESSION.rol!=='admin'){
+    const k={sm:'sm',sp1:'eval',sp2:'eval',sp3:'eval',sqr:'qr',sdash:'dash',sres:'ult'}[act.id];
+    document.querySelectorAll('#es-nav .es-it').forEach(b=>b.classList.toggle('on',b.dataset.k===k));
+    heroSup(); pintarHero('es-hero-sup','Supervisor · Evaluaciones ETI — '+(typeof SECS!=='undefined'?SECS.reduce((a,s)=>a+s.pregs.length,0):36)+' preguntas · '+(typeof SECS!=='undefined'?SECS.length:6)+' temas · cálculo automático');
+  }else{
+    const b9=$('atab9'); if(b9) b9.className=(act.id==='sqr'?'btn bpri bsm':'btn bout bsm');
+    if(act.id==='sqr') document.querySelectorAll('#es-nav .btn').forEach(b=>{if(b.id!=='atab9')b.className=b.className.replace('bpri','bout');});
+    heroAdmin(); pintarHero('es-hero-adm','Administrador · Evaluaciones ETI — Ética Social');
+  }
+}
+const _go=window.go;
+window.go=function(){const r=_go.apply(this,arguments);setTimeout(actualizar,0);return r;};
+const _at=window.adminTab;
+window.adminTab=function(t){tabActual=t;const r=_at.apply(this,arguments);setTimeout(actualizar,0);return r;};
+const _lo=window.doLogout;
+if(typeof _lo==='function') window.doLogout=function(){const r=_lo.apply(this,arguments);setTimeout(actualizar,0);return r;};
+function arranque(){actualizar();setTimeout(actualizar,700);}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',arranque);else arranque();
+console.log('[_SHELL_RL_V1] listo');
 })();
 </script>
 </body>
