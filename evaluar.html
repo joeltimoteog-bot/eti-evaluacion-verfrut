@@ -35,7 +35,9 @@ p{color:var(--text2);line-height:1.5;margin:0 0 12px;font-size:15px}
 .tips li{display:flex;gap:10px;align-items:flex-start;padding:7px 0;font-size:14.5px;color:var(--text)}
 label{display:block;font-weight:700;font-size:13px;color:var(--text2);margin:14px 0 6px}
 input{width:100%;font:600 18px Barlow,sans-serif;padding:14px 14px;border:2px solid var(--bdr);border-radius:12px;outline:none;color:var(--text);background:#fff}
-input:focus{border-color:var(--navy)}
+input:focus,select:focus{border-color:var(--navy)}
+select{width:100%;font:600 17px Barlow,sans-serif;padding:14px 12px;border:2px solid var(--bdr);border-radius:12px;outline:none;color:var(--text);background:#fff}
+.anon{display:flex;gap:10px;align-items:flex-start;background:#E9F7EF;color:#0B5E33;border-radius:12px;padding:11px 13px;font-size:14px;margin:4px 0 6px}
 .err{background:#FCE4E7;color:var(--red);border-radius:10px;padding:10px 12px;font-size:14px;font-weight:600;margin-top:12px;display:none}
 .btn{display:block;width:100%;border:none;border-radius:14px;padding:16px;font:800 17px Barlow,sans-serif;cursor:pointer;background:var(--navy);color:#fff;box-shadow:0 10px 24px rgba(0,61,165,.28)}
 .btn:disabled{opacity:.45;box-shadow:none}
@@ -79,8 +81,10 @@ input:focus{border-color:var(--navy)}
 var FB_CONFIG={apiKey:"AIzaSyAv-1VcbT8VCerClNAeVtVXzOxhSffeDpc",authDomain:"sistema-eti-verfrut.firebaseapp.com",projectId:"sistema-eti-verfrut",
   storageBucket:"sistema-eti-verfrut.firebasestorage.app",messagingSenderId:"209614676744",appId:"1:209614676744:web:23b4b1cd8c18b77e9742bd"};
 var COL_SES='sesiones_qr', COL_RESP='respuestas_qr', SAL='ETI-QR';
+var AZ_ETI='https://rl-functions-verfrut-c0ctfjc0cjf5f0hz.brazilsouth-01.azurewebsites.net/api/etieval/guardar';   /* _ANONIMA_V2: copia en Azure SQL */
+var SECTORES_BASE=['San Vicente','Algarrobos','Punta Arenas','Planta Rapel','El Papayo','Limones','Olivares Bajo','Los Olivares','Aproa','Santa Rosa'];
 var app=document.getElementById('app'), bar=document.getElementById('bar'), bPrev=document.getElementById('bPrev'), bNext=document.getElementById('bNext');
-var db=null, S=null, SID=null, P=[], idx=0, R={}, W={dni:'',nombre:''}, ORD={};
+var db=null, S=null, SID=null, P=[], idx=0, R={}, W={sector:'',ruta:'',cod:''}, ORD={}, SEED=Math.floor(Math.random()*100000)+7;
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fmtF(f){if(!f)return'';var p=f.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
 function sha(t){return crypto.subtle.digest('SHA-256',new TextEncoder().encode(t)).then(function(b){return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0');}).join('').slice(0,16);});}
@@ -93,7 +97,6 @@ function mezclar(n,seed){var a=[];for(var i=0;i<n;i++)a.push(i);var s=seed;for(v
 function iniciar(){
   SID=(new URLSearchParams(location.search).get('s')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
   if(!SID){mensaje('🔍','Código no válido','Escanea nuevamente el código QR que te muestra tu supervisor.');return;}
-  if(ls('eti_qr_ok_'+SID)){mensaje('✅','Ya enviaste tu evaluación','Desde este celular ya se registró una evaluación para esta sesión. ¡Gracias por participar!');return;}
   try{firebase.initializeApp(FB_CONFIG);db=firebase.firestore();}catch(e){mensaje('📶','Sin conexión','No se pudo conectar. Revisa tu señal o datos móviles e inténtalo de nuevo.');return;}
   db.collection(COL_SES).doc(SID).get().then(function(d){
     if(!d.exists){mensaje('🔍','Evaluación no encontrada','El código QR no corresponde a una evaluación activa. Pide a tu supervisor que lo muestre de nuevo.');return;}
@@ -108,36 +111,39 @@ function iniciar(){
 function bienvenida(){
   barra(false);
   app.innerHTML='<div class="card"><h1>¡Hola! 👋</h1><p>Esta evaluación nos ayuda a saber cuánto conoces sobre tus derechos, beneficios y buenas prácticas en la empresa. <b>No afecta tu sueldo ni tu contrato.</b></p>'+
-   '<div class="info"><div><span>Empresa</span><b>'+esc(S.emp)+'</b></div><div><span>Sector</span><b>'+esc(S.sector)+'</b></div><div><span>'+(S.tipo==='empleado'?'Área':'Ruta')+'</span><b>'+esc(S.ruta)+'</b></div><div><span>Fecha</span><b>'+esc(fmtF(S.fecha))+'</b></div></div>'+
+   '<div class="info"><div><span>Empresa</span><b>'+esc(S.emp)+'</b></div><div><span>Fecha</span><b>'+esc(fmtF(S.fecha))+'</b></div></div>'+
+   '<div class="anon">🔒 <span><b>Es anónima:</b> no te pediremos DNI ni nombre. Solo tu sector o fundo, tu ruta y su código.</span></div>'+
    '<ul class="tips"><li>📝 <span><b>'+P.length+' preguntas</b> de opción múltiple.</span></li><li>👆 <span>Toca la respuesta que creas correcta. Algunas permiten marcar varias.</span></li><li>⏱ <span>Toma entre 8 y 12 minutos. Responde tú solo, con calma.</span></li></ul>'+
    '<div style="margin-top:16px"><button class="btn" id="bIr">Comenzar →</button></div></div><div class="foot">Supervisor: '+esc(S.sup)+'</div>';
-  document.getElementById('bIr').onclick=datos;
+  document.getElementById('bIr').onclick=ubicacion;
 }
-/* 3) Datos del trabajador */
-function datos(){
+/* 3) Ubicación del trabajador (anónima): sector/fundo de lista, ruta y código escritos */
+function ubicacion(){
   barra(false);
-  app.innerHTML='<div class="card"><h2>Tus datos</h2><p>Ingresa tu DNI y tu nombre completo tal como figura en tu documento.</p>'+
-   '<label for="dni">DNI</label><input id="dni" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="8 dígitos" value="'+esc(W.dni)+'">'+
-   '<label for="nom">Nombres y apellidos</label><input id="nom" autocomplete="name" placeholder="Ej. Juan Pérez García" value="'+esc(W.nombre)+'">'+
+  var sects=(S.sectores&&S.sectores.length?S.sectores:SECTORES_BASE);
+  var last={}; try{last=JSON.parse(ls('eti_qr_ult')||'{}')||{};}catch(e){}
+  var secIni=W.sector||S.sector||last.sector||'', rutaIni=W.ruta||last.ruta||'', codIni=W.cod||last.cod||'';
+  var pal=S.tipo==='empleado'?'área':'ruta';
+  app.innerHTML='<div class="card"><h2>¿Dónde trabajas hoy?</h2><p>Estos datos sirven para ver los resultados por sector y '+pal+'. <b>No se guarda tu nombre ni tu DNI.</b></p>'+
+   '<label for="sec">Sector o fundo</label><select id="sec"><option value="">— Elige tu sector o fundo —</option>'+sects.map(function(x){return '<option'+(x===secIni?' selected':'')+'>'+esc(x)+'</option>';}).join('')+'</select>'+
+   '<label for="ruta">'+(S.tipo==='empleado'?'Área':'Ruta')+'</label><input id="ruta" autocomplete="off" placeholder="'+(S.tipo==='empleado'?'Ej. Riego':'Ej. Ruta 5')+'" value="'+esc(rutaIni)+'">'+
+   '<label for="cod">Código de la '+pal+'</label><input id="cod" autocomplete="off" placeholder="Ej. R-05" value="'+esc(codIni)+'">'+
    '<div class="err" id="err"></div><div style="margin-top:18px"><button class="btn" id="bOk">Continuar →</button></div></div>';
-  var dni=document.getElementById('dni'), nom=document.getElementById('nom'), err=document.getElementById('err'), b=document.getElementById('bOk');
-  dni.oninput=function(){dni.value=dni.value.replace(/\D/g,'').slice(0,8);};
-  b.onclick=function(){
-    var d=dni.value.trim(), n=nom.value.trim().replace(/\s+/g,' ');
+  var err=document.getElementById('err');
+  document.getElementById('bOk').onclick=function(){
+    var sec=document.getElementById('sec').value, ruta=document.getElementById('ruta').value.trim().replace(/\s+/g,' ').toUpperCase(), cod=document.getElementById('cod').value.trim().replace(/\s+/g,'').toUpperCase();
     err.style.display='none';
-    if(!/^\d{8}$/.test(d)){err.textContent='El DNI debe tener 8 números.';err.style.display='block';return;}
-    if(n.length<6||n.split(' ').length<2){err.textContent='Escribe tu nombre y apellidos completos.';err.style.display='block';return;}
-    b.disabled=true;b.textContent='Verificando…';
-    db.collection(COL_RESP).doc(SID+'_'+d).get().then(function(x){
-      if(x.exists){mensaje('✅','Ya registraste tu evaluación','El DNI '+esc(d)+' ya envió sus respuestas en esta sesión. ¡Gracias por participar!');return;}
-      W.dni=d;W.nombre=n.toUpperCase();idx=0;pregunta();
-    }).catch(function(){b.disabled=false;b.textContent='Continuar →';err.textContent='Sin conexión. Revisa tu señal e inténtalo de nuevo.';err.style.display='block';});
+    if(!sec){err.textContent='Elige tu sector o fundo.';err.style.display='block';return;}
+    if(ruta.length<1){err.textContent='Escribe tu '+pal+'.';err.style.display='block';return;}
+    if(cod.length<1){err.textContent='Escribe el código de tu '+pal+'.';err.style.display='block';return;}
+    W={sector:sec,ruta:ruta.slice(0,60),cod:cod.slice(0,30)}; ls('eti_qr_ult',JSON.stringify(W));
+    idx=0;R={};pregunta();window.scrollTo(0,0);
   };
 }
 /* 4) Preguntas: una por pantalla */
 function pregunta(){
   var it=P[idx], p=it.p, multi=p.tipo==='multiple', sel=R[p.n]||[];
-  if(!ORD[p.n]) ORD[p.n]=mezclar(p.ops.length,(parseInt(W.dni,10)||7)+p.n*31);
+  if(!ORD[p.n]) ORD[p.n]=mezclar(p.ops.length,SEED+p.n*31);
   var hechas=Object.keys(R).filter(function(k){return R[k]&&R[k].length;}).length;
   app.innerHTML='<div class="card"><div class="prog"><span>Pregunta '+(idx+1)+' de '+P.length+'</span><span>'+Math.round(hechas/P.length*100)+'%</span></div>'+
    '<div class="track"><i style="width:'+(hechas/P.length*100)+'%"></i></div><span class="tema">'+esc(it.sec.nom)+'</span><h2>'+esc(p.t)+'</h2>'+
@@ -150,8 +156,8 @@ function pregunta(){
     if(!multi) setTimeout(function(){if(P[idx]&&P[idx].p.n===p.n&&idx<P.length-1){idx++;pregunta();window.scrollTo(0,0);}},350);
   };});
   barra(true);
-  bPrev.textContent=idx===0?'← Datos':'← Atrás';
-  bPrev.onclick=function(){if(idx===0)datos();else{idx--;pregunta();}window.scrollTo(0,0);};
+  bPrev.textContent=idx===0?'← Mi ruta':'← Atrás';
+  bPrev.onclick=function(){if(idx===0)ubicacion();else{idx--;pregunta();}window.scrollTo(0,0);};
   bNext.disabled=!(R[p.n]&&R[p.n].length);
   bNext.textContent=idx===P.length-1?'Revisar y enviar →':'Siguiente →';
   bNext.onclick=function(){if(idx<P.length-1){idx++;pregunta();}else revisar();window.scrollTo(0,0);};
@@ -188,16 +194,27 @@ function calificar(){
 }
 function enviar(){
   bNext.disabled=true;bPrev.disabled=true;bNext.textContent='Enviando…';
+  var er=document.getElementById('err');if(er)er.style.display='none';
   calificar().then(function(c){
-    var doc={sesion:SID,dni:W.dni,nombre:W.nombre,emp:S.emp,sup:S.sup,sector:S.sector,tipo:S.tipo,ruta:S.ruta,cod:S.cod||'',fecha:S.fecha,
+    if(!W.docId) W.docId=db.collection(COL_RESP).doc().id;   /* mismo id en reintentos: no duplica */
+    var doc={sesion:SID,anonima:true,emp:S.emp,sup:S.sup,sector:W.sector,tipo:S.tipo,ruta:W.ruta,cod:W.cod,fecha:S.fecha,
       usuarioSup:S.usuario||'',resp:R,pts:c.ptsN,secs:c.secs,resultado:c.resultado,estado:c.resultado>=0.7?'APROBADO':'REFUERZO',
-      bancoVersion:S.bancoVersion||0,creadoEn:new Date().toISOString(),ts:Date.now(),disp:(navigator.userAgent||'').slice(0,120)};
-    var ref=db.collection(COL_RESP).doc(SID+'_'+W.dni);
+      bancoVersion:S.bancoVersion||0,creadoEn:new Date().toISOString(),ts:Date.now()};
+    var ref=db.collection(COL_RESP).doc(W.docId);
     var intento=function(n){
       return Promise.race([ref.set(doc),new Promise(function(_,rej){setTimeout(function(){rej(new Error('timeout'));},15000);})])
         .catch(function(e){if(n<3)return new Promise(function(r){setTimeout(r,2500);}).then(function(){return intento(n+1);});throw e;});
     };
-    return intento(1);
+    var reg={id:W.docId,modalidad:'QR',sesion_id:SID,fecha:S.fecha,empresa:S.emp,supervisor:S.sup,usuario:S.usuario||'',sector:W.sector,tipo:S.tipo,
+      ruta:W.ruta,codigo:W.cod,evaluados:1,resultado:c.resultado,banco_version:S.bancoVersion||0,
+      secciones:c.secs.map(function(x){return {id:x.id,nom:x.nom,peso:x.peso,pct:x.pct};})};
+    var az=fetch(AZ_ETI,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({registros:[reg]}),keepalive:true})
+      .then(function(r){return r.ok;},function(){return false;});
+    var fs=intento(1).then(function(){return true;},function(){return false;});
+    /* basta con que llegue a una de las dos; lo que falte se sincroniza desde el panel del administrador */
+    return new Promise(function(ok,no){var pend=2,listo=false;
+      function uno(v){if(listo)return;if(v){listo=true;ok();return;}if(--pend===0)no(new Error('sin envio'));}
+      fs.then(uno);az.then(uno);});
   }).then(fin).catch(function(e){
     console.error(e);bNext.disabled=false;bPrev.disabled=false;bNext.textContent='Reintentar envío ↻';
     var er=document.getElementById('err');if(er){er.textContent='No se pudo enviar (sin señal o sesión cerrada). Tus respuestas siguen aquí: toca "Reintentar envío".';er.style.display='block';}
@@ -205,25 +222,25 @@ function enviar(){
 }
 /* 7) Fin: mensaje y salida del sitio */
 function fin(){
-  ls('eti_qr_ok_'+SID,'1');
+  W.enviado=true;
   barra(false);
   var t=6;
   app.innerHTML='<div class="card center"><div class="ok-anim"><svg viewBox="0 0 24 24" fill="none" stroke="#007A3D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>'+
-   '<h1>Evaluación enviada</h1><p style="font-size:17px;color:var(--text)"><b>¡Gracias por participar, '+esc(W.nombre.split(' ')[0])+'!</b></p><p>Tus respuestas fueron registradas correctamente.</p>'+
+   '<h1>Evaluación enviada</h1><p style="font-size:17px;color:var(--text)"><b>¡Gracias por participar!</b></p><p>Tus respuestas fueron registradas correctamente.</p>'+
    '<p style="font-size:13px" id="cuenta">Esta página se cerrará en '+t+' segundos…</p></div>';
   try{history.replaceState(null,'','evaluar.html');}catch(e){}
   var iv=setInterval(function(){t--;var c=document.getElementById('cuenta');if(c)c.textContent='Esta página se cerrará en '+t+' segundos…';
     if(t<=0){clearInterval(iv);salir();}},1000);
 }
 function salir(){
-  R={};W={dni:'',nombre:''};
+  R={};W={sector:'',ruta:'',cod:''};
   try{window.open('','_self');window.close();}catch(e){}
   setTimeout(function(){
     app.innerHTML='<div class="card center"><div class="big">👋</div><h1>¡Hasta pronto!</h1><p>Ya puedes cerrar esta pestaña.</p></div>';
     try{location.replace('about:blank');}catch(e){}
   },400);
 }
-window.addEventListener('beforeunload',function(e){if(P.length&&Object.keys(R).length&&!ls('eti_qr_ok_'+SID)){e.preventDefault();e.returnValue='';}});
+window.addEventListener('beforeunload',function(e){if(P.length&&Object.keys(R).length&&!W.enviado){e.preventDefault();e.returnValue='';}});
 iniciar();
 })();
 </script>

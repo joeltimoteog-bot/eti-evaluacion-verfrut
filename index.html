@@ -1512,12 +1512,12 @@ function guardarEvalNube(res){
     destiempo:res.destiempo||null,
     modalidad:res.modalidad||'Manual', sesionQR:res.sesionQR||null,   // _MODULOS_V1
     rutas:res.rutas.map(r=>({nom:r.nom, cod:r.cod, ne:r.ne, resGrupo:r.resGrupo,
-      secs:r.secs.map(s=>({nom:s.nom, pct:s.cum, pond:s.pond, promSec:s.promSec}))})),
+      secs:r.secs.map(s=>({id:s.id, nom:s.nom, peso:s.peso, pct:s.cum, pond:s.pond, promSec:s.promSec}))})),
     creadoEn:new Date().toISOString(), ts:Date.now()
   };
   if(fbdb){
     fbdb.collection(COL_EVAL).add(payload)
-      .then(()=>console.log('✅ Evaluación guardada en la nube'))
+      .then(ref=>{console.log('✅ Evaluación guardada en la nube'); try{ if(window.etiAzureEvalManual) etiAzureEvalManual(payload, ref.id); }catch(e){} })   // _INDICADORES_V1: copia en Azure SQL
       .catch(e=>console.error('Firestore:',e));
   }
   enviarASheets(payload);
@@ -5920,7 +5920,7 @@ const BK={
 };
 
 /* ════════════════ 2) ACCESOS POR MÓDULO ════════════════ */
-const MODS=[{k:'eval',ico:'📋',nom:'Nueva evaluación (manual)'},{k:'qr',ico:'📱',nom:'Evaluación por QR'},{k:'dash',ico:'📊',nom:'Dashboard'},{k:'ult',ico:'📈',nom:'Último reporte'}];
+const MODS=[{k:'eval',ico:'📋',nom:'Nueva evaluación (manual)'},{k:'qr',ico:'📱',nom:'Evaluación por QR'},{k:'dash',ico:'📊',nom:'Dashboard'},{k:'ult',ico:'🧾',nom:'Último reporte'},{k:'ind',ico:'📈',nom:'Indicadores'}];
 let ACC={usuarios:{}}, accDraft=null;
 function tiene(k){
   if(!SESSION) return false;
@@ -5987,6 +5987,8 @@ function miSup(){
 }
 let sesActiva=null, unsubSes=null, unsubResp=null, sesiones=[], respuestas=[];
 
+/* _QR_ANONIMO_V2 (30-set-2026): la sesión ya no fija ruta; cada trabajador (anónimo)
+   elige su sector/fundo e indica su ruta y código. Al cerrar se agrupa por sector → ruta+código. */
 function crearPantallaQR(){
   if($('sqr')) return;
   const d=document.createElement('div'); d.className='screen'; d.id='sqr';
@@ -5997,20 +5999,18 @@ function crearPantallaQR(){
     <div class="m-qrgrid">
       <section class="m-card" id="qr-form">
         <h2 class="m-tit">📱 Nueva sesión de evaluación</h2>
-        <p class="m-sub">Completa los datos, genera el QR y muéstralo a los trabajadores. Cada trabajador responde desde su celular con su DNI; el puntaje se calcula solo.</p>
+        <p class="m-sub">Genera el QR y muéstralo. La evaluación es <b>anónima</b>: cada trabajador elige su sector/fundo e indica su ruta y código desde su celular. El puntaje se calcula solo.</p>
         <div class="m-f2">
           <div class="fg"><label class="fl">Empresa *</label><select class="fc" id="qr-emp"><option value="">— Seleccionar —</option><option>VERFRUT S.A.C.</option><option>RAPEL S.A.C.</option></select></div>
           <div class="fg"><label class="fl">Fecha *</label><input class="fc" type="date" id="qr-fecha"></div>
         </div>
         <div class="fg"><label class="fl">Supervisor *</label><select class="fc" id="qr-sup" onchange="ETIM.qrSupCambio()"></select></div>
-        <div class="fg"><label class="fl" id="qr-sec-lbl">Sector *</label><select class="fc" id="qr-sector"></select></div>
         <div class="m-f2">
-          <div class="fg"><label class="fl">Tipo de personal *</label><select class="fc" id="qr-tipo" onchange="ETIM.qrTipo()"><option value="obrero">👷 Obrero (por ruta)</option><option value="empleado">💼 Empleado (por área)</option></select></div>
-          <div class="fg"><label class="fl">Código (opcional)</label><input class="fc" id="qr-cod" placeholder="Ej. R-12"></div>
+          <div class="fg"><label class="fl" id="qr-sec-lbl">Sector / fundo sugerido</label><select class="fc" id="qr-sector"></select></div>
+          <div class="fg"><label class="fl">Tipo de personal *</label><select class="fc" id="qr-tipo"><option value="obrero">👷 Obrero (por ruta)</option><option value="empleado">💼 Empleado (por área)</option></select></div>
         </div>
-        <div class="fg"><label class="fl" id="qr-ruta-lbl">Nombre de la ruta / grupo *</label><input class="fc" id="qr-ruta" placeholder="Ej. Ruta 5 – Sullana"></div>
         <button class="btn bpri" style="width:100%;padding:.85rem;" onclick="ETIM.qrCrear()">⚡ Generar QR</button>
-        <div class="m-mut" style="margin-top:.6rem;font-size:.75rem;">El QR se mantiene activo hasta que cierres la sesión (máximo hasta el final del día elegido).</div>
+        <div class="m-mut" style="margin-top:.6rem;font-size:.75rem;">El QR sirve para todos los trabajadores (hasta 1 000 o más) y queda activo hasta que cierres la sesión, como máximo hasta el final del día elegido.</div>
       </section>
       <section class="m-card" id="qr-activo"></section>
     </div>
@@ -6031,7 +6031,7 @@ function prepararFormQR(){
   sel.innerHTML=(SESSION.rol==='admin'?'<option value="">— Seleccionar —</option>':'')+lista.map(s=>`<option>${esc(s.nom)}</option>`).join('');
   sel.disabled=SESSION.rol!=='admin';
   if(!$('qr-fecha').value) $('qr-fecha').value=hoyL();
-  QR.qrSupCambio(); QR.qrTipo();
+  QR.qrSupCambio();
 }
 function escucharSesiones(){
   if(unsubSes||!fbdb||!SESSION) return;
@@ -6040,15 +6040,16 @@ function escucharSesiones(){
   unsubSes=q.onSnapshot(s=>{
     sesiones=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.ts||0)-(a.ts||0));
     if(sesActiva){const x=sesiones.find(v=>v.id===sesActiva.id);if(x)sesActiva=x;}
-    renderListaSes(); renderActiva();
+    renderListaSes(); pintarActiva();
   },e=>{console.error('QR sesiones:',e);const l=$('qr-lista');if(l)l.innerHTML='<div class="m-empty">No se pudo leer las sesiones: '+esc(e.message)+'</div>';});
 }
+function nomSesion(s){return s.ruta?s.ruta:(s.sector?'Sector sugerido: '+s.sector:'Varios sectores');}
 function renderListaSes(){
   const el=$('qr-lista'); if(!el) return;
   if(!sesiones.length){el.innerHTML='<div class="m-empty">Aún no tienes sesiones. Genera tu primer QR arriba.</div>';return;}
-  el.innerHTML=`<div class="m-tablewrap"><table class="m-table"><thead><tr><th>Fecha</th><th>Ruta / Área</th><th>Sector</th>${SESSION.rol==='admin'?'<th>Supervisor</th>':''}<th>Estado</th><th>Evaluados</th><th>Resultado</th><th></th></tr></thead><tbody>
-  ${sesiones.slice(0,40).map(s=>{const ab=s.estado==='abierta'&&!(s.expira&&Date.now()>s.expira);return `<tr>
-    <td>${esc(fmtF(s.fecha))}</td><td><b>${esc(s.ruta)}</b>${s.cod?` <span class="m-mut">${esc(s.cod)}</span>`:''}</td><td>${esc(s.sector)}</td>
+  el.innerHTML=`<div class="m-tablewrap"><table class="m-table"><thead><tr><th>Fecha</th><th>Empresa</th><th>Sector sugerido</th>${SESSION.rol==='admin'?'<th>Supervisor</th>':''}<th>Estado</th><th>Evaluados</th><th>Resultado</th><th></th></tr></thead><tbody>
+  ${sesiones.slice(0,40).map(s=>{const ab=abierta(s);return `<tr>
+    <td>${esc(fmtF(s.fecha))}</td><td>${esc(s.emp)}</td><td>${esc(s.sector||'Varios')}${s.ruta?` <span class="m-mut">${esc(s.ruta)}</span>`:''}</td>
     ${SESSION.rol==='admin'?`<td>${esc(s.sup)}</td>`:''}
     <td><span class="m-est ${ab?'ab':'ce'}">${ab?'● Abierta':(s.estado==='abierta'?'Vencida':'Cerrada')}</span></td>
     <td>${s.n!=null?s.n:'—'}</td>
@@ -6056,37 +6057,53 @@ function renderListaSes(){
     <td style="white-space:nowrap">${ab?`<button class="btn bpri bsm" onclick="ETIM.qrVer('${s.id}')">Mostrar QR</button>`:`<button class="btn bout bsm" onclick="ETIM.qrVer('${s.id}')">Ver</button>`}</td></tr>`;}).join('')}
   </tbody></table></div>`;
 }
+/* con cientos de respuestas llegando a la vez, se repinta como máximo 2 veces por segundo */
+let _pintT=null;
+function pintarActiva(){clearTimeout(_pintT);_pintT=setTimeout(()=>{renderActiva();renderFull();},400);}
 function escucharResp(id){
   if(unsubResp){unsubResp();unsubResp=null;}
   respuestas=[];
   if(!fbdb||!id) return;
   unsubResp=fbdb.collection(COL_RESP).where('sesion','==',id).onSnapshot(s=>{
     respuestas=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.ts||0)-(b.ts||0));
-    renderActiva(); renderFull();
+    pintarActiva();
   },e=>console.error('QR respuestas:',e));
 }
 function abierta(s){return s&&s.estado==='abierta'&&!(s.expira&&Date.now()>s.expira);}
+function claveRuta(r){return [r.sector||'—',String(r.ruta||'—').toUpperCase(),String(r.cod||'').toUpperCase()].join('|');}
+function gruposRuta(resps){
+  const m=new Map();
+  resps.forEach(r=>{const k=claveRuta(r);const g=m.get(k)||{sector:r.sector||'—',ruta:String(r.ruta||'—').toUpperCase(),cod:String(r.cod||'').toUpperCase(),n:0,s:0,apr:0};
+    g.n++;g.s+=(r.resultado||0);if((r.resultado||0)>=0.7)g.apr++;m.set(k,g);});
+  return [...m.values()].sort((a,b)=>a.sector.localeCompare(b.sector)||a.ruta.localeCompare(b.ruta,undefined,{numeric:true}));
+}
 function renderActiva(){
   const el=$('qr-activo'); if(!el) return;
   const s=sesActiva;
   if(!s){el.innerHTML=`<div class="m-qrvacio"><div style="font-size:3rem">📲</div><h3>Aún no hay un QR activo</h3><p>Genera una sesión o elige una de "Mis sesiones" para mostrar su código.</p></div>`;return;}
   const n=respuestas.length, prom=n?respuestas.reduce((a,r)=>a+(r.resultado||0),0)/n:0, apr=respuestas.filter(r=>(r.resultado||0)>=0.7).length;
-  const ab=abierta(s), url=urlEval(s.id);
+  const ab=abierta(s), url=urlEval(s.id), gr=gruposRuta(respuestas);
   el.innerHTML=`
     <div class="m-qrtop"><div><div class="m-eyebrow">${ab?'<span class="m-live"></span> Sesión abierta':'Sesión '+(s.estado==='abierta'?'vencida':'cerrada')}</div>
-      <h2 class="m-tit" style="margin:.1rem 0">${esc(s.ruta)}</h2>
-      <div class="m-mut">${esc(s.emp)} · ${esc(s.sector)} · ${esc(fmtF(s.fecha))} · ${esc(s.sup)}</div></div>
+      <h2 class="m-tit" style="margin:.1rem 0">${esc(nomSesion(s))}</h2>
+      <div class="m-mut">${esc(s.emp)} · ${esc(fmtF(s.fecha))} · ${esc(s.sup)} · 🔒 anónima</div></div>
       <div class="m-codigo" title="Código de sesión">${esc(s.id)}</div></div>
     ${ab?`<div class="m-qrbox">${qrSvg(url,8)}</div>
     <div class="m-link"><input class="fc" readonly value="${esc(url)}" onclick="this.select()"><button class="btn bout bsm" onclick="ETIM.qrCopiar()">📋 Copiar</button></div>`:''}
-    <div class="m-kpis3"><div><b>${n}</b><span>Respondieron</span></div><div><b>${n?pct(prom):'—'}</b><span>Promedio</span></div><div><b>${apr}</b><span>Aprobados (≥70%)</span></div></div>
+    <div class="m-kpis3"><div><b>${n}</b><span>Evaluados</span></div><div><b>${n?pct(prom):'—'}</b><span>Promedio</span></div><div><b>${gr.length}</b><span>Rutas / códigos</span></div></div>
     <div class="m-acts" style="justify-content:center;margin:.8rem 0">
       ${ab?`<button class="btn bout bsm" onclick="ETIM.qrFull(true)">⛶ Pantalla completa</button>
       <button class="btn bpri bsm m-btnrojo" onclick="ETIM.qrCerrar()">⏹ Cerrar sesión y calcular</button>`
       :(s.estado==='abierta'?`<button class="btn bpri bsm" onclick="ETIM.qrCerrar()">⏹ Cerrar y calcular</button>`:'')}
     </div>
-    <div class="m-resp">${n?`<table class="m-table"><thead><tr><th>#</th><th>Trabajador</th><th>DNI</th><th>Hora</th><th>Resultado</th></tr></thead><tbody>
-      ${respuestas.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.nombre)}</td><td>${esc(r.dni)}</td><td>${r.ts?new Date(r.ts).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}):''}</td>
+    <div class="m-resp">${n?`
+      <div class="m-lbl" style="margin-top:0">Avance por sector, ruta y código · ${apr} aprobados (≥70%)</div>
+      <table class="m-table"><thead><tr><th>Sector</th><th>Ruta</th><th>Código</th><th>Evaluados</th><th>Promedio</th></tr></thead><tbody>
+      ${gr.map(g=>`<tr><td>${esc(g.sector)}</td><td><b>${esc(g.ruta)}</b></td><td>${esc(g.cod||'—')}</td><td>${g.n}</td>
+      <td><b style="color:${g.s/g.n>=0.7?'var(--green)':'var(--red)'}">${pct(g.s/g.n)}</b></td></tr>`).join('')}</tbody></table>
+      <div class="m-lbl">Últimas respuestas</div>
+      <table class="m-table"><thead><tr><th>Hora</th><th>Sector</th><th>Ruta</th><th>Código</th><th>Resultado</th></tr></thead><tbody>
+      ${respuestas.slice(-25).reverse().map(r=>`<tr><td>${r.ts?new Date(r.ts).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}):''}</td><td>${esc(r.sector||'—')}</td><td>${esc(r.ruta||'—')}</td><td>${esc(r.cod||'—')}</td>
       <td><b style="color:${(r.resultado||0)>=0.7?'var(--green)':'var(--red)'}">${pct(r.resultado)}</b></td></tr>`).join('')}</tbody></table>`
       :'<div class="m-empty">Esperando respuestas… aparecerán aquí automáticamente.</div>'}</div>`;
 }
@@ -6096,22 +6113,29 @@ function renderFull(){
   if(!fullOn||!sesActiva){el.classList.remove('on');return;}
   el.classList.add('on');
   el.innerHTML=`<div class="m-fullin"><button class="m-fullx" onclick="ETIM.qrFull(false)">✕</button>
-    <div class="m-eyebrow" style="color:#C8102E">Evaluación de conocimiento ETI</div>
+    <div class="m-eyebrow" style="color:#C8102E">Evaluación de conocimiento ETI · anónima</div>
     <h2>Escanea con la cámara de tu celular</h2>
     <div class="m-fullqr">${qrSvg(urlEval(sesActiva.id),12)}</div>
-    <div class="m-fullinfo"><b>${esc(sesActiva.ruta)}</b> · ${esc(sesActiva.sector)} · Código <b>${esc(sesActiva.id)}</b></div>
+    <div class="m-fullinfo"><b>${esc(sesActiva.emp)}</b> · ${esc(sesActiva.sup)} · Código <b>${esc(sesActiva.id)}</b></div>
     <div class="m-fullcount"><b>${respuestas.length}</b> trabajador(es) ya respondieron</div></div>`;
 }
-async function consolidar(s,resps){
-  const secs=(s.banco||[]).map(sec=>{
-    const subs=resps.map(r=>{const x=(r.secs||[]).find(y=>y.id===sec.id);return x?x.pts:0;});
+/* Consolida: 1 evaluación por sector, con 1 "ruta" por cada ruta+código */
+function consolidar(s,resps){
+  const porSector=new Map();
+  resps.forEach(r=>{const k=r.sector||s.sector||'—';if(!porSector.has(k))porSector.set(k,[]);porSector.get(k).push(r);});
+  const secsDe=(lista)=> (s.banco||[]).map(sec=>{
+    const subs=lista.map(r=>{const x=(r.secs||[]).find(y=>y.id===sec.id);return x?x.pts:0;});
     const promSec=subs.length?subs.reduce((a,b)=>a+b,0)/subs.length:0;
     const cum=sec.maxSec?promSec/sec.maxSec:0;
     return {id:sec.id,nom:sec.nom,peso:sec.peso,maxSec:sec.maxSec,promSec,cum,pond:cum*sec.peso,evSubs:subs};
   });
-  const resGrupo=secs.reduce((a,x)=>a+x.pond,0);
-  return {emp:s.emp,sup:s.sup,sector:s.sector,tipo:s.tipo,fecha:s.fecha,destiempo:null,modalidad:'QR',sesionQR:s.id,
-    rutas:[{nom:s.ruta,cod:s.cod||'',ne:resps.length,tot:resps.length,secs,resGrupo}],resGen:resGrupo};
+  return [...porSector.entries()].map(([sector,lista])=>{
+    const rm=new Map();
+    lista.forEach(r=>{const k=String(r.ruta||s.ruta||'—').toUpperCase()+'|'+String(r.cod||s.cod||'').toUpperCase();if(!rm.has(k))rm.set(k,[]);rm.get(k).push(r);});
+    const rutas=[...rm.entries()].map(([k,l])=>{const [nom,cod]=k.split('|');const secs=secsDe(l);return {nom,cod,ne:l.length,tot:l.length,secs,resGrupo:secs.reduce((a,x)=>a+x.pond,0)};});
+    const n=lista.length, resGen=rutas.reduce((a,r)=>a+r.resGrupo*r.ne,0)/n;
+    return {emp:s.emp,sup:s.sup,sector,tipo:s.tipo,fecha:s.fecha,destiempo:null,modalidad:'QR',sesionQR:s.id,rutas,resGen,n};
+  });
 }
 const QR={
   abrirQR(){
@@ -6120,28 +6144,25 @@ const QR={
   },
   qrSupCambio(){
     const nom=$('qr-sup').value, sd=SUPERVISORES.find(s=>s.nom===nom), sel=$('qr-sector');
-    let ops=SECTORES_TODOS, lbl='📍 Sector *';
-    if(sd&&sd.multiSector){ops=sd.sectores;lbl='📍 ¿En qué sector evaluará? *';}
-    else if(sd&&sd.sector&&!sd.reemplazante){ops=[sd.sector];lbl='📍 Sector asignado';}
-    else if(sd&&sd.reemplazante) lbl='📍 Sector que está cubriendo *';
-    sel.innerHTML=(ops.length>1?'<option value="">— Seleccionar —</option>':'')+ops.map(x=>`<option>${esc(x)}</option>`).join('');
-    $('qr-sec-lbl').textContent=lbl;
+    let ops=SECTORES_TODOS;
+    if(sd&&sd.multiSector) ops=sd.sectores; else if(sd&&sd.sector&&!sd.reemplazante) ops=[sd.sector];
+    sel.innerHTML='<option value="">— Varios (el trabajador elige) —</option>'+ops.map(x=>`<option>${esc(x)}</option>`).join('');
+    if(ops.length===1) sel.value=ops[0];
   },
-  qrTipo(){const ob=$('qr-tipo').value==='obrero';$('qr-ruta-lbl').textContent=ob?'Nombre de la ruta / grupo *':'Nombre del área *';$('qr-ruta').placeholder=ob?'Ej. Ruta 5 – Sullana':'Ej. Riego';},
+  qrTipo(){},
   async qrCrear(){
     const v=id=>($(id).value||'').trim();
-    const d={emp:v('qr-emp'),sup:v('qr-sup'),sector:v('qr-sector'),tipo:v('qr-tipo'),ruta:v('qr-ruta'),cod:v('qr-cod'),fecha:v('qr-fecha')};
-    const falta=[['emp','la empresa'],['sup','el supervisor'],['sector','el sector'],['ruta','la ruta / área'],['fecha','la fecha']].find(([k])=>!d[k]);
+    const d={emp:v('qr-emp'),sup:v('qr-sup'),sector:v('qr-sector'),tipo:v('qr-tipo'),fecha:v('qr-fecha')};
+    const falta=[['emp','la empresa'],['sup','el supervisor'],['fecha','la fecha']].find(([k])=>!d[k]);
     if(falta){toast('Completa '+falta[1],'e');return;}
     if(!fbdb){toast('Sin conexión a la nube: no se puede crear el QR','e');return;}
     const btn=event&&event.target; if(btn){btn.disabled=true;btn.textContent='Generando…';}
     try{
       const id=idSesion(), [y,m,dd]=d.fecha.split('-').map(Number);
-      const doc={...d,id,estado:'abierta',usuario:SESSION.user,nomUsuario:SESSION.nom,creadoEn:new Date().toISOString(),ts:Date.now(),
-        expira:new Date(y,m-1,dd,23,59,59).getTime(),banco:await bancoPublico(id),bancoVersion:(bancoMeta&&bancoMeta.version)||0};
+      const doc={...d,ruta:'',cod:'',anonima:true,sectores:SECTORES_TODOS.slice(),id,estado:'abierta',usuario:SESSION.user,nomUsuario:SESSION.nom,
+        creadoEn:new Date().toISOString(),ts:Date.now(),expira:new Date(y,m-1,dd,23,59,59).getTime(),banco:await bancoPublico(id),bancoVersion:(bancoMeta&&bancoMeta.version)||0};
       await fbdb.collection(COL_SES).doc(id).set(doc);
       sesActiva=doc; escucharResp(id); renderActiva(); toast('✅ QR generado. Muéstralo a los trabajadores.','s');
-      $('qr-ruta').value=''; $('qr-cod').value='';
     }catch(e){console.error(e);toast('No se pudo crear la sesión: '+e.message,'e');}
     finally{if(btn){btn.disabled=false;btn.textContent='⚡ Generar QR';}}
   },
@@ -6150,21 +6171,22 @@ const QR={
   qrFull(on){fullOn=on;renderFull();if(on&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{});else if(!on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});},
   qrCerrar(){
     const s=sesActiva; if(!s) return;
-    confMod('¿Cerrar la sesión QR?',`Ya no se aceptarán más respuestas. Se calculará el resultado de ${respuestas.length} trabajador(es) y se guardará en Registros.`,async()=>{
+    confMod('¿Cerrar la sesión QR?',`Ya no se aceptarán más respuestas. Se calculará el resultado de ${respuestas.length} trabajador(es), agrupado por sector, ruta y código, y se guardará en Registros.`,async()=>{
       try{
         const snap=await fbdb.collection(COL_RESP).where('sesion','==',s.id).get();
         const resps=snap.docs.map(d=>d.data());
         const upd={estado:'cerrada',cerradaEn:new Date().toISOString(),cerradaPor:SESSION.user,n:resps.length};
         fullOn=false; renderFull();
         if(!resps.length){await fbdb.collection(COL_SES).doc(s.id).update(upd);toast('Sesión cerrada sin respuestas','i');return;}
-        const res=await consolidar(s,resps);
-        upd.resultado=res.resGen;
+        const lista=consolidar(s,resps);
+        upd.resultado=lista.reduce((a,r)=>a+r.resGen*r.n,0)/resps.length;
         await fbdb.collection(COL_SES).doc(s.id).update(upd);
-        guardarEvalNube(res);
+        lista.forEach(res=>guardarEvalNube(res));
         try{const p=progPendienteDe(s.sup);if(p&&fechasPendientes(p).includes(s.fecha))marcarProgEjecutada(p.id,s.fecha);}catch(e){}
-        try{localStorage.setItem('eti_last_res_'+(SESSION.user||'anon'),JSON.stringify(res));}catch(e){}
-        window._res=res; renderRes(res); go('sres');
-        toast(`✅ Sesión cerrada · ${resps.length} evaluados · ${pct(res.resGen)}`,'s');
+        const ver=lista.length===1?lista[0]:{...lista[0],sector:lista.map(r=>r.sector).join(', '),rutas:lista.flatMap(r=>r.rutas.map(x=>({...x,nom:r.sector+' · '+x.nom}))),resGen:upd.resultado};
+        try{localStorage.setItem('eti_last_res_'+(SESSION.user||'anon'),JSON.stringify(ver));}catch(e){}
+        window._res=ver; renderRes(ver); go('sres');
+        toast(`✅ Sesión cerrada · ${resps.length} evaluados · ${pct(upd.resultado)}`,'s');
       }catch(e){console.error(e);toast('No se pudo cerrar: '+e.message,'e');}
     });
   }
@@ -6249,6 +6271,246 @@ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded'
 console.log('[_MODULOS_V1] listo');
 })();
 </script>
+<script>
+/* ══════════════════════════════════════════════════════════════
+   _INDICADORES_V1 (30-set-2026) — Indicadores de evaluados por sector, ruta y código
+   Fuente principal: Azure SQL (dbo.ETI_Evaluaciones vía /api/etieval/stats).
+   Respaldo automático: Firebase (respuestas_qr + evaluaciones manuales).
+   Incluye el envío a Azure de cada evaluación (manual y QR) y la sincronización de pendientes.
+   ══════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+const AZ_ETI='https://rl-functions-verfrut-c0ctfjc0cjf5f0hz.brazilsouth-01.azurewebsites.net/api/etieval';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const pct=v=>(Math.round((v||0)*1000)/10).toFixed(1)+'%';
+const fmtN=n=>Number(n||0).toLocaleString('es-PE');
+const hoyL=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+const secId=nom=>{const s=(typeof SECS!=='undefined'?SECS:[]).find(x=>x.nom===nom);return s?s.id:String(nom||'').toLowerCase().normalize('NFD').replace(/[^a-z]/g,'').slice(0,12);};
+
+/* ── Envío a Azure ── */
+async function azPost(registros){
+  const r=await fetch(AZ_ETI+'/guardar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({registros})});
+  if(!r.ok) throw new Error('Azure '+r.status);
+  return r.json();
+}
+function regsDeEval(ev,docId){
+  if(!ev||ev.modalidad==='QR') return [];
+  return (ev.rutas||[]).map((r,i)=>({id:docId+'_'+i,modalidad:'MANUAL',fecha:ev.fecha,empresa:ev.emp,supervisor:ev.sup,usuario:ev.usuario,
+    sector:ev.sector,tipo:ev.tipo,ruta:r.nom,codigo:r.cod,evaluados:r.ne||1,resultado:r.resGrupo||0,
+    secciones:(r.secs||[]).map(s=>({id:s.id||secId(s.nom),nom:s.nom,peso:s.peso,pct:s.pct!=null?s.pct:(s.cum||0)}))}));
+}
+function regDeRespuesta(d,id){
+  return {id,modalidad:'QR',sesion_id:d.sesion,fecha:d.fecha,empresa:d.emp,supervisor:d.sup,usuario:d.usuarioSup,sector:d.sector,tipo:d.tipo,
+    ruta:d.ruta,codigo:d.cod,evaluados:1,resultado:d.resultado||0,banco_version:d.bancoVersion||0,
+    secciones:(d.secs||[]).map(s=>({id:s.id,nom:s.nom,peso:s.peso,pct:s.pct}))};
+}
+window.etiAzureEvalManual=function(ev,docId){const regs=regsDeEval(ev,docId);if(regs.length)azPost(regs).catch(e=>console.warn('Azure ETI (se sincroniza después):',e.message));};
+
+/* ── Lectura de datos ── */
+async function desdeAzure(desde,hasta){
+  const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(),15000);
+  try{
+    const r=await fetch(AZ_ETI+'/stats?desde='+desde+'&hasta='+hasta,{signal:ctl.signal,cache:'no-store'});
+    if(!r.ok) throw new Error('Azure '+r.status);
+    const j=await r.json(); if(!j.success) throw new Error(j.error||'Azure');
+    return j.filas||[];
+  }finally{clearTimeout(t);}
+}
+async function desdeFirebase(desde,hasta){
+  if(!fbdb) throw new Error('Sin Firebase');
+  const filas=[];
+  const qr=await fbdb.collection('respuestas_qr').where('fecha','>=',desde).where('fecha','<=',hasta).get();
+  qr.docs.forEach(d=>{const x=d.data();const secs={};(x.secs||[]).forEach(s=>secs[s.id]={nom:s.nom,sp:s.pct||0});
+    filas.push({fecha:x.fecha,empresa:x.emp,supervisor:x.sup,sector:x.sector,ruta:String(x.ruta||'').toUpperCase(),codigo:String(x.cod||'').toUpperCase(),modalidad:'QR',
+      n:1,sr:x.resultado||0,apr:(x.resultado||0)>=0.7?1:0,regs:1,secs});});
+  const ev=await fbdb.collection(COL_EVAL).where('fecha','>=',desde).where('fecha','<=',hasta).get();
+  ev.docs.forEach(d=>{const x=d.data(); if(x.modalidad==='QR') return;
+    (x.rutas||[]).forEach(r=>{const n=r.ne||1,res=r.resGrupo||0,secs={};
+      (r.secs||[]).forEach(s=>{secs[s.id||secId(s.nom)]={nom:s.nom,sp:(s.pct!=null?s.pct:(s.cum||0))*n};});
+      filas.push({fecha:x.fecha,empresa:x.emp,supervisor:x.sup,sector:x.sector,ruta:String(r.nom||'').toUpperCase(),codigo:String(r.cod||'').toUpperCase(),modalidad:'MANUAL',
+        n,sr:res*n,apr:res>=0.7?n:0,regs:1,secs});});});
+  return filas;
+}
+
+/* ── Estado y agregación ── */
+const IND={filas:[],fuente:'',f:null,busca:'',orden:'prom'}; let charts=[];
+function filtrosIni(){
+  const d=new Date(); const ini=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-01';
+  return {desde:ini,hasta:hoyL(),empresa:'',sector:'',supervisor:'',modalidad:''};
+}
+function esAdmin(){return SESSION&&SESSION.rol==='admin';}
+function filtrar(filas){
+  const f=IND.f;
+  return filas.filter(r=>(!f.empresa||r.empresa===f.empresa)&&(!f.sector||r.sector===f.sector)&&(!f.modalidad||r.modalidad===f.modalidad)
+    &&(esAdmin()?(!f.supervisor||_cumCoincide(r.supervisor,f.supervisor)):_cumCoincide(r.supervisor,SESSION.nom)));
+}
+function agregar(filas){
+  const A={n:0,sr:0,apr:0,sect:new Map(),rutas:new Map(),temas:new Map(),dias:new Map(),sups:new Set(),mod:{QR:0,MANUAL:0}};
+  filas.forEach(r=>{
+    A.n+=r.n;A.sr+=r.sr;A.apr+=r.apr;A.mod[r.modalidad]=(A.mod[r.modalidad]||0)+r.n;if(r.supervisor)A.sups.add(r.supervisor);
+    const sk=r.sector||'—'; const S=A.sect.get(sk)||{sector:sk,n:0,sr:0,apr:0,rutas:new Set(),ult:''};
+    S.n+=r.n;S.sr+=r.sr;S.apr+=r.apr;S.rutas.add((r.ruta||'—')+'|'+(r.codigo||''));if(r.fecha>S.ult)S.ult=r.fecha;A.sect.set(sk,S);
+    const rk=sk+'|'+(r.ruta||'—')+'|'+(r.codigo||''); const R=A.rutas.get(rk)||{sector:sk,ruta:r.ruta||'—',codigo:r.codigo||'',n:0,sr:0,apr:0,ult:'',sups:new Set(),mods:new Set()};
+    R.n+=r.n;R.sr+=r.sr;R.apr+=r.apr;if(r.fecha>R.ult)R.ult=r.fecha;if(r.supervisor)R.sups.add(r.supervisor);R.mods.add(r.modalidad);A.rutas.set(rk,R);
+    const D=A.dias.get(r.fecha)||{fecha:r.fecha,n:0,sr:0};D.n+=r.n;D.sr+=r.sr;A.dias.set(r.fecha,D);
+    Object.entries(r.secs||{}).forEach(([id,s])=>{const T=A.temas.get(id)||{id,nom:s.nom,sp:0,n:0};T.sp+=s.sp;T.n+=r.n;if(!T.nom)T.nom=s.nom;A.temas.set(id,T);});
+  });
+  return A;
+}
+const est=(p)=>p>=0.7?'<span class="bdg bg" style="font-size:.68rem">APROBADO</span>':'<span class="bdg br" style="font-size:.68rem">REFUERZO</span>';
+const barra=(p)=>`<div style="height:6px;background:#E6ECF6;border-radius:9px;overflow:hidden;min-width:70px"><i style="display:block;height:100%;width:${Math.min(100,p*100)}%;background:${p>=0.7?'#22C55E':'#E03A4E'}"></i></div>`;
+
+/* ── Pantalla ── */
+function contenedor(){return esAdmin()?$('admin-indicadores'):$('ind-sup');}
+function pintarBase(){
+  const box=contenedor(); if(!box) return;
+  const f=IND.f, sects=(typeof SECTORES_TODOS!=='undefined'?SECTORES_TODOS:[]);
+  box.innerHTML=`
+  <div class="m-head" style="margin-bottom:.8rem"><div><h2 class="m-tit">📈 Indicadores de evaluaciones</h2>
+    <p class="m-sub">Evaluados por sector, ruta y código — evaluación manual y por QR (anónima). <span id="ind-fuente" class="m-mut"></span></p></div>
+    <div class="m-acts">
+      <button class="btn bout bsm" onclick="ETIND.excel()">📊 Excel</button>
+      ${esAdmin()?'<button class="btn bout bsm" onclick="ETIND.sincronizar()" title="Envía a Azure lo que quedó solo en Firebase">🔄 Sincronizar con Azure</button>':''}
+      <button class="btn bpri bsm" onclick="ETIND.cargar()">↻ Actualizar</button></div></div>
+  <div class="m-card" style="padding:.9rem 1rem;margin-bottom:1rem">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem;align-items:end">
+      <div class="fg" style="margin:0"><label class="fl">Desde</label><input class="fc" type="date" id="ind-desde" value="${f.desde}"></div>
+      <div class="fg" style="margin:0"><label class="fl">Hasta</label><input class="fc" type="date" id="ind-hasta" value="${f.hasta}"></div>
+      <div class="fg" style="margin:0"><label class="fl">Empresa</label><select class="fc" id="ind-emp"><option value="">Todas</option><option ${f.empresa==='VERFRUT S.A.C.'?'selected':''}>VERFRUT S.A.C.</option><option ${f.empresa==='RAPEL S.A.C.'?'selected':''}>RAPEL S.A.C.</option></select></div>
+      <div class="fg" style="margin:0"><label class="fl">Sector / fundo</label><select class="fc" id="ind-sec"><option value="">Todos</option>${sects.map(s=>`<option ${f.sector===s?'selected':''}>${esc(s)}</option>`).join('')}</select></div>
+      ${esAdmin()?`<div class="fg" style="margin:0"><label class="fl">Supervisor</label><select class="fc" id="ind-sup"><option value="">Todos</option>${SUPERVISORES.filter(s=>s.rol!=='Administrador').map(s=>`<option ${f.supervisor===s.nom?'selected':''}>${esc(s.nom)}</option>`).join('')}</select></div>`:''}
+      <div class="fg" style="margin:0"><label class="fl">Modalidad</label><select class="fc" id="ind-mod"><option value="">Todas</option><option value="QR" ${f.modalidad==='QR'?'selected':''}>QR (anónima)</option><option value="MANUAL" ${f.modalidad==='MANUAL'?'selected':''}>Manual</option></select></div>
+      <button class="btn bpri" onclick="ETIND.aplicar()">Filtrar</button>
+    </div></div>
+  <div id="ind-cuerpo"><div class="m-empty">Cargando indicadores…</div></div>`;
+}
+function pintarCuerpo(){
+  const el=$('ind-cuerpo'); if(!el) return;
+  charts.forEach(c=>{try{c.destroy();}catch(e){}}); charts=[];
+  const filas=filtrar(IND.filas), A=agregar(filas);
+  const fu=$('ind-fuente'); if(fu) fu.innerHTML=IND.fuente?`· Fuente: <b>${esc(IND.fuente)}</b>`:'';
+  if(!A.n){el.innerHTML='<div class="m-empty">No hay evaluaciones registradas con estos filtros.</div>';return;}
+  const prom=A.sr/A.n, rutas=[...A.rutas.values()], sect=[...A.sect.values()].sort((a,b)=>b.n-a.n), temas=[...A.temas.values()], dias=[...A.dias.values()].sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  const rutasOk=rutas.filter(r=>r.sr/r.n>=0.7).length;
+  const q=IND.busca.toLowerCase();
+  let rl=rutas.filter(r=>!q||(r.sector+' '+r.ruta+' '+r.codigo).toLowerCase().includes(q));
+  rl.sort(IND.orden==='prom'?(a,b)=>a.sr/a.n-b.sr/b.n:IND.orden==='n'?(a,b)=>b.n-a.n:(a,b)=>a.sector.localeCompare(b.sector)||a.ruta.localeCompare(b.ruta,undefined,{numeric:true}));
+  el.innerHTML=`
+  <div class="kstrip" style="margin-bottom:1.1rem">
+    <div class="kcard"><div class="klbl">Evaluados</div><div class="kval">${fmtN(A.n)}</div><div class="ksub">QR ${fmtN(A.mod.QR||0)} · Manual ${fmtN(A.mod.MANUAL||0)}</div></div>
+    <div class="kcard ${prom>=0.7?'kg':'kr'}"><div class="klbl">Promedio general</div><div class="kval">${pct(prom)}</div><div class="ksub">${prom>=0.7?'✅ Aprobado':'⚠️ Refuerzo'} · meta 70%</div></div>
+    <div class="kcard"><div class="klbl">Aprobados (≥70%)</div><div class="kval">${pct(A.apr/A.n)}</div><div class="ksub">${fmtN(A.apr)} de ${fmtN(A.n)} evaluados</div></div>
+    <div class="kcard"><div class="klbl">Rutas / códigos</div><div class="kval">${fmtN(rutas.length)}</div><div class="ksub">${rutasOk} aprobadas · ${rutas.length-rutasOk} en refuerzo</div></div>
+    <div class="kcard"><div class="klbl">Sectores / fundos</div><div class="kval">${sect.length}</div><div class="ksub">${A.sups.size} supervisor(es)</div></div>
+    <div class="kcard"><div class="klbl">Días con evaluación</div><div class="kval">${dias.length}</div><div class="ksub">${esc(fmtF(IND.f.desde))} – ${esc(fmtF(IND.f.hasta))}</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:1rem;margin-bottom:1rem" class="ind-g2">
+    <div class="m-card"><h3 class="m-tit2">Evaluados por día y promedio</h3><div style="position:relative;height:260px"><canvas id="ind-c1"></canvas></div></div>
+    <div class="m-card"><h3 class="m-tit2">Promedio por tema</h3><div style="position:relative;height:260px"><canvas id="ind-c2"></canvas></div></div>
+  </div>
+  <div class="m-card" style="margin-bottom:1rem"><h3 class="m-tit2">📍 Por sector / fundo</h3>
+    <div class="m-tablewrap"><table class="m-table"><thead><tr><th>Sector</th><th>Evaluados</th><th>Rutas</th><th>Promedio</th><th></th><th>Aprobados</th><th>Última</th><th>Estado</th></tr></thead><tbody>
+    ${sect.map(s=>`<tr style="cursor:pointer" onclick="ETIND.verSector('${esc(s.sector)}')"><td><b>${esc(s.sector)}</b></td><td>${fmtN(s.n)}</td><td>${s.rutas.size}</td><td><b>${pct(s.sr/s.n)}</b></td><td>${barra(s.sr/s.n)}</td><td>${pct(s.apr/s.n)}</td><td>${esc(fmtF(s.ult))}</td><td>${est(s.sr/s.n)}</td></tr>`).join('')}
+    </tbody></table></div></div>
+  <div class="m-card"><div class="m-head" style="margin-bottom:.6rem"><h3 class="m-tit2" style="margin:0">🚌 Por ruta y código</h3>
+      <div class="m-acts"><input class="fc m-buscar" id="ind-busca" placeholder="🔎 Buscar sector, ruta o código…" value="${esc(IND.busca)}" oninput="ETIND.buscar(this.value)">
+      <select class="fc" style="width:auto" onchange="ETIND.ordenar(this.value)"><option value="prom" ${IND.orden==='prom'?'selected':''}>Menor promedio primero</option><option value="n" ${IND.orden==='n'?'selected':''}>Más evaluados</option><option value="alf" ${IND.orden==='alf'?'selected':''}>Sector y ruta</option></select></div></div>
+    <div class="m-tablewrap" style="max-height:520px;overflow:auto"><table class="m-table"><thead><tr><th>Sector</th><th>Ruta</th><th>Código</th><th>Evaluados</th><th>Promedio</th><th></th><th>Aprobados</th><th>Modalidad</th><th>Última</th><th>Estado</th></tr></thead><tbody>
+    ${rl.slice(0,500).map(r=>`<tr><td>${esc(r.sector)}</td><td><b>${esc(r.ruta)}</b></td><td>${esc(r.codigo||'—')}</td><td>${fmtN(r.n)}</td><td><b>${pct(r.sr/r.n)}</b></td><td>${barra(r.sr/r.n)}</td><td>${pct(r.apr/r.n)}</td><td>${[...r.mods].map(m=>m==='QR'?'📱 QR':'📋 Manual').join(' · ')}</td><td>${esc(fmtF(r.ult))}</td><td>${est(r.sr/r.n)}</td></tr>`).join('')}
+    </tbody></table>${rl.length>500?`<div class="m-mut" style="padding:.6rem">Mostrando 500 de ${rl.length}. Usa el buscador o descarga el Excel.</div>`:''}</div></div>`;
+  if(typeof Chart==='function'){
+    charts.push(new Chart($('ind-c1'),{data:{labels:dias.map(d=>fmtF(d.fecha)),datasets:[
+      {type:'bar',label:'Evaluados',data:dias.map(d=>d.n),backgroundColor:'#3B82F6',borderRadius:6,yAxisID:'y'},
+      {type:'line',label:'Promedio %',data:dias.map(d=>Math.round(d.sr/d.n*1000)/10),borderColor:'#C8102E',backgroundColor:'#C8102E',tension:.3,yAxisID:'y1'}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,title:{display:true,text:'Evaluados'}},y1:{position:'right',min:0,max:100,grid:{drawOnChartArea:false},title:{display:true,text:'%'}}}}}));
+    charts.push(new Chart($('ind-c2'),{type:'bar',data:{labels:temas.map(t=>t.nom),datasets:[{label:'% logrado',data:temas.map(t=>Math.round(t.sp/t.n*1000)/10),
+      backgroundColor:temas.map(t=>t.sp/t.n>=0.7?'#22C55E':'#E03A4E'),borderRadius:6}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{min:0,max:100}}}}));
+  }
+}
+
+/* ── Acciones ── */
+const ETIND={
+  abrir(){ // supervisor
+    if(window.etiTieneAcceso&&!etiTieneAcceso('ind')){toast('🔒 No tienes acceso a Indicadores','e');return;}
+    if(!$('sind')){const d=document.createElement('div');d.className='screen';d.id='sind';d.innerHTML='<div class="dlayout"><div id="ind-sup"></div></div>';document.body.appendChild(d);}
+    go('sind'); ETIND.iniciar();
+  },
+  iniciar(){ if(!IND.f) IND.f=filtrosIni(); pintarBase(); ETIND.cargar(); },
+  aplicar(){
+    const v=id=>($(id)?$(id).value:'');
+    const nd=v('ind-desde'),nh=v('ind-hasta'); const cambioFechas=nd!==IND.f.desde||nh!==IND.f.hasta;
+    Object.assign(IND.f,{desde:nd,hasta:nh,empresa:v('ind-emp'),sector:v('ind-sec'),supervisor:v('ind-sup'),modalidad:v('ind-mod')});
+    if(cambioFechas) ETIND.cargar(); else pintarCuerpo();
+  },
+  async cargar(){
+    const el=$('ind-cuerpo'); if(el) el.innerHTML='<div class="m-empty">Cargando indicadores…</div>';
+    const {desde,hasta}=IND.f;
+    try{ IND.filas=await desdeAzure(desde,hasta); IND.fuente='Azure SQL'; }
+    catch(e){
+      console.warn('Indicadores: Azure no disponible, uso Firebase:',e.message);
+      try{ IND.filas=await desdeFirebase(desde,hasta); IND.fuente='Firebase (respaldo)'; }
+      catch(e2){ if(el) el.innerHTML='<div class="m-empty">No se pudo leer los datos: '+esc(e2.message)+'</div>'; return; }
+    }
+    pintarCuerpo();
+  },
+  buscar(v){IND.busca=v;pintarCuerpo();const i=$('ind-busca');if(i){i.focus();i.setSelectionRange(v.length,v.length);}},
+  ordenar(v){IND.orden=v;pintarCuerpo();},
+  verSector(s){IND.f.sector=s;pintarBase();pintarCuerpo();},
+  excel(){
+    if(typeof XLSX==='undefined'){toast('Excel no disponible','e');return;}
+    const A=agregar(filtrar(IND.filas)); if(!A.n){toast('No hay datos para exportar','i');return;}
+    const P=x=>Math.round(x*1000)/10;
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Indicadores Evaluaciones ETI'],['Desde',IND.f.desde,'Hasta',IND.f.hasta,'Fuente',IND.fuente],[],
+      ['Evaluados',A.n],['Promedio %',P(A.sr/A.n)],['Aprobados %',P(A.apr/A.n)],['Rutas/códigos',A.rutas.size],['Sectores',A.sect.size]]),'Resumen');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Sector','Evaluados','Rutas','Promedio %','Aprobados %','Última','Estado'],
+      ...[...A.sect.values()].map(s=>[s.sector,s.n,s.rutas.size,P(s.sr/s.n),P(s.apr/s.n),s.ult,s.sr/s.n>=0.7?'APROBADO':'REFUERZO'])]),'Por sector');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Sector','Ruta','Código','Evaluados','Promedio %','Aprobados %','Modalidad','Supervisor(es)','Última','Estado'],
+      ...[...A.rutas.values()].map(r=>[r.sector,r.ruta,r.codigo,r.n,P(r.sr/r.n),P(r.apr/r.n),[...r.mods].join('/'),[...r.sups].join(' / '),r.ult,r.sr/r.n>=0.7?'APROBADO':'REFUERZO'])]),'Por ruta y código');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Tema','% logrado'],...[...A.temas.values()].map(t=>[t.nom,P(t.sp/t.n)])]),'Por tema');
+    XLSX.writeFile(wb,`Indicadores-ETI-${IND.f.desde}_a_${IND.f.hasta}.xlsx`);
+  },
+  async sincronizar(){
+    if(!esAdmin()||!fbdb) return;
+    confMod('¿Sincronizar con Azure?','Se enviarán a Azure SQL todas las evaluaciones guardadas en Firebase (manuales y QR). Las que ya existen no se duplican.',async()=>{
+      try{
+        toast('🔄 Leyendo Firebase…','i');
+        const regs=[];
+        (await fbdb.collection('respuestas_qr').get()).docs.forEach(d=>{const x=d.data();if(x.fecha&&x.resultado!=null)regs.push(regDeRespuesta(x,d.id));});
+        (await fbdb.collection(COL_EVAL).get()).docs.forEach(d=>regs.push(...regsDeEval(d.data(),d.id)));
+        let ins=0,ex=0;
+        for(let i=0;i<regs.length;i+=100){const r=await azPost(regs.slice(i,i+100));ins+=r.insertados||0;ex+=r.existentes||0;
+          if(i%500===0) toast(`🔄 Enviando… ${Math.min(i+100,regs.length)} de ${regs.length}`,'i');}
+        toast(`✅ Azure al día: ${ins} nuevos · ${ex} ya estaban`,'s'); ETIND.cargar();
+      }catch(e){console.error(e);toast('No se pudo sincronizar: '+e.message+' (¿publicaste las funciones de Azure?)','e');}
+    });
+  }
+};
+window.ETIND=ETIND;
+
+/* ── Enganches: pestaña admin, menú del supervisor y accesos ── */
+function inyectar(){
+  if(!esAdmin()) return;
+  if(!$('admin-indicadores')){const st=$('admin-stats');if(st){const p=document.createElement('div');p.id='admin-indicadores';p.style.display='none';st.parentNode.insertBefore(p,st);}}
+  if(!$('atab12')){const ref=$('atab1');if(ref){const b=document.createElement('button');b.className='btn bout bsm';b.id='atab12';b.innerHTML='📈 Indicadores';b.onclick=()=>adminTab('indicadores');ref.parentNode.insertBefore(b,ref.nextSibling);}}
+}
+const _at=window.adminTab;
+window.adminTab=function(t){
+  const p=$('admin-indicadores'); if(p) p.style.display='none';
+  const r=_at.apply(this,arguments);
+  const b=$('atab12'); if(b) b.className=t==='indicadores'?'btn bpri bsm':'btn bout bsm';
+  if(t==='indicadores') ETIND.iniciar();
+  return r;
+};
+const _go=window.go;
+window.go=function(id){ if(id==='sadmin') inyectar(); return _go.apply(this,arguments); };
+function arr(){ const a=document.querySelector('.screen.active'); if(a&&a.id==='sadmin') inyectar(); }
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',arr);else arr();
+console.log('[_INDICADORES_V1] listo');
+})();
+</script>
 <style>
 /* ══ _SHELL_RL_V1 (29-set-2026): mismo modelo visual del Sistema RR.LL
       barra lateral oscura + barra superior blanca + tarjetas KPI ══ */
@@ -6331,6 +6593,8 @@ body.shell-on #sm .mvis-p{color:#5B6B85!important}
 body.shell-on #sm .mfoot{color:#8593B0!important}
 body.shell-on #chat-fab{left:290px!important}
 body.shell-on #chat-panel{left:290px!important}
+@media(max-width:1000px){.ind-g2{grid-template-columns:1fr!important}}
+#sind .dlayout{max-width:1500px}
 body.side-open #gDock,body.side-open #gFab,body.side-open #chat-fab{display:none!important}
 @media(max-width:1000px){body.shell-on #chat-fab,body.shell-on #chat-panel{left:18px!important}}
 @media(max-width:1000px){
@@ -6352,8 +6616,8 @@ body.side-open #gDock,body.side-open #gFab,body.side-open #chat-fab{display:none
 'use strict';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-const TIT={sm:'Inicio',sp1:'Nueva Evaluación',sp2:'Nueva Evaluación',sp3:'Nueva Evaluación',sres:'Resultados',sdash:'Dashboard',sqr:'Evaluación por QR'};
-const TAB_TIT={stats:'Estadísticas',users:'Usuarios',registros:'Registros',eval:'Nueva Evaluación',dash:'Mi Dashboard',prog:'Programación',conectados:'Conectados',cumplimiento:'Cumplimiento',banco:'Banco de Preguntas',accesos:'Control de Accesos'};
+const TIT={sind:'Indicadores',sm:'Inicio',sp1:'Nueva Evaluación',sp2:'Nueva Evaluación',sp3:'Nueva Evaluación',sres:'Resultados',sdash:'Dashboard',sqr:'Evaluación por QR'};
+const TAB_TIT={stats:'Estadísticas',users:'Usuarios',registros:'Registros',eval:'Nueva Evaluación',dash:'Mi Dashboard',prog:'Programación',conectados:'Conectados',cumplimiento:'Cumplimiento',banco:'Banco de Preguntas',accesos:'Control de Accesos',indicadores:'Indicadores'};
 let tabActual='stats';
 function crear(){
   if($('eti-side')) return;
@@ -6382,7 +6646,7 @@ function armarNav(){
   if(rol==='admin'){
     // devolver botones previos por si se rearma
     nav.innerHTML='';
-    sec(nav,'Principal');['atab1','atab5','atab4','atab3'].forEach(i=>mover(nav,i));
+    sec(nav,'Principal');['atab1','atab12','atab5','atab4','atab3'].forEach(i=>mover(nav,i));
     sec(nav,'Gestión');['atab6','atab8','atab7','atab2'].forEach(i=>mover(nav,i));
     sec(nav,'Evaluación en campo');mover(nav,'atab9');
     if($('atab10')){sec(nav,'Configuración 🔒');['atab10','atab11'].forEach(i=>mover(nav,i));}
@@ -6395,7 +6659,8 @@ function armarNav(){
     if(T('qr')) it(nav,'📱','Evaluación por QR',()=>ETIM.abrirQR(),'qr');
     sec(nav,'Reportes');
     if(T('dash')) it(nav,'📊','Dashboard',()=>irDash(),'dash');
-    if(T('ult')) it(nav,'📈','Último Reporte',()=>verUlt(),'ult');
+    if(T('ult')) it(nav,'🧾','Último Reporte',()=>verUlt(),'ult');
+    if(T('ind')) it(nav,'📈','Indicadores',()=>ETIND.abrir(),'ind');
   }
 }
 function heroAdmin(){
@@ -6428,7 +6693,7 @@ function actualizar(){
   $('es-tit').textContent=tit;
   // resaltar item activo
   if(SESSION.rol!=='admin'){
-    const k={sm:'sm',sp1:'eval',sp2:'eval',sp3:'eval',sqr:'qr',sdash:'dash',sres:'ult'}[act.id];
+    const k={sm:'sm',sp1:'eval',sp2:'eval',sp3:'eval',sqr:'qr',sdash:'dash',sres:'ult',sind:'ind'}[act.id];
     document.querySelectorAll('#es-nav .es-it').forEach(b=>b.classList.toggle('on',b.dataset.k===k));
     heroSup(); pintarHero('es-hero-sup','Supervisor · Evaluaciones ETI — '+(typeof SECS!=='undefined'?SECS.reduce((a,s)=>a+s.pregs.length,0):36)+' preguntas · '+(typeof SECS!=='undefined'?SECS.length:6)+' temas · cálculo automático');
   }else{
