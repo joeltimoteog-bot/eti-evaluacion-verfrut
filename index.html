@@ -1390,7 +1390,8 @@ function escucharNube(){
           estado:p.estado||'pendiente',
           fechas:(Array.isArray(p.fechas)&&p.fechas.length?p.fechas.slice().sort()
                  :[p.fechaProgramada,p.fechaFin||p.fechaProgramada].filter(Boolean).sort()),
-          fechasEjecutadas:p.fechasEjecutadas||[]}));
+          fechasEjecutadas:p.fechasEjecutadas||[],
+          reprogramaciones:p.reprogramaciones||[], vecesReprogramada:p.vecesReprogramada||0, solicitudesReprog:p.solicitudesReprog||[]}));   /* _SOLREPROG_V1: no perder historial al reprogramar */
       const el=document.getElementById('admin-prog');
       if(el && el.style.display!=='none') renderPgLista();
       _cumRefrescarSiVisible();
@@ -4094,6 +4095,7 @@ function mreprGuardar(){
   const cambios={fechas:nuevasFechas, estado:'pendiente',
     vecesReprogramada:(_reprProg.vecesReprogramada||0)+1,
     reprogramaciones:[...(_reprProg.reprogramaciones||[]),registro]};
+  if((_reprProg.solicitudesReprog||[]).length && window.etiSolicitudesAtendidas) cambios.solicitudesReprog=window.etiSolicitudesAtendidas(_reprProg.solicitudesReprog, SESSION?.nom||'');   /* _SOLREPROG_V1 */
   if(fbdb && _progsNube!==null){
     fbdb.collection(_progColeccion(_reprProg.id)).doc(_reprProg.id).update(cambios)
       .then(()=>toast('🔄 Evaluación reprogramada correctamente','s'))
@@ -4150,9 +4152,11 @@ function renderPgLista(){
     ${l.map(p=>{const e=pgEstado(p);const ejec=p.fechasEjecutadas||[];
       const fechasHtml=p.fechas.map(f=>ejec.includes(f)?`<span style="color:#007a3d;font-weight:700;">${fmtF(f)} ✅</span>`:fmtF(f)).join(' · ');
       const reprHtml=p.vecesReprogramada?` <span title="${(p.reprogramaciones||[]).map(r=>r.motivo).join(' | ').replace(/"/g,'&quot;')}" style="background:#fff3cd;color:#8a6d00;padding:.1rem .45rem;border-radius:8px;font-size:.68rem;font-weight:800;">🔄×${p.vecesReprogramada}</span>`:'';
+      const _sp=window.etiSolicitudPendiente?window.etiSolicitudPendiente(p):null;   /* _SOLREPROG_V1 */
+      const solHtml=_sp?` <span title="${String((_sp.nombre||'')+': '+(_sp.motivo||'')+' — '+(_sp.detalle||'')).replace(/"/g,'&quot;')}" style="background:#fee2e2;color:#991b1b;padding:.1rem .45rem;border-radius:8px;font-size:.68rem;font-weight:800;">📝 Pide reprogramar: ${String(_sp.motivo||'').replace(/</g,'&lt;')}</span>`:'';
       return `<tr style="border-top:1px solid var(--bdr);">
       <td style="padding:.5rem .8rem;font-weight:700;">${p.sup}</td>
-      <td style="padding:.5rem .8rem;">${fechasHtml}${reprHtml}</td>
+      <td style="padding:.5rem .8rem;">${fechasHtml}${reprHtml}${solHtml}</td>
       <td style="padding:.5rem .8rem;text-align:center;"><span style="background:${e.bg};color:${e.c};padding:.2rem .6rem;border-radius:10px;font-weight:700;font-size:.72rem;white-space:nowrap;">${e.t}</span></td>
       <td style="padding:.5rem .8rem;font-size:.75rem;color:var(--text2);">${p.obs||'—'}</td>
       <td style="padding:.5rem .8rem;text-align:right;white-space:nowrap;">
@@ -6444,5 +6448,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 console.log('[_SHELL_RL_V1] listo');
 })();
 </script>
+<script>/* _SOLREPROG_V1 (30-set-2026): supervisor para "Actividad no realizada / pedir reprogramación" */
+window._etiUsuarioReprog=function(){try{if(!SESSION||!SESSION.user)return null;var r=String(SESSION.rol||'').toLowerCase();if(r==='admin'||r==='administrador'||String(SESSION.user).toLowerCase()==='jtimoteo')return null;return {usuario:SESSION.user,nombre:SESSION.nom||SESSION.user};}catch(e){return null;}};</script>
+<script src="solreprog.js?v=1"></script>
 </body>
 </html>
