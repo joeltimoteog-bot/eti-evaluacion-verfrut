@@ -5920,14 +5920,16 @@ const BK={
 };
 
 /* ════════════════ 2) ACCESOS POR MÓDULO ════════════════ */
-const MODS=[{k:'eval',ico:'📋',nom:'Nueva evaluación (manual)'},{k:'qr',ico:'📱',nom:'Evaluación por QR'},{k:'dash',ico:'📊',nom:'Dashboard'},{k:'ult',ico:'🧾',nom:'Último reporte'},{k:'ind',ico:'📈',nom:'Indicadores'}];
+const MODS=[{k:'eval',ico:'📋',nom:'Nueva evaluación (manual)'},{k:'qr',ico:'📱',nom:'Evaluación por QR'},{k:'dash',ico:'📊',nom:'Dashboard'},{k:'ult',ico:'🧾',nom:'Último reporte'},{k:'ind',ico:'📈',nom:'Indicadores'},{k:'qrc',ico:'➕',nom:'Crear QR (normalmente solo admin)'}];
+const modOn=(r,k)=>k==='qrc'?!!(r.mods&&r.mods.qrc===true):!(r.mods&&r.mods[k]===false);
 let ACC={usuarios:{}}, accDraft=null;
 function tiene(k){
   if(!SESSION) return false;
   if(SESSION.rol==='admin') return true;
   const u=ACC.usuarios[String(SESSION.user).toLowerCase()];
-  if(!u) return true;
+  if(!u) return k!=='qrc';
   if(u.activo===false) return false;
+  if(k==='qrc') return !!(u.mods&&u.mods.qrc===true);   /* crear QR: apagado salvo que el admin lo active */
   return !(u.mods&&u.mods[k]===false);
 }
 window.etiTieneAcceso=tiene;
@@ -5955,9 +5957,9 @@ function renderAccesos(){
   <div class="m-tablewrap m-acc"><table class="m-table">
     <thead><tr><th>Usuario</th><th>Estado</th>${MODS.map(m=>`<th>${m.ico}<br><small>${m.nom}</small></th>`).join('')}</tr></thead>
     <tbody>${us.map(u=>{const k=String(u.user).toLowerCase(),r=reg(k);return `<tr class="${r.activo===false?'off':''}">
-      <td><div class="m-usr"><span class="m-av">${esc(String(u.nom).split(' ').filter(w=>/^[A-Za-zÁÉÍÓÚÑáéíóúñ]/.test(w)).slice(0,2).map(w=>w[0]).join('').toUpperCase())}</span><div><b>${esc(u.nom)}</b><br><span class="m-mut">${esc(u.user)} · ${r.activo===false?'sin acceso':MODS.filter(m=>!(r.mods&&r.mods[m.k]===false)).length+' de '+MODS.length+' módulos'}</span></div></div></td>
+      <td><div class="m-usr"><span class="m-av">${esc(String(u.nom).split(' ').filter(w=>/^[A-Za-zÁÉÍÓÚÑáéíóúñ]/.test(w)).slice(0,2).map(w=>w[0]).join('').toUpperCase())}</span><div><b>${esc(u.nom)}</b><br><span class="m-mut">${esc(u.user)} · ${r.activo===false?'sin acceso':MODS.filter(m=>modOn(r,m.k)).length+' de '+MODS.length+' módulos'}</span></div></div></td>
       <td><label class="m-sw"><input type="checkbox" ${r.activo!==false?'checked':''} onchange="ETIM.accSet('${k}','activo',this.checked)"><i></i><span>${r.activo!==false?'Activo':'Suspendido'}</span></label></td>
-      ${MODS.map(m=>`<td><label class="m-sw"><input type="checkbox" ${r.activo===false?'disabled':''} ${!(r.mods&&r.mods[m.k]===false)?'checked':''} onchange="ETIM.accSet('${k}','${m.k}',this.checked)"><i></i></label></td>`).join('')}
+      ${MODS.map(m=>`<td><label class="m-sw"><input type="checkbox" ${r.activo===false?'disabled':''} ${modOn(r,m.k)?'checked':''} onchange="ETIM.accSet('${k}','${m.k}',this.checked)"><i></i></label></td>`).join('')}
     </tr>`;}).join('')}</tbody></table></div>`;
 }
 const AC={
@@ -5987,7 +5989,9 @@ function miSup(){
 }
 let sesActiva=null, unsubSes=null, unsubResp=null, sesiones=[], respuestas=[];
 
-/* _QR_ANONIMO_V2 (30-set-2026): la sesión ya no fija ruta; cada trabajador (anónimo)
+/* _QR_ASIGNADO_V3 (30-set-2026): el admin crea el QR y lo ASIGNA a un supervisor; el supervisor lo ve y lo muestra.
+   El admin puede editar/eliminar sesiones y respuestas (Azure + Firebase).
+   _QR_ANONIMO_V2 (30-set-2026): la sesión ya no fija ruta; cada trabajador (anónimo)
    elige su sector/fundo e indica su ruta y código. Al cerrar se agrupa por sector → ruta+código. */
 function crearPantallaQR(){
   if($('sqr')) return;
@@ -6004,14 +6008,15 @@ function crearPantallaQR(){
           <div class="fg"><label class="fl">Empresa *</label><select class="fc" id="qr-emp"><option value="">— Seleccionar —</option><option>VERFRUT S.A.C.</option><option>RAPEL S.A.C.</option></select></div>
           <div class="fg"><label class="fl">Fecha *</label><input class="fc" type="date" id="qr-fecha"></div>
         </div>
-        <div class="fg"><label class="fl">Supervisor *</label><select class="fc" id="qr-sup" onchange="ETIM.qrSupCambio()"></select></div>
+        <div class="fg"><label class="fl">Asignar a (supervisor que mostrará el QR) *</label><select class="fc" id="qr-sup" onchange="ETIM.qrSupCambio()"></select></div>
         <div class="m-f2">
-          <div class="fg"><label class="fl" id="qr-sec-lbl">Sector / fundo sugerido</label><select class="fc" id="qr-sector"></select></div>
+          <div class="fg"><label class="fl" id="qr-sec-lbl">Sector / fundo</label><select class="fc" id="qr-sector"></select></div>
           <div class="fg"><label class="fl">Tipo de personal *</label><select class="fc" id="qr-tipo"><option value="obrero">👷 Obrero (por ruta)</option><option value="empleado">💼 Empleado (por área)</option></select></div>
         </div>
         <button class="btn bpri" style="width:100%;padding:.85rem;" onclick="ETIM.qrCrear()">⚡ Generar QR</button>
         <div class="m-mut" style="margin-top:.6rem;font-size:.75rem;">El QR sirve para todos los trabajadores (hasta 1 000 o más) y queda activo hasta que cierres la sesión, como máximo hasta el final del día elegido.</div>
       </section>
+      <section class="m-card" id="qr-info" style="display:none"><h2 class="m-tit">📱 Mis QR asignados</h2><p class="m-sub">El administrador crea los QR y te los asigna. Elige uno en <b>Mis sesiones</b>, presiona <b>Mostrar QR</b> y muéstralo a los trabajadores de tu ruta: ellos solo escriben su ruta y código.</p></section>
       <section class="m-card" id="qr-activo"></section>
     </div>
     <section class="m-card" style="margin-top:1rem;"><h3 class="m-tit2">🗂 Mis sesiones</h3><div id="qr-lista"></div></section>
@@ -6024,7 +6029,10 @@ function qrSvg(txt,cell){
   const q=qrcode(0,'M'); q.addData(txt); q.make();
   return q.createSvgTag({cellSize:cell||8,margin:2,scalable:true});
 }
+function puedeCrear(){return SESSION&&(SESSION.rol==='admin'||tiene('qrc'));}
+function userDeSup(nom){const u=getUsuarios().find(x=>x.rol!=='admin'&&(x.nom===nom||_cumCoincide(x.nom,nom)));return u?u.user:'';}
 function prepararFormQR(){
+  const fc=puedeCrear(); $('qr-form').style.display=fc?'':'none'; $('qr-info').style.display=fc?'none':'';
   const sel=$('qr-sup'); if(!sel) return;
   const ms=miSup();
   const lista=SESSION.rol==='admin'?SUPERVISORES.filter(s=>s.rol!=='Administrador'):[ms||{nom:SESSION.nom,sector:'',reemplazante:true}];
@@ -6035,15 +6043,20 @@ function prepararFormQR(){
 }
 function escucharSesiones(){
   if(unsubSes||!fbdb||!SESSION) return;
-  let q=fbdb.collection(COL_SES);
-  q=SESSION.rol==='admin'?q.orderBy('ts','desc').limit(60):q.where('usuario','==',SESSION.user);
-  unsubSes=q.onSnapshot(s=>{
-    sesiones=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.ts||0)-(a.ts||0));
-    if(sesActiva){const x=sesiones.find(v=>v.id===sesActiva.id);if(x)sesActiva=x;}
-    renderListaSes(); pintarActiva();
-  },e=>{console.error('QR sesiones:',e);const l=$('qr-lista');if(l)l.innerHTML='<div class="m-empty">No se pudo leer las sesiones: '+esc(e.message)+'</div>';});
+  const col=fbdb.collection(COL_SES), partes={a:[],b:[]};
+  const err=e=>{console.error('QR sesiones:',e);const l=$('qr-lista');if(l)l.innerHTML='<div class="m-empty">No se pudo leer las sesiones: '+esc(e.message)+'</div>';};
+  const unir=()=>{const m=new Map();[...partes.a,...partes.b].forEach(x=>m.set(x.id,x));
+    sesiones=[...m.values()].sort((a,b)=>(b.ts||0)-(a.ts||0));
+    if(sesActiva){const x=sesiones.find(v=>v.id===sesActiva.id);if(x)sesActiva=x;else{sesActiva=null;}}
+    if(!sesActiva&&SESSION.rol!=='admin'){const ab=sesiones.find(abierta);if(ab){sesActiva=ab;escucharResp(ab.id);}}
+    renderListaSes(); pintarActiva();};
+  const map=s=>s.docs.map(d=>({id:d.id,...d.data()}));
+  if(SESSION.rol==='admin'){unsubSes=col.orderBy('ts','desc').limit(80).onSnapshot(s=>{partes.a=map(s);unir();},err);}
+  else{const u1=col.where('usuario','==',SESSION.user).onSnapshot(s=>{partes.a=map(s);unir();},err);
+    const u2=col.where('asignado','==',SESSION.user).onSnapshot(s=>{partes.b=map(s);unir();},err);
+    unsubSes=()=>{u1();u2();};}
 }
-function nomSesion(s){return s.ruta?s.ruta:(s.sector?'Sector sugerido: '+s.sector:'Varios sectores');}
+function nomSesion(s){return s.ruta?s.ruta:(s.sector?'Sector: '+s.sector:'Varios sectores');}
 function renderListaSes(){
   const el=$('qr-lista'); if(!el) return;
   if(!sesiones.length){el.innerHTML='<div class="m-empty">Aún no tienes sesiones. Genera tu primer QR arriba.</div>';return;}
@@ -6054,7 +6067,8 @@ function renderListaSes(){
     <td><span class="m-est ${ab?'ab':'ce'}">${ab?'● Abierta':(s.estado==='abierta'?'Vencida':'Cerrada')}</span></td>
     <td>${s.n!=null?s.n:'—'}</td>
     <td>${s.resultado!=null?`<b style="color:${s.resultado>=0.7?'var(--green)':'var(--red)'}">${pct(s.resultado)}</b>`:'—'}</td>
-    <td style="white-space:nowrap">${ab?`<button class="btn bpri bsm" onclick="ETIM.qrVer('${s.id}')">Mostrar QR</button>`:`<button class="btn bout bsm" onclick="ETIM.qrVer('${s.id}')">Ver</button>`}</td></tr>`;}).join('')}
+    <td style="white-space:nowrap">${ab?`<button class="btn bpri bsm" onclick="ETIM.qrVer('${s.id}')">Mostrar QR</button>`:`<button class="btn bout bsm" onclick="ETIM.qrVer('${s.id}')">Ver</button>`}
+      ${SESSION.rol==='admin'?`<button class="m-ico" title="Editar sesión" onclick="ETIM.qrEditarSesion('${s.id}')">✏️</button><button class="m-ico" title="Eliminar sesión" onclick="ETIM.qrEliminarSesion('${s.id}')">🗑</button>`:''}</td></tr>`;}).join('')}
   </tbody></table></div>`;
 }
 /* con cientos de respuestas llegando a la vez, se repinta como máximo 2 veces por segundo */
@@ -6082,11 +6096,11 @@ function renderActiva(){
   const s=sesActiva;
   if(!s){el.innerHTML=`<div class="m-qrvacio"><div style="font-size:3rem">📲</div><h3>Aún no hay un QR activo</h3><p>Genera una sesión o elige una de "Mis sesiones" para mostrar su código.</p></div>`;return;}
   const n=respuestas.length, prom=n?respuestas.reduce((a,r)=>a+(r.resultado||0),0)/n:0, apr=respuestas.filter(r=>(r.resultado||0)>=0.7).length;
-  const ab=abierta(s), url=urlEval(s.id), gr=gruposRuta(respuestas);
+  const ab=abierta(s), url=urlEval(s.id), gr=gruposRuta(respuestas), adm=SESSION.rol==='admin';
   el.innerHTML=`
     <div class="m-qrtop"><div><div class="m-eyebrow">${ab?'<span class="m-live"></span> Sesión abierta':'Sesión '+(s.estado==='abierta'?'vencida':'cerrada')}</div>
       <h2 class="m-tit" style="margin:.1rem 0">${esc(nomSesion(s))}</h2>
-      <div class="m-mut">${esc(s.emp)} · ${esc(fmtF(s.fecha))} · ${esc(s.sup)} · 🔒 anónima</div></div>
+      <div class="m-mut">${esc(s.emp)} · ${esc(fmtF(s.fecha))} · 👤 ${esc(s.sup)} · 🔒 anónima</div></div>
       <div class="m-codigo" title="Código de sesión">${esc(s.id)}</div></div>
     ${ab?`<div class="m-qrbox">${qrSvg(url,8)}</div>
     <div class="m-link"><input class="fc" readonly value="${esc(url)}" onclick="this.select()"><button class="btn bout bsm" onclick="ETIM.qrCopiar()">📋 Copiar</button></div>`:''}
@@ -6098,13 +6112,15 @@ function renderActiva(){
     </div>
     <div class="m-resp">${n?`
       <div class="m-lbl" style="margin-top:0">Avance por sector, ruta y código · ${apr} aprobados (≥70%)</div>
-      <table class="m-table"><thead><tr><th>Sector</th><th>Ruta</th><th>Código</th><th>Evaluados</th><th>Promedio</th></tr></thead><tbody>
+      <table class="m-table"><thead><tr><th>Sector</th><th>Ruta</th><th>Código</th><th>Evaluados</th><th>Promedio</th>${adm?'<th></th>':''}</tr></thead><tbody>
       ${gr.map(g=>`<tr><td>${esc(g.sector)}</td><td><b>${esc(g.ruta)}</b></td><td>${esc(g.cod||'—')}</td><td>${g.n}</td>
-      <td><b style="color:${g.s/g.n>=0.7?'var(--green)':'var(--red)'}">${pct(g.s/g.n)}</b></td></tr>`).join('')}</tbody></table>
+      <td><b style="color:${g.s/g.n>=0.7?'var(--green)':'var(--red)'}">${pct(g.s/g.n)}</b></td>
+      ${adm?`<td style="white-space:nowrap"><button class="m-ico" title="Corregir sector, ruta o código de este grupo" onclick='ETIM.qrEditarGrupo(${JSON.stringify([g.sector,g.ruta,g.cod]).replace(/'/g,"&#39;")})'>✏️</button><button class="m-ico" title="Eliminar las respuestas de este grupo" onclick='ETIM.qrEliminarGrupo(${JSON.stringify([g.sector,g.ruta,g.cod]).replace(/'/g,"&#39;")})'>🗑</button></td>`:''}</tr>`).join('')}</tbody></table>
       <div class="m-lbl">Últimas respuestas</div>
-      <table class="m-table"><thead><tr><th>Hora</th><th>Sector</th><th>Ruta</th><th>Código</th><th>Resultado</th></tr></thead><tbody>
+      <table class="m-table"><thead><tr><th>Hora</th><th>Sector</th><th>Ruta</th><th>Código</th><th>Resultado</th>${adm?'<th></th>':''}</tr></thead><tbody>
       ${respuestas.slice(-25).reverse().map(r=>`<tr><td>${r.ts?new Date(r.ts).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}):''}</td><td>${esc(r.sector||'—')}</td><td>${esc(r.ruta||'—')}</td><td>${esc(r.cod||'—')}</td>
-      <td><b style="color:${(r.resultado||0)>=0.7?'var(--green)':'var(--red)'}">${pct(r.resultado)}</b></td></tr>`).join('')}</tbody></table>`
+      <td><b style="color:${(r.resultado||0)>=0.7?'var(--green)':'var(--red)'}">${pct(r.resultado)}</b></td>
+      ${adm?`<td style="white-space:nowrap"><button class="m-ico" title="Corregir" onclick="ETIM.qrEditarResp('${r.id}')">✏️</button><button class="m-ico" title="Eliminar" onclick="ETIM.qrEliminarResp('${r.id}')">🗑</button></td>`:''}</tr>`).join('')}</tbody></table>`
       :'<div class="m-empty">Esperando respuestas… aparecerán aquí automáticamente.</div>'}</div>`;
 }
 let fullOn=false;
@@ -6137,9 +6153,21 @@ function consolidar(s,resps){
     return {emp:s.emp,sup:s.sup,sector,tipo:s.tipo,fecha:s.fecha,destiempo:null,modalidad:'QR',sesionQR:s.id,rutas,resGen,n};
   });
 }
+function editarForm(titulo,nota,v,sects,onOk){
+  let m=$('ix-modal');if(!m){m=document.createElement('div');m.id='ix-modal';m.className='ix-modal';document.body.appendChild(m);}
+  m.innerHTML=`<div class="ix-mbox"><h3>${titulo}</h3><p>${nota}</p>
+    <label class="fl">Sector / fundo</label><select class="fc" id="eg-sec">${sects.map(x=>`<option ${x===v.sector?'selected':''}>${esc(x)}</option>`).join('')}</select>
+    <label class="fl">Ruta</label><input class="fc" id="eg-ruta" value="${esc(v.ruta||'')}">
+    <label class="fl">Código</label><input class="fc" id="eg-cod" value="${esc(v.cod||'')}">
+    <div class="ix-macts"><button class="btn bout" id="eg-no">Cancelar</button><button class="btn bpri" id="eg-ok">Guardar cambios</button></div></div>`;
+  m.classList.add('on'); $('eg-no').onclick=()=>m.classList.remove('on');
+  $('eg-ok').onclick=()=>{const c={},s2=$('eg-sec').value,r2=$('eg-ruta').value.trim(),c2=$('eg-cod').value.trim();
+    if(s2&&s2!==v.sector)c.sector=s2; if(r2&&r2.toUpperCase()!==String(v.ruta||'').toUpperCase())c.ruta=r2; if(c2.toUpperCase()!==String(v.cod||'').toUpperCase())c.codigo=c2;
+    m.classList.remove('on'); if(!Object.keys(c).length){toast('No hay cambios','i');return;} onOk(c);};
+}
 const QR={
   abrirQR(){
-    if(!tiene('qr')){toast('🔒 No tienes acceso a la evaluación por QR','e');return;}
+    if(SESSION.rol!=='admin'&&!tiene('qr')){toast('🔒 No tienes acceso a la evaluación por QR','e');return;}
     crearPantallaQR(); go('sqr'); prepararFormQR(); escucharSesiones(); renderActiva(); renderListaSes();
   },
   qrSupCambio(){
@@ -6159,14 +6187,46 @@ const QR={
     const btn=event&&event.target; if(btn){btn.disabled=true;btn.textContent='Generando…';}
     try{
       const id=idSesion(), [y,m,dd]=d.fecha.split('-').map(Number);
-      const doc={...d,ruta:'',cod:'',anonima:true,sectores:SECTORES_TODOS.slice(),id,estado:'abierta',usuario:SESSION.user,nomUsuario:SESSION.nom,
+      const doc={...d,asignado:userDeSup(d.sup),ruta:'',cod:'',anonima:true,sectores:SECTORES_TODOS.slice(),id,estado:'abierta',usuario:SESSION.user,nomUsuario:SESSION.nom,
         creadoEn:new Date().toISOString(),ts:Date.now(),expira:new Date(y,m-1,dd,23,59,59).getTime(),banco:await bancoPublico(id),bancoVersion:(bancoMeta&&bancoMeta.version)||0};
       await fbdb.collection(COL_SES).doc(id).set(doc);
-      sesActiva=doc; escucharResp(id); renderActiva(); toast('✅ QR generado. Muéstralo a los trabajadores.','s');
+      sesActiva=doc; escucharResp(id); renderActiva(); toast(SESSION.rol==='admin'?'✅ QR generado y asignado a '+d.sup+'. Ya lo ve en su panel.':'✅ QR generado. Muéstralo a los trabajadores.','s');
     }catch(e){console.error(e);toast('No se pudo crear la sesión: '+e.message,'e');}
     finally{if(btn){btn.disabled=false;btn.textContent='⚡ Generar QR';}}
   },
   qrVer(id){const s=sesiones.find(x=>x.id===id);if(!s)return;sesActiva=s;escucharResp(id);renderActiva();$('qr-activo').scrollIntoView({behavior:'smooth',block:'start'});},
+  qrEditarGrupo(arr){const [sector,ruta,cod]=arr;const sects=SECTORES_TODOS.includes(sector)?SECTORES_TODOS:[sector,...SECTORES_TODOS];
+    editarForm('✏️ Corregir grupo',`Se corregirán las <b>${respuestas.filter(r=>claveRuta(r)===claveRuta({sector,ruta,cod})).length}</b> respuestas de <b>${esc(ruta)} ${esc(cod)}</b> (${esc(sector)}) en esta sesión.`,{sector,ruta,cod},sects,
+      v=>window.etiAdminCambio({sesion_id:sesActiva.id,sector,ruta,codigo:cod||''},v,'Corrigiendo'));},
+  qrEliminarGrupo(arr){const [sector,ruta,cod]=arr;
+    confMod('¿Eliminar este grupo?',`Se eliminarán todas las respuestas de ${ruta} ${cod} (${sector}) de esta sesión, en Azure y Firebase. No se puede deshacer.`,
+      ()=>window.etiAdminCambio({sesion_id:sesActiva.id,sector,ruta,codigo:cod||''},null,'Eliminando'));},
+  qrEditarResp(id){const r=respuestas.find(x=>x.id===id);if(!r)return;const sects=SECTORES_TODOS.includes(r.sector)?SECTORES_TODOS:[r.sector,...SECTORES_TODOS];
+    editarForm('✏️ Corregir respuesta','Corrige el sector, la ruta o el código de esta respuesta.',{sector:r.sector,ruta:r.ruta,cod:r.cod},sects,
+      v=>window.etiAdminCambio({sesion_id:sesActiva.id,ids:[id]},v,'Corrigiendo'));},
+  qrEliminarResp(id){confMod('¿Eliminar esta respuesta?','Se elimina en Azure y Firebase. No se puede deshacer.',()=>window.etiAdminCambio({sesion_id:sesActiva.id,ids:[id]},null,'Eliminando'));},
+  qrEditarSesion(id){const s=sesiones.find(x=>x.id===id);if(!s)return;
+    let m=$('ix-modal');if(!m){m=document.createElement('div');m.id='ix-modal';m.className='ix-modal';document.body.appendChild(m);}
+    const sups=SUPERVISORES.filter(x=>x.rol!=='Administrador');
+    m.innerHTML=`<div class="ix-mbox"><h3>✏️ Editar sesión ${esc(s.id)}</h3><p>Cambia a quién está asignada, el sector, la fecha o su estado.</p>
+      <label class="fl">Asignada a</label><select class="fc" id="es-sup">${sups.map(x=>`<option ${x.nom===s.sup?'selected':''}>${esc(x.nom)}</option>`).join('')}</select>
+      <label class="fl">Sector / fundo</label><select class="fc" id="es-sec"><option value="">— Varios (el trabajador elige) —</option>${SECTORES_TODOS.map(x=>`<option ${x===s.sector?'selected':''}>${esc(x)}</option>`).join('')}</select>
+      <label class="fl">Fecha</label><input class="fc" type="date" id="es-fec" value="${esc(s.fecha)}">
+      <label class="fl">Estado</label><select class="fc" id="es-est"><option value="abierta" ${s.estado==='abierta'?'selected':''}>Abierta</option><option value="cerrada" ${s.estado!=='abierta'?'selected':''}>Cerrada</option></select>
+      <div class="ix-macts"><button class="btn bout" id="es-no">Cancelar</button><button class="btn bpri" id="es-ok">Guardar</button></div></div>`;
+    m.classList.add('on'); $('es-no').onclick=()=>m.classList.remove('on');
+    $('es-ok').onclick=async()=>{const sup=$('es-sup').value,fecha=$('es-fec').value,[y,mo,dd]=fecha.split('-').map(Number);
+      const u={sup,asignado:userDeSup(sup),sector:$('es-sec').value,fecha,estado:$('es-est').value,expira:new Date(y,mo-1,dd,23,59,59).getTime()};
+      m.classList.remove('on');
+      try{await fbdb.collection(COL_SES).doc(id).update(u);toast('✅ Sesión actualizada','s');}catch(e){toast('No se pudo guardar: '+e.message,'e');}};},
+  qrEliminarSesion(id){const s=sesiones.find(x=>x.id===id);if(!s)return;
+    confMod('¿Eliminar la sesión '+id+'?','Se eliminan la sesión, todas sus respuestas (Azure y Firebase) y su resultado consolidado en Registros. No se puede deshacer.',async()=>{
+      try{await window.etiAdminCambio({sesion_id:id},null,'Eliminando sesión');
+        const ev=await fbdb.collection(COL_EVAL).where('sesionQR','==',id).get(); for(const d of ev.docs) await d.ref.delete();
+        await fbdb.collection(COL_SES).doc(id).delete();
+        if(sesActiva&&sesActiva.id===id){sesActiva=null;escucharResp(null);}
+        toast('🗑 Sesión eliminada','s');
+      }catch(e){toast('No se pudo eliminar: '+e.message,'e');}});},
   qrCopiar(){const u=urlEval(sesActiva.id);(navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(()=>toast('Enlace copiado','s')).catch(()=>toast(u,'i'));},
   qrFull(on){fullOn=on;renderFull();if(on&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{});else if(!on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});},
   qrCerrar(){
@@ -6273,10 +6333,10 @@ console.log('[_MODULOS_V1] listo');
 </script>
 <script>
 /* ══════════════════════════════════════════════════════════════
-   _INDICADORES_V1 (30-set-2026) — Indicadores de evaluados por sector, ruta y código
-   Fuente principal: Azure SQL (dbo.ETI_Evaluaciones vía /api/etieval/stats).
-   Respaldo automático: Firebase (respuestas_qr + evaluaciones manuales).
-   Incluye el envío a Azure de cada evaluación (manual y QR) y la sincronización de pendientes.
+   _INDICADORES_V2 (30-set-2026) — Indicadores y estadística de evaluaciones
+   · Fuente principal: Azure SQL (/api/etieval/stats). Respaldo: Firebase.
+   · Panel estadístico reutilizable: Indicadores, Estadísticas, Mi Dashboard y Dashboard del supervisor.
+   · Admin: editar / eliminar por sector, ruta y código (Azure + Firebase).
    ══════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
@@ -6284,15 +6344,31 @@ const AZ_ETI='https://rl-functions-verfrut-c0ctfjc0cjf5f0hz.brazilsouth-01.azure
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const pct=v=>(Math.round((v||0)*1000)/10).toFixed(1)+'%';
+const P1=v=>Math.round((v||0)*1000)/10;
 const fmtN=n=>Number(n||0).toLocaleString('es-PE');
 const hoyL=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const secId=nom=>{const s=(typeof SECS!=='undefined'?SECS:[]).find(x=>x.nom===nom);return s?s.id:String(nom||'').toLowerCase().normalize('NFD').replace(/[^a-z]/g,'').slice(0,12);};
+const U=s=>String(s||'').trim().toUpperCase();
+const esAdmin=()=>!!(SESSION&&SESSION.rol==='admin');
+/* paleta (método dataviz): serie azul, estado bueno/crítico con etiqueta, rampa azul para magnitud */
+const C={serie:'#2a78d6',bueno:'#0ca30c',critico:'#d03b3b',aviso:'#fab219',meta:'#52514e',grid:'#E6ECF6',
+  rampa:['#cde2fb','#b7d3f6','#9ec5f4','#86b6ef','#6da7ec','#5598e7','#3987e5','#2a78d6','#256abf','#1c5cab','#184f95','#104281']};
+const META=0.7;
 
-/* ── Envío a Azure ── */
+/* ── Envío / administración en Azure ── */
 async function azPost(registros){
   const r=await fetch(AZ_ETI+'/guardar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({registros})});
   if(!r.ok) throw new Error('Azure '+r.status);
   return r.json();
+}
+async function azAdmin(accion,filtro,cambios){
+  const tk=sessionStorage.getItem('eti_token');
+  const r=await fetch(AZ_ETI+'/admin/'+accion,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(tk||'')},body:JSON.stringify({filtro,cambios})});
+  const j=await r.json().catch(()=>({}));
+  if(r.status===401) throw new Error('Tu sesión de administrador venció: vuelve a iniciar sesión');
+  if(!r.ok||!j.success) throw new Error(j.error||('Azure '+r.status));
+  return j;
 }
 function regsDeEval(ev,docId){
   if(!ev||ev.modalidad==='QR') return [];
@@ -6307,14 +6383,15 @@ function regDeRespuesta(d,id){
 }
 window.etiAzureEvalManual=function(ev,docId){const regs=regsDeEval(ev,docId);if(regs.length)azPost(regs).catch(e=>console.warn('Azure ETI (se sincroniza después):',e.message));};
 
-/* ── Lectura de datos ── */
+/* ── Lectura ── */
+const binDe=v=>Math.min(9,Math.max(0,Math.floor((v||0)*10+1e-9)));
 async function desdeAzure(desde,hasta){
   const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(),15000);
   try{
     const r=await fetch(AZ_ETI+'/stats?desde='+desde+'&hasta='+hasta,{signal:ctl.signal,cache:'no-store'});
     if(!r.ok) throw new Error('Azure '+r.status);
     const j=await r.json(); if(!j.success) throw new Error(j.error||'Azure');
-    return j.filas||[];
+    return (j.filas||[]).map(f=>{ if(!Array.isArray(f.bins)){f.bins=new Array(10).fill(0);f.bins[binDe(f.n?f.sr/f.n:0)]=f.n;} return f; });
   }finally{clearTimeout(t);}
 }
 async function desdeFirebase(desde,hasta){
@@ -6322,46 +6399,149 @@ async function desdeFirebase(desde,hasta){
   const filas=[];
   const qr=await fbdb.collection('respuestas_qr').where('fecha','>=',desde).where('fecha','<=',hasta).get();
   qr.docs.forEach(d=>{const x=d.data();const secs={};(x.secs||[]).forEach(s=>secs[s.id]={nom:s.nom,sp:s.pct||0});
-    filas.push({fecha:x.fecha,empresa:x.emp,supervisor:x.sup,sector:x.sector,ruta:String(x.ruta||'').toUpperCase(),codigo:String(x.cod||'').toUpperCase(),modalidad:'QR',
-      n:1,sr:x.resultado||0,apr:(x.resultado||0)>=0.7?1:0,regs:1,secs});});
+    const bins=new Array(10).fill(0);bins[binDe(x.resultado)]=1;
+    filas.push({fecha:x.fecha,empresa:x.emp,supervisor:x.sup,sector:x.sector,ruta:U(x.ruta),codigo:U(x.cod),modalidad:'QR',
+      n:1,sr:x.resultado||0,apr:(x.resultado||0)>=META?1:0,regs:1,bins,secs});});
   const ev=await fbdb.collection(COL_EVAL).where('fecha','>=',desde).where('fecha','<=',hasta).get();
   ev.docs.forEach(d=>{const x=d.data(); if(x.modalidad==='QR') return;
-    (x.rutas||[]).forEach(r=>{const n=r.ne||1,res=r.resGrupo||0,secs={};
+    (x.rutas||[]).forEach(r=>{const n=r.ne||1,res=r.resGrupo||0,secs={};const bins=new Array(10).fill(0);bins[binDe(res)]=n;
       (r.secs||[]).forEach(s=>{secs[s.id||secId(s.nom)]={nom:s.nom,sp:(s.pct!=null?s.pct:(s.cum||0))*n};});
-      filas.push({fecha:x.fecha,empresa:x.emp,supervisor:x.sup,sector:x.sector,ruta:String(r.nom||'').toUpperCase(),codigo:String(r.cod||'').toUpperCase(),modalidad:'MANUAL',
-        n,sr:res*n,apr:res>=0.7?n:0,regs:1,secs});});});
+      filas.push({fecha:x.fecha,empresa:x.emp,supervisor:x.sup,sector:x.sector,ruta:U(r.nom),codigo:U(r.cod),modalidad:'MANUAL',
+        n,sr:res*n,apr:res>=META?n:0,regs:1,bins,secs});});});
   return filas;
 }
-
-/* ── Estado y agregación ── */
-const IND={filas:[],fuente:'',f:null,busca:'',orden:'prom'}; let charts=[];
-function filtrosIni(){
-  const d=new Date(); const ini=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-01';
-  return {desde:ini,hasta:hoyL(),empresa:'',sector:'',supervisor:'',modalidad:''};
+const CACHE=new Map();
+async function cargarFilas(desde,hasta,forzar){
+  const k=desde+'|'+hasta, c=CACHE.get(k);
+  if(!forzar&&c&&Date.now()-c.t<60000) return c;
+  let filas,fuente;
+  try{ filas=await desdeAzure(desde,hasta); fuente='Azure SQL'; }
+  catch(e){ console.warn('Indicadores: Azure no disponible, uso Firebase:',e.message); filas=await desdeFirebase(desde,hasta); fuente='Firebase (respaldo)'; }
+  const v={filas,fuente,t:Date.now()}; CACHE.set(k,v); return v;
 }
-function esAdmin(){return SESSION&&SESSION.rol==='admin';}
-function filtrar(filas){
-  const f=IND.f;
+
+/* ── Agregación y estadística ── */
+function semanaDe(f){const d=new Date(f+'T12:00:00');const w=(d.getDay()+6)%7;d.setDate(d.getDate()-w);return iso(d);}
+function agregar(filas){
+  const A={n:0,sr:0,apr:0,bins:new Array(10).fill(0),sect:new Map(),rutas:new Map(),temas:new Map(),sem:new Map(),sups:new Map(),mod:{QR:0,MANUAL:0},st:new Map(),dias:new Set()};
+  filas.forEach(r=>{
+    A.n+=r.n;A.sr+=r.sr;A.apr+=r.apr;A.mod[r.modalidad]=(A.mod[r.modalidad]||0)+r.n;A.dias.add(r.fecha);
+    (r.bins||[]).forEach((b,i)=>A.bins[i]+=b);
+    const sk=r.sector||'—';
+    const S=A.sect.get(sk)||{sector:sk,n:0,sr:0,apr:0,rutas:new Set(),ult:''};S.n+=r.n;S.sr+=r.sr;S.apr+=r.apr;S.rutas.add(r.ruta+'|'+r.codigo);if(r.fecha>S.ult)S.ult=r.fecha;A.sect.set(sk,S);
+    const rk=sk+'|'+(r.ruta||'—')+'|'+(r.codigo||'');
+    const R=A.rutas.get(rk)||{sector:sk,ruta:r.ruta||'—',codigo:r.codigo||'',n:0,sr:0,apr:0,ult:'',sups:new Set(),mods:new Set()};
+    R.n+=r.n;R.sr+=r.sr;R.apr+=r.apr;if(r.fecha>R.ult)R.ult=r.fecha;if(r.supervisor)R.sups.add(r.supervisor);R.mods.add(r.modalidad);A.rutas.set(rk,R);
+    const wk=semanaDe(r.fecha);const W=A.sem.get(wk)||{sem:wk,n:0,sr:0,apr:0};W.n+=r.n;W.sr+=r.sr;W.apr+=r.apr;A.sem.set(wk,W);
+    if(r.supervisor){const V=A.sups.get(r.supervisor)||{sup:r.supervisor,n:0,sr:0,apr:0};V.n+=r.n;V.sr+=r.sr;V.apr+=r.apr;A.sups.set(r.supervisor,V);}
+    Object.entries(r.secs||{}).forEach(([id,s])=>{
+      const T=A.temas.get(id)||{id,nom:s.nom,sp:0,n:0};T.sp+=s.sp;T.n+=r.n;if(!T.nom)T.nom=s.nom;A.temas.set(id,T);
+      const k2=sk+'|'+id;const X=A.st.get(k2)||{sp:0,n:0};X.sp+=s.sp;X.n+=r.n;A.st.set(k2,X);
+    });
+  });
+  /* estadística descriptiva aproximada con el histograma (centro de cada tramo de 10 puntos) */
+  const tot=A.bins.reduce((a,b)=>a+b,0)||1, mean=A.n?A.sr/A.n:0;
+  let v=0;A.bins.forEach((b,i)=>{const c=(i+0.5)/10;v+=b*(c-mean)*(c-mean);});
+  let acc=0,med=0;for(let i=0;i<10;i++){if(acc+A.bins[i]>=tot/2){med=(i+(tot/2-acc)/(A.bins[i]||1))/10;break;}acc+=A.bins[i];}
+  A.desv=Math.sqrt(v/tot);A.mediana=med;A.bajo50=(A.bins.slice(0,5).reduce((a,b)=>a+b,0))/tot;
+  return A;
+}
+
+/* ── Gráficos (Chart.js) ── */
+const CH=new Map();
+function chart(id,cfg){if(typeof Chart!=='function')return;const el=$(id);if(!el)return;const prev=CH.get(id);if(prev)try{prev.destroy();}catch(e){}
+  Chart.defaults.font.family="Barlow,'Segoe UI',sans-serif";Chart.defaults.color='#52514e';
+  CH.set(id,new Chart(el,cfg));}
+const ejes=(extra)=>Object.assign({grid:{color:C.grid},border:{display:false}},extra||{});
+const est=(p)=>p>=META?'<span class="ix-st ok">✔ Aprobado</span>':'<span class="ix-st bad">▼ Refuerzo</span>';
+const barra=(p)=>`<div class="ix-bar"><i style="width:${Math.min(100,p*100)}%;background:${p>=META?C.bueno:C.critico}"></i><b style="left:70%"></b></div>`;
+
+function conclusiones(A){
+  const out=[],prom=A.sr/A.n;
+  out.push(`El promedio general es <b>${pct(prom)}</b> — ${prom>=META?'supera':'está por debajo de'} la meta de 70%.`);
+  const t=[...A.temas.values()].map(x=>({...x,p:x.sp/x.n})).sort((a,b)=>a.p-b.p);
+  if(t.length>1) out.push(`Tema más débil: <b>${esc(t[0].nom)}</b> (${pct(t[0].p)}). Tema más fuerte: <b>${esc(t[t.length-1].nom)}</b> (${pct(t[t.length-1].p)}).`);
+  const s=[...A.sect.values()].map(x=>({...x,p:x.sr/x.n})).sort((a,b)=>a.p-b.p);
+  if(s.length>1) out.push(`Sector con menor promedio: <b>${esc(s[0].sector)}</b> (${pct(s[0].p)}); con mayor: <b>${esc(s[s.length-1].sector)}</b> (${pct(s[s.length-1].p)}).`);
+  const r=[...A.rutas.values()].map(x=>({...x,p:x.sr/x.n})).filter(x=>x.p<META).sort((a,b)=>a.p-b.p);
+  if(r.length) out.push(`<b>${r.length}</b> de ${A.rutas.size} rutas están en refuerzo. Prioriza: ${r.slice(0,3).map(x=>`<b>${esc(x.ruta)}${x.codigo?' ('+esc(x.codigo)+')':''}</b> de ${esc(x.sector)} ${pct(x.p)}`).join(', ')}.`);
+  else out.push('Todas las rutas evaluadas alcanzan la meta de 70%. 🎉');
+  out.push(`El <b>${pct(A.bajo50)}</b> de los evaluados obtuvo menos de 50%.`);
+  return out;
+}
+/* Pinta el panel estadístico en el contenedor pid */
+function panelStats(pid,filas,opt){
+  const el=$(pid); if(!el) return;
+  if(!filas.length){el.innerHTML='<div class="m-empty">No hay evaluaciones registradas en este periodo.</div>';return;}
+  const A=agregar(filas), prom=A.sr/A.n, rutas=[...A.rutas.values()].map(x=>({...x,p:x.sr/x.n}));
+  const rRef=rutas.filter(x=>x.p<META).length;
+  const sem=[...A.sem.values()].sort((a,b)=>a.sem.localeCompare(b.sem));
+  const temas=[...A.temas.values()].map(x=>({...x,p:x.sp/x.n})).sort((a,b)=>a.p-b.p);
+  const sect=[...A.sect.values()].map(x=>({...x,p:x.sr/x.n})).sort((a,b)=>b.n-a.n);
+  const ord=[...rutas].sort((a,b)=>b.p-a.p);
+  const p=pid;
+  el.innerHTML=`
+  <div class="kstrip ix-k">
+    <div class="kcard"><div class="klbl">Evaluados</div><div class="kval">${fmtN(A.n)}</div><div class="ksub">📱 QR ${fmtN(A.mod.QR||0)} · 📋 Manual ${fmtN(A.mod.MANUAL||0)}</div></div>
+    <div class="kcard ${prom>=META?'kg':'kr'}"><div class="klbl">Promedio general</div><div class="kval">${pct(prom)}</div>${barra(prom)}<div class="ksub">Meta 70% · ${prom>=META?'✔ cumple':'▼ no cumple'}</div></div>
+    <div class="kcard"><div class="klbl">Aprobados (≥70%)</div><div class="kval">${pct(A.apr/A.n)}</div><div class="ksub">${fmtN(A.apr)} de ${fmtN(A.n)} trabajadores</div></div>
+    <div class="kcard ${rRef?'kr':'kg'}"><div class="klbl">Rutas en refuerzo</div><div class="kval">${rRef}</div><div class="ksub">de ${rutas.length} rutas / códigos</div></div>
+    <div class="kcard"><div class="klbl">Mediana · Desviación</div><div class="kval">${pct(A.mediana)}</div><div class="ksub">± ${P1(A.desv)} pts de dispersión</div></div>
+    <div class="kcard"><div class="klbl">Cobertura</div><div class="kval">${A.sect.size}</div><div class="ksub">sectores · ${A.dias.size} día(s) · ${A.sups.size} supervisor(es)</div></div>
+  </div>
+  <div class="ix-concl"><div class="ix-concl-t">💡 Lectura rápida</div><ul>${conclusiones(A).map(x=>`<li>${x}</li>`).join('')}</ul></div>
+  <div class="ix-g2">
+    <div class="m-card"><h3 class="m-tit2">¿Cuántos trabajadores obtuvieron cada nota?</h3><p class="ix-sub">Distribución de resultados en tramos de 10 puntos. Verde = aprobado (≥70%), rojo = refuerzo.</p><div class="ix-ch"><canvas id="${p}-hist"></canvas></div></div>
+    <div class="m-card"><h3 class="m-tit2">Promedio por tema</h3><p class="ix-sub">Del tema más débil al más fuerte. La línea punteada es la meta de 70%.</p><div class="ix-ch"><canvas id="${p}-temas"></canvas></div></div>
+  </div>
+  <div class="ix-g2">
+    <div class="m-card"><h3 class="m-tit2">Evolución semanal del promedio</h3><p class="ix-sub">Promedio de cada semana frente a la meta.</p><div class="ix-ch sm"><canvas id="${p}-semp"></canvas></div></div>
+    <div class="m-card"><h3 class="m-tit2">Trabajadores evaluados por semana</h3><p class="ix-sub">Avance de la cobertura.</p><div class="ix-ch sm"><canvas id="${p}-semn"></canvas></div></div>
+  </div>
+  <div class="ix-g2">
+    <div class="m-card"><h3 class="m-tit2">Aprobados vs. refuerzo por sector</h3><p class="ix-sub">Proporción de trabajadores en cada sector (100%).</p><div class="ix-ch" style="height:${Math.max(220,sect.length*38+60)}px"><canvas id="${p}-apr"></canvas></div></div>
+    <div class="m-card"><h3 class="m-tit2">Mejores y peores rutas</h3><p class="ix-sub">Por promedio; mínimo 1 evaluado.</p>
+      <div class="ix-rank"><div><div class="ix-rk-t ok">🏆 Top 5</div>${ord.slice(0,5).map((x,i)=>`<div class="ix-rk"><span>${i+1}</span><b>${esc(x.ruta)}</b><small>${esc(x.sector)}${x.codigo?' · '+esc(x.codigo):''}</small><em>${pct(x.p)}</em></div>`).join('')}</div>
+      <div><div class="ix-rk-t bad">⚠️ Requieren refuerzo</div>${ord.slice(-5).reverse().map((x,i)=>`<div class="ix-rk"><span>${i+1}</span><b>${esc(x.ruta)}</b><small>${esc(x.sector)}${x.codigo?' · '+esc(x.codigo):''}</small><em class="${x.p<META?'bad':''}">${pct(x.p)}</em></div>`).join('')}</div></div></div>
+  </div>
+  <div class="m-card" style="margin-bottom:1rem"><h3 class="m-tit2">Mapa de calor: tema × sector</h3><p class="ix-sub">% logrado. Más oscuro = mejor. Las celdas con borde rojo están bajo 70%.</p>
+    <div class="m-tablewrap"><table class="ix-heat"><thead><tr><th>Sector</th>${[...temas].sort((a,b)=>a.id.localeCompare(b.id)).map(t=>`<th title="${esc(t.nom)}">${esc(t.nom)}</th>`).join('')}<th>General</th></tr></thead><tbody>
+    ${sect.map(s=>`<tr><th>${esc(s.sector)}</th>${[...temas].sort((a,b)=>a.id.localeCompare(b.id)).map(t=>{const X=A.st.get(s.sector+'|'+t.id);if(!X||!X.n)return '<td>—</td>';const v=X.sp/X.n;const c=C.rampa[Math.min(11,Math.max(0,Math.round(v*11)))];
+      return `<td style="background:${c};color:${v>0.55?'#fff':'#0b0b0b'};${v<META?'box-shadow:inset 0 0 0 2px '+C.critico:''}" title="${esc(s.sector)} · ${esc(t.nom)}: ${pct(v)}">${P1(v)}</td>`;}).join('')}<td><b>${pct(s.p)}</b></td></tr>`).join('')}
+    </tbody></table></div></div>`;
+  const tick={callback:v=>v+'%'};
+  chart(p+'-hist',{type:'bar',data:{labels:['0-9','10-19','20-29','30-39','40-49','50-59','60-69','70-79','80-89','90-100'],datasets:[{label:'Trabajadores',data:A.bins,
+    backgroundColor:A.bins.map((_,i)=>i>=7?C.bueno:C.critico),borderRadius:4,borderSkipped:'bottom',maxBarThickness:46}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>'Nota '+i[0].label+'%',label:i=>' '+fmtN(i.raw)+' trabajador(es)'}}},
+      scales:{x:ejes({grid:{display:false},title:{display:true,text:'Nota obtenida (%)'}}),y:ejes({beginAtZero:true,ticks:{precision:0},title:{display:true,text:'Trabajadores'}})}}});
+  chart(p+'-temas',{data:{labels:temas.map(t=>t.nom),datasets:[
+    {type:'bar',label:'% logrado',data:temas.map(t=>P1(t.p)),backgroundColor:temas.map(t=>t.p>=META?C.bueno:C.critico),borderRadius:4,maxBarThickness:26},
+    {type:'line',label:'Meta 70%',data:temas.map(()=>70),borderColor:C.meta,borderDash:[5,4],borderWidth:2,pointRadius:0}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:i=>' '+i.dataset.label+': '+i.raw+'%'}}},
+      scales:{x:ejes({min:0,max:100,ticks:tick}),y:ejes({grid:{display:false}})}}});
+  const lbl=sem.map(w=>'Sem. '+w.sem.slice(8,10)+'/'+w.sem.slice(5,7));
+  chart(p+'-semp',{type:'line',data:{labels:lbl,datasets:[
+    {label:'Promedio',data:sem.map(w=>P1(w.sr/w.n)),borderColor:C.serie,backgroundColor:C.serie,borderWidth:2,pointRadius:4,tension:.25},
+    {label:'Meta 70%',data:sem.map(()=>70),borderColor:C.meta,borderDash:[5,4],borderWidth:2,pointRadius:0}]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:i=>' '+i.dataset.label+': '+i.raw+'%'}}},
+      scales:{y:ejes({min:0,max:100,ticks:tick}),x:ejes({grid:{display:false}})}}});
+  chart(p+'-semn',{type:'bar',data:{labels:lbl,datasets:[{label:'Evaluados',data:sem.map(w=>w.n),backgroundColor:C.serie,borderRadius:4,maxBarThickness:46}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:i=>' '+fmtN(i.raw)+' evaluados'}}},
+      scales:{y:ejes({beginAtZero:true,ticks:{precision:0}}),x:ejes({grid:{display:false}})}}});
+  chart(p+'-apr',{type:'bar',data:{labels:sect.map(s=>s.sector),datasets:[
+    {label:'✔ Aprobados (≥70%)',data:sect.map(s=>P1(s.apr/s.n)),backgroundColor:C.bueno,borderRadius:4,borderSkipped:false},
+    {label:'▼ Refuerzo (<70%)',data:sect.map(s=>P1(1-s.apr/s.n)),backgroundColor:C.critico,borderRadius:4,borderSkipped:false}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:i=>' '+i.dataset.label+': '+i.raw+'%'}}},
+      datasets:{bar:{borderColor:'#fff',borderWidth:{left:2,right:2}}},scales:{x:ejes({stacked:true,min:0,max:100,ticks:tick}),y:ejes({stacked:true,grid:{display:false}})}}});
+}
+
+/* ── Estado del módulo Indicadores ── */
+const IND={filas:[],fuente:'',f:null,busca:'',orden:'prom'};
+function filtrosIni(){const d=new Date();return {desde:d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-01',hasta:hoyL(),empresa:'',sector:'',supervisor:'',modalidad:''};}
+function filtrar(filas,f){
   return filas.filter(r=>(!f.empresa||r.empresa===f.empresa)&&(!f.sector||r.sector===f.sector)&&(!f.modalidad||r.modalidad===f.modalidad)
     &&(esAdmin()?(!f.supervisor||_cumCoincide(r.supervisor,f.supervisor)):_cumCoincide(r.supervisor,SESSION.nom)));
 }
-function agregar(filas){
-  const A={n:0,sr:0,apr:0,sect:new Map(),rutas:new Map(),temas:new Map(),dias:new Map(),sups:new Set(),mod:{QR:0,MANUAL:0}};
-  filas.forEach(r=>{
-    A.n+=r.n;A.sr+=r.sr;A.apr+=r.apr;A.mod[r.modalidad]=(A.mod[r.modalidad]||0)+r.n;if(r.supervisor)A.sups.add(r.supervisor);
-    const sk=r.sector||'—'; const S=A.sect.get(sk)||{sector:sk,n:0,sr:0,apr:0,rutas:new Set(),ult:''};
-    S.n+=r.n;S.sr+=r.sr;S.apr+=r.apr;S.rutas.add((r.ruta||'—')+'|'+(r.codigo||''));if(r.fecha>S.ult)S.ult=r.fecha;A.sect.set(sk,S);
-    const rk=sk+'|'+(r.ruta||'—')+'|'+(r.codigo||''); const R=A.rutas.get(rk)||{sector:sk,ruta:r.ruta||'—',codigo:r.codigo||'',n:0,sr:0,apr:0,ult:'',sups:new Set(),mods:new Set()};
-    R.n+=r.n;R.sr+=r.sr;R.apr+=r.apr;if(r.fecha>R.ult)R.ult=r.fecha;if(r.supervisor)R.sups.add(r.supervisor);R.mods.add(r.modalidad);A.rutas.set(rk,R);
-    const D=A.dias.get(r.fecha)||{fecha:r.fecha,n:0,sr:0};D.n+=r.n;D.sr+=r.sr;A.dias.set(r.fecha,D);
-    Object.entries(r.secs||{}).forEach(([id,s])=>{const T=A.temas.get(id)||{id,nom:s.nom,sp:0,n:0};T.sp+=s.sp;T.n+=r.n;if(!T.nom)T.nom=s.nom;A.temas.set(id,T);});
-  });
-  return A;
-}
-const est=(p)=>p>=0.7?'<span class="bdg bg" style="font-size:.68rem">APROBADO</span>':'<span class="bdg br" style="font-size:.68rem">REFUERZO</span>';
-const barra=(p)=>`<div style="height:6px;background:#E6ECF6;border-radius:9px;overflow:hidden;min-width:70px"><i style="display:block;height:100%;width:${Math.min(100,p*100)}%;background:${p>=0.7?'#22C55E':'#E03A4E'}"></i></div>`;
-
-/* ── Pantalla ── */
 function contenedor(){return esAdmin()?$('admin-indicadores'):$('ind-sup');}
 function pintarBase(){
   const box=contenedor(); if(!box) return;
@@ -6372,67 +6552,96 @@ function pintarBase(){
     <div class="m-acts">
       <button class="btn bout bsm" onclick="ETIND.excel()">📊 Excel</button>
       ${esAdmin()?'<button class="btn bout bsm" onclick="ETIND.sincronizar()" title="Envía a Azure lo que quedó solo en Firebase">🔄 Sincronizar con Azure</button>':''}
-      <button class="btn bpri bsm" onclick="ETIND.cargar()">↻ Actualizar</button></div></div>
+      <button class="btn bpri bsm" onclick="ETIND.cargar(true)">↻ Actualizar</button></div></div>
   <div class="m-card" style="padding:.9rem 1rem;margin-bottom:1rem">
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem;align-items:end">
-      <div class="fg" style="margin:0"><label class="fl">Desde</label><input class="fc" type="date" id="ind-desde" value="${f.desde}"></div>
-      <div class="fg" style="margin:0"><label class="fl">Hasta</label><input class="fc" type="date" id="ind-hasta" value="${f.hasta}"></div>
-      <div class="fg" style="margin:0"><label class="fl">Empresa</label><select class="fc" id="ind-emp"><option value="">Todas</option><option ${f.empresa==='VERFRUT S.A.C.'?'selected':''}>VERFRUT S.A.C.</option><option ${f.empresa==='RAPEL S.A.C.'?'selected':''}>RAPEL S.A.C.</option></select></div>
-      <div class="fg" style="margin:0"><label class="fl">Sector / fundo</label><select class="fc" id="ind-sec"><option value="">Todos</option>${sects.map(s=>`<option ${f.sector===s?'selected':''}>${esc(s)}</option>`).join('')}</select></div>
-      ${esAdmin()?`<div class="fg" style="margin:0"><label class="fl">Supervisor</label><select class="fc" id="ind-sup"><option value="">Todos</option>${SUPERVISORES.filter(s=>s.rol!=='Administrador').map(s=>`<option ${f.supervisor===s.nom?'selected':''}>${esc(s.nom)}</option>`).join('')}</select></div>`:''}
-      <div class="fg" style="margin:0"><label class="fl">Modalidad</label><select class="fc" id="ind-mod"><option value="">Todas</option><option value="QR" ${f.modalidad==='QR'?'selected':''}>QR (anónima)</option><option value="MANUAL" ${f.modalidad==='MANUAL'?'selected':''}>Manual</option></select></div>
+    <div class="ix-filtros">
+      <div class="fg"><label class="fl">Desde</label><input class="fc" type="date" id="ind-desde" value="${f.desde}"></div>
+      <div class="fg"><label class="fl">Hasta</label><input class="fc" type="date" id="ind-hasta" value="${f.hasta}"></div>
+      <div class="fg"><label class="fl">Empresa</label><select class="fc" id="ind-emp"><option value="">Todas</option><option ${f.empresa==='VERFRUT S.A.C.'?'selected':''}>VERFRUT S.A.C.</option><option ${f.empresa==='RAPEL S.A.C.'?'selected':''}>RAPEL S.A.C.</option></select></div>
+      <div class="fg"><label class="fl">Sector / fundo</label><select class="fc" id="ind-sec"><option value="">Todos</option>${sects.map(s=>`<option ${f.sector===s?'selected':''}>${esc(s)}</option>`).join('')}</select></div>
+      ${esAdmin()?`<div class="fg"><label class="fl">Supervisor</label><select class="fc" id="ind-sup"><option value="">Todos</option>${SUPERVISORES.filter(s=>s.rol!=='Administrador').map(s=>`<option ${f.supervisor===s.nom?'selected':''}>${esc(s.nom)}</option>`).join('')}</select></div>`:''}
+      <div class="fg"><label class="fl">Modalidad</label><select class="fc" id="ind-mod"><option value="">Todas</option><option value="QR" ${f.modalidad==='QR'?'selected':''}>QR (anónima)</option><option value="MANUAL" ${f.modalidad==='MANUAL'?'selected':''}>Manual</option></select></div>
       <button class="btn bpri" onclick="ETIND.aplicar()">Filtrar</button>
     </div></div>
   <div id="ind-cuerpo"><div class="m-empty">Cargando indicadores…</div></div>`;
 }
 function pintarCuerpo(){
   const el=$('ind-cuerpo'); if(!el) return;
-  charts.forEach(c=>{try{c.destroy();}catch(e){}}); charts=[];
-  const filas=filtrar(IND.filas), A=agregar(filas);
   const fu=$('ind-fuente'); if(fu) fu.innerHTML=IND.fuente?`· Fuente: <b>${esc(IND.fuente)}</b>`:'';
+  const filas=filtrar(IND.filas,IND.f), A=agregar(filas);
   if(!A.n){el.innerHTML='<div class="m-empty">No hay evaluaciones registradas con estos filtros.</div>';return;}
-  const prom=A.sr/A.n, rutas=[...A.rutas.values()], sect=[...A.sect.values()].sort((a,b)=>b.n-a.n), temas=[...A.temas.values()], dias=[...A.dias.values()].sort((a,b)=>a.fecha.localeCompare(b.fecha));
-  const rutasOk=rutas.filter(r=>r.sr/r.n>=0.7).length;
+  const adm=esAdmin(), sect=[...A.sect.values()].sort((a,b)=>b.n-a.n), rutas=[...A.rutas.values()];
   const q=IND.busca.toLowerCase();
   let rl=rutas.filter(r=>!q||(r.sector+' '+r.ruta+' '+r.codigo).toLowerCase().includes(q));
   rl.sort(IND.orden==='prom'?(a,b)=>a.sr/a.n-b.sr/b.n:IND.orden==='n'?(a,b)=>b.n-a.n:(a,b)=>a.sector.localeCompare(b.sector)||a.ruta.localeCompare(b.ruta,undefined,{numeric:true}));
-  el.innerHTML=`
-  <div class="kstrip" style="margin-bottom:1.1rem">
-    <div class="kcard"><div class="klbl">Evaluados</div><div class="kval">${fmtN(A.n)}</div><div class="ksub">QR ${fmtN(A.mod.QR||0)} · Manual ${fmtN(A.mod.MANUAL||0)}</div></div>
-    <div class="kcard ${prom>=0.7?'kg':'kr'}"><div class="klbl">Promedio general</div><div class="kval">${pct(prom)}</div><div class="ksub">${prom>=0.7?'✅ Aprobado':'⚠️ Refuerzo'} · meta 70%</div></div>
-    <div class="kcard"><div class="klbl">Aprobados (≥70%)</div><div class="kval">${pct(A.apr/A.n)}</div><div class="ksub">${fmtN(A.apr)} de ${fmtN(A.n)} evaluados</div></div>
-    <div class="kcard"><div class="klbl">Rutas / códigos</div><div class="kval">${fmtN(rutas.length)}</div><div class="ksub">${rutasOk} aprobadas · ${rutas.length-rutasOk} en refuerzo</div></div>
-    <div class="kcard"><div class="klbl">Sectores / fundos</div><div class="kval">${sect.length}</div><div class="ksub">${A.sups.size} supervisor(es)</div></div>
-    <div class="kcard"><div class="klbl">Días con evaluación</div><div class="kval">${dias.length}</div><div class="ksub">${esc(fmtF(IND.f.desde))} – ${esc(fmtF(IND.f.hasta))}</div></div>
-  </div>
-  <div style="display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:1rem;margin-bottom:1rem" class="ind-g2">
-    <div class="m-card"><h3 class="m-tit2">Evaluados por día y promedio</h3><div style="position:relative;height:260px"><canvas id="ind-c1"></canvas></div></div>
-    <div class="m-card"><h3 class="m-tit2">Promedio por tema</h3><div style="position:relative;height:260px"><canvas id="ind-c2"></canvas></div></div>
-  </div>
+  const acc=(tipo,s,r,c)=>adm?`<td class="ix-acc"><button class="m-ico" title="Editar" onclick="event.stopPropagation();ETIND.editar('${tipo}',${JSON.stringify(s).replace(/"/g,'&quot;')},${JSON.stringify(r).replace(/"/g,'&quot;')},${JSON.stringify(c).replace(/"/g,'&quot;')})">✏️</button><button class="m-ico" title="Eliminar" onclick="event.stopPropagation();ETIND.eliminar('${tipo}',${JSON.stringify(s).replace(/"/g,'&quot;')},${JSON.stringify(r).replace(/"/g,'&quot;')},${JSON.stringify(c).replace(/"/g,'&quot;')})">🗑</button></td>`:'';
+  el.innerHTML=`<div id="ind-stats"></div>
   <div class="m-card" style="margin-bottom:1rem"><h3 class="m-tit2">📍 Por sector / fundo</h3>
-    <div class="m-tablewrap"><table class="m-table"><thead><tr><th>Sector</th><th>Evaluados</th><th>Rutas</th><th>Promedio</th><th></th><th>Aprobados</th><th>Última</th><th>Estado</th></tr></thead><tbody>
-    ${sect.map(s=>`<tr style="cursor:pointer" onclick="ETIND.verSector('${esc(s.sector)}')"><td><b>${esc(s.sector)}</b></td><td>${fmtN(s.n)}</td><td>${s.rutas.size}</td><td><b>${pct(s.sr/s.n)}</b></td><td>${barra(s.sr/s.n)}</td><td>${pct(s.apr/s.n)}</td><td>${esc(fmtF(s.ult))}</td><td>${est(s.sr/s.n)}</td></tr>`).join('')}
+    <div class="m-tablewrap"><table class="m-table"><thead><tr><th>Sector</th><th>Evaluados</th><th>Rutas</th><th>Promedio</th><th></th><th>Aprobados</th><th>Última</th><th>Estado</th>${adm?'<th></th>':''}</tr></thead><tbody>
+    ${sect.map(s=>`<tr style="cursor:pointer" title="Ver solo este sector" onclick="ETIND.verSector('${esc(s.sector)}')"><td><b>${esc(s.sector)}</b></td><td>${fmtN(s.n)}</td><td>${s.rutas.size}</td><td><b>${pct(s.sr/s.n)}</b></td><td>${barra(s.sr/s.n)}</td><td>${pct(s.apr/s.n)}</td><td>${esc(fmtF(s.ult))}</td><td>${est(s.sr/s.n)}</td>${acc('sector',s.sector,null,null)}</tr>`).join('')}
     </tbody></table></div></div>
-  <div class="m-card"><div class="m-head" style="margin-bottom:.6rem"><h3 class="m-tit2" style="margin:0">🚌 Por ruta y código</h3>
+  <div class="m-card"><div class="m-head" style="margin-bottom:.6rem;align-items:center"><h3 class="m-tit2" style="margin:0">🚌 Por ruta y código</h3>
       <div class="m-acts"><input class="fc m-buscar" id="ind-busca" placeholder="🔎 Buscar sector, ruta o código…" value="${esc(IND.busca)}" oninput="ETIND.buscar(this.value)">
       <select class="fc" style="width:auto" onchange="ETIND.ordenar(this.value)"><option value="prom" ${IND.orden==='prom'?'selected':''}>Menor promedio primero</option><option value="n" ${IND.orden==='n'?'selected':''}>Más evaluados</option><option value="alf" ${IND.orden==='alf'?'selected':''}>Sector y ruta</option></select></div></div>
-    <div class="m-tablewrap" style="max-height:520px;overflow:auto"><table class="m-table"><thead><tr><th>Sector</th><th>Ruta</th><th>Código</th><th>Evaluados</th><th>Promedio</th><th></th><th>Aprobados</th><th>Modalidad</th><th>Última</th><th>Estado</th></tr></thead><tbody>
-    ${rl.slice(0,500).map(r=>`<tr><td>${esc(r.sector)}</td><td><b>${esc(r.ruta)}</b></td><td>${esc(r.codigo||'—')}</td><td>${fmtN(r.n)}</td><td><b>${pct(r.sr/r.n)}</b></td><td>${barra(r.sr/r.n)}</td><td>${pct(r.apr/r.n)}</td><td>${[...r.mods].map(m=>m==='QR'?'📱 QR':'📋 Manual').join(' · ')}</td><td>${esc(fmtF(r.ult))}</td><td>${est(r.sr/r.n)}</td></tr>`).join('')}
+    <div class="m-tablewrap" style="max-height:560px;overflow:auto"><table class="m-table"><thead><tr><th>Sector</th><th>Ruta</th><th>Código</th><th>Evaluados</th><th>Promedio</th><th></th><th>Aprobados</th><th>Modalidad</th><th>Última</th><th>Estado</th>${adm?'<th></th>':''}</tr></thead><tbody>
+    ${rl.slice(0,500).map(r=>`<tr><td>${esc(r.sector)}</td><td><b>${esc(r.ruta)}</b></td><td>${esc(r.codigo||'—')}</td><td>${fmtN(r.n)}</td><td><b>${pct(r.sr/r.n)}</b></td><td>${barra(r.sr/r.n)}</td><td>${pct(r.apr/r.n)}</td><td>${[...r.mods].map(m=>m==='QR'?'📱 QR':'📋 Manual').join(' · ')}</td><td>${esc(fmtF(r.ult))}</td><td>${est(r.sr/r.n)}</td>${acc('ruta',r.sector,r.ruta,r.codigo)}</tr>`).join('')}
     </tbody></table>${rl.length>500?`<div class="m-mut" style="padding:.6rem">Mostrando 500 de ${rl.length}. Usa el buscador o descarga el Excel.</div>`:''}</div></div>`;
-  if(typeof Chart==='function'){
-    charts.push(new Chart($('ind-c1'),{data:{labels:dias.map(d=>fmtF(d.fecha)),datasets:[
-      {type:'bar',label:'Evaluados',data:dias.map(d=>d.n),backgroundColor:'#3B82F6',borderRadius:6,yAxisID:'y'},
-      {type:'line',label:'Promedio %',data:dias.map(d=>Math.round(d.sr/d.n*1000)/10),borderColor:'#C8102E',backgroundColor:'#C8102E',tension:.3,yAxisID:'y1'}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,title:{display:true,text:'Evaluados'}},y1:{position:'right',min:0,max:100,grid:{drawOnChartArea:false},title:{display:true,text:'%'}}}}}));
-    charts.push(new Chart($('ind-c2'),{type:'bar',data:{labels:temas.map(t=>t.nom),datasets:[{label:'% logrado',data:temas.map(t=>Math.round(t.sp/t.n*1000)/10),
-      backgroundColor:temas.map(t=>t.sp/t.n>=0.7?'#22C55E':'#E03A4E'),borderRadius:6}]},
-      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{min:0,max:100}}}}));
-  }
+  panelStats('ind-stats',filas);
 }
+
+/* ── Editar / eliminar (admin): Azure + Firebase ── */
+function miniForm(titulo,nota,campos,onOk){
+  let m=$('ix-modal'); if(!m){m=document.createElement('div');m.id='ix-modal';m.className='ix-modal';document.body.appendChild(m);}
+  m.innerHTML=`<div class="ix-mbox"><h3>${titulo}</h3><p>${nota}</p>${campos.map(c=>c.lista
+    ?`<label class="fl">${c.lbl}</label><select class="fc" id="ixm-${c.k}">${c.lista.map(o=>`<option ${o===c.v?'selected':''}>${esc(o)}</option>`).join('')}</select>`
+    :`<label class="fl">${c.lbl}</label><input class="fc" id="ixm-${c.k}" value="${esc(c.v||'')}">`).join('')}
+    <div class="ix-macts"><button class="btn bout" id="ixm-no">Cancelar</button><button class="btn bpri" id="ixm-ok">${campos.length?'Guardar cambios':'Sí, eliminar'}</button></div></div>`;
+  m.classList.add('on');
+  $('ixm-no').onclick=()=>m.classList.remove('on');
+  $('ixm-ok').onclick=()=>{const v={};campos.forEach(c=>v[c.k]=($('ixm-'+c.k).value||'').trim());m.classList.remove('on');onOk(v);};
+}
+async function fbAplicar(filtro,cambios){
+  /* respuestas QR */
+  let q=fbdb.collection('respuestas_qr');
+  q=filtro.sesion_id?q.where('sesion','==',filtro.sesion_id):q.where('fecha','>=',filtro.desde).where('fecha','<=',filtro.hasta);
+  const snap=await q.get(); let n=0;
+  const ok=x=>(!filtro.ids||filtro.ids.includes(x.id))&&(!filtro.sector||x.d.sector===filtro.sector)&&(filtro.ruta==null||U(x.d.ruta)===U(filtro.ruta))&&(filtro.codigo==null||U(x.d.cod)===U(filtro.codigo));
+  const docs=snap.docs.map(d=>({id:d.id,ref:d.ref,d:d.data()})).filter(ok);
+  for(let i=0;i<docs.length;i+=400){const b=fbdb.batch();docs.slice(i,i+400).forEach(x=>{
+    if(cambios){const u={};if(cambios.sector)u.sector=cambios.sector;if(cambios.ruta)u.ruta=U(cambios.ruta);if(cambios.codigo!=null)u.cod=U(cambios.codigo);b.update(x.ref,u);}else b.delete(x.ref);});
+    await b.commit();n+=Math.min(400,docs.length-i);}
+  /* evaluaciones manuales (por ruta dentro del documento) */
+  if(!filtro.sesion_id&&!filtro.ids){
+    const ev=await fbdb.collection(COL_EVAL).where('fecha','>=',filtro.desde).where('fecha','<=',filtro.hasta).get();
+    for(const d of ev.docs){const x=d.data(); if(x.modalidad==='QR'||(filtro.sector&&x.sector!==filtro.sector)) continue;
+      const match=r=>(filtro.ruta==null||U(r.nom)===U(filtro.ruta))&&(filtro.codigo==null||U(r.cod)===U(filtro.codigo));
+      const rutas=x.rutas||[]; if(!rutas.some(match)) continue;
+      if(cambios){
+        const nr=rutas.map(r=>match(r)?{...r,nom:cambios.ruta?U(cambios.ruta):r.nom,cod:cambios.codigo!=null?U(cambios.codigo):r.cod}:r);
+        const u={rutas:nr}; if(cambios.sector&&rutas.every(match)) u.sector=cambios.sector;
+        await d.ref.update(u);
+      }else{
+        const nr=rutas.filter(r=>!match(r));
+        if(!nr.length) await d.ref.delete(); else await d.ref.update({rutas:nr,resGen:nr.reduce((a,r)=>a+(r.resGrupo||0),0)/nr.length});
+      }
+      n++;}
+  }
+  return n;
+}
+async function aplicarCambio(filtro,cambios,texto){
+  toast('⏳ '+texto+'…','i');
+  let az=null,azErr=null;
+  try{ az=await azAdmin(cambios?'editar':'eliminar',filtro,cambios); }catch(e){ azErr=e.message; }
+  let fb=0; try{ fb=await fbAplicar(filtro,cambios); }catch(e){ console.error(e); toast('Firebase: '+e.message,'e'); }
+  CACHE.clear();
+  if(azErr) toast('⚠ Firebase actualizado ('+fb+'), pero Azure no: '+azErr,'e');
+  else toast(`✅ Listo · Azure ${az.editados!=null?az.editados+' editados':az.eliminados+' eliminados'} · Firebase ${fb}`,'s');
+}
+window.etiAdminCambio=aplicarCambio;
 
 /* ── Acciones ── */
 const ETIND={
-  abrir(){ // supervisor
+  abrir(){
     if(window.etiTieneAcceso&&!etiTieneAcceso('ind')){toast('🔒 No tienes acceso a Indicadores','e');return;}
     if(!$('sind')){const d=document.createElement('div');d.className='screen';d.id='sind';d.innerHTML='<div class="dlayout"><div id="ind-sup"></div></div>';document.body.appendChild(d);}
     go('sind'); ETIND.iniciar();
@@ -6440,36 +6649,52 @@ const ETIND={
   iniciar(){ if(!IND.f) IND.f=filtrosIni(); pintarBase(); ETIND.cargar(); },
   aplicar(){
     const v=id=>($(id)?$(id).value:'');
-    const nd=v('ind-desde'),nh=v('ind-hasta'); const cambioFechas=nd!==IND.f.desde||nh!==IND.f.hasta;
+    const nd=v('ind-desde'),nh=v('ind-hasta'); const cf=nd!==IND.f.desde||nh!==IND.f.hasta;
     Object.assign(IND.f,{desde:nd,hasta:nh,empresa:v('ind-emp'),sector:v('ind-sec'),supervisor:v('ind-sup'),modalidad:v('ind-mod')});
-    if(cambioFechas) ETIND.cargar(); else pintarCuerpo();
+    if(cf) ETIND.cargar(); else pintarCuerpo();
   },
-  async cargar(){
+  async cargar(forzar){
     const el=$('ind-cuerpo'); if(el) el.innerHTML='<div class="m-empty">Cargando indicadores…</div>';
-    const {desde,hasta}=IND.f;
-    try{ IND.filas=await desdeAzure(desde,hasta); IND.fuente='Azure SQL'; }
-    catch(e){
-      console.warn('Indicadores: Azure no disponible, uso Firebase:',e.message);
-      try{ IND.filas=await desdeFirebase(desde,hasta); IND.fuente='Firebase (respaldo)'; }
-      catch(e2){ if(el) el.innerHTML='<div class="m-empty">No se pudo leer los datos: '+esc(e2.message)+'</div>'; return; }
-    }
+    try{ const r=await cargarFilas(IND.f.desde,IND.f.hasta,forzar); IND.filas=r.filas; IND.fuente=r.fuente; }
+    catch(e){ if(el) el.innerHTML='<div class="m-empty">No se pudo leer los datos: '+esc(e.message)+'</div>'; return; }
     pintarCuerpo();
   },
   buscar(v){IND.busca=v;pintarCuerpo();const i=$('ind-busca');if(i){i.focus();i.setSelectionRange(v.length,v.length);}},
   ordenar(v){IND.orden=v;pintarCuerpo();},
   verSector(s){IND.f.sector=s;pintarBase();pintarCuerpo();},
+  editar(tipo,sector,ruta,codigo){
+    if(!esAdmin()) return;
+    const {desde,hasta}=IND.f, sects=(typeof SECTORES_TODOS!=='undefined'?SECTORES_TODOS:[]);
+    const campos=tipo==='sector'?[{k:'sector',lbl:'Nuevo nombre de sector / fundo',v:sector,lista:sects.includes(sector)?sects:[sector,...sects]}]
+      :[{k:'sector',lbl:'Sector / fundo',v:sector,lista:sects.includes(sector)?sects:[sector,...sects]},{k:'ruta',lbl:'Ruta',v:ruta},{k:'codigo',lbl:'Código',v:codigo}];
+    miniForm(tipo==='sector'?'✏️ Corregir sector':'✏️ Corregir ruta y código',`Se corregirán todos los registros de <b>${esc(tipo==='sector'?sector:ruta+' '+(codigo||''))}</b> entre ${fmtF(desde)} y ${fmtF(hasta)}, en Azure y en Firebase.`,campos,async v=>{
+      const filtro={desde,hasta,sector}; if(tipo==='ruta'){filtro.ruta=ruta;filtro.codigo=codigo||'';}
+      const cambios={}; if(v.sector&&v.sector!==sector)cambios.sector=v.sector; if(tipo==='ruta'){if(U(v.ruta)!==U(ruta))cambios.ruta=v.ruta; if(U(v.codigo)!==U(codigo))cambios.codigo=v.codigo;}
+      if(!Object.keys(cambios).length){toast('No hay cambios','i');return;}
+      await aplicarCambio(filtro,cambios,'Corrigiendo'); ETIND.cargar(true);
+    });
+  },
+  eliminar(tipo,sector,ruta,codigo){
+    if(!esAdmin()) return;
+    const {desde,hasta}=IND.f, nom=tipo==='sector'?'el sector '+sector:'la ruta '+ruta+(codigo?' ('+codigo+')':'')+' de '+sector;
+    miniForm('🗑 Eliminar registros',`Se eliminarán <b>todas</b> las evaluaciones de <b>${esc(nom)}</b> entre ${fmtF(desde)} y ${fmtF(hasta)} (Azure y Firebase). <b>No se puede deshacer.</b>`,[],async()=>{
+      const filtro={desde,hasta,sector}; if(tipo==='ruta'){filtro.ruta=ruta;filtro.codigo=codigo||'';}
+      await aplicarCambio(filtro,null,'Eliminando'); ETIND.cargar(true);
+    });
+  },
   excel(){
-    if(typeof XLSX==='undefined'){toast('Excel no disponible','e');return;}
-    const A=agregar(filtrar(IND.filas)); if(!A.n){toast('No hay datos para exportar','i');return;}
-    const P=x=>Math.round(x*1000)/10;
+    if(typeof XLSX==='undefined'){toast('Excel no disponible','i');return;}
+    const A=agregar(filtrar(IND.filas,IND.f)); if(!A.n){toast('No hay datos para exportar','i');return;}
     const wb=XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Indicadores Evaluaciones ETI'],['Desde',IND.f.desde,'Hasta',IND.f.hasta,'Fuente',IND.fuente],[],
-      ['Evaluados',A.n],['Promedio %',P(A.sr/A.n)],['Aprobados %',P(A.apr/A.n)],['Rutas/códigos',A.rutas.size],['Sectores',A.sect.size]]),'Resumen');
+      ['Evaluados',A.n],['Promedio %',P1(A.sr/A.n)],['Mediana % (aprox.)',P1(A.mediana)],['Desviación (pts)',P1(A.desv)],['Aprobados %',P1(A.apr/A.n)],['Rutas/códigos',A.rutas.size],['Sectores',A.sect.size],[],
+      ['Distribución','Trabajadores'],...['0-9','10-19','20-29','30-39','40-49','50-59','60-69','70-79','80-89','90-100'].map((l,i)=>[l+'%',A.bins[i]])]),'Resumen');
     XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Sector','Evaluados','Rutas','Promedio %','Aprobados %','Última','Estado'],
-      ...[...A.sect.values()].map(s=>[s.sector,s.n,s.rutas.size,P(s.sr/s.n),P(s.apr/s.n),s.ult,s.sr/s.n>=0.7?'APROBADO':'REFUERZO'])]),'Por sector');
+      ...[...A.sect.values()].map(s=>[s.sector,s.n,s.rutas.size,P1(s.sr/s.n),P1(s.apr/s.n),s.ult,s.sr/s.n>=META?'APROBADO':'REFUERZO'])]),'Por sector');
     XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Sector','Ruta','Código','Evaluados','Promedio %','Aprobados %','Modalidad','Supervisor(es)','Última','Estado'],
-      ...[...A.rutas.values()].map(r=>[r.sector,r.ruta,r.codigo,r.n,P(r.sr/r.n),P(r.apr/r.n),[...r.mods].join('/'),[...r.sups].join(' / '),r.ult,r.sr/r.n>=0.7?'APROBADO':'REFUERZO'])]),'Por ruta y código');
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Tema','% logrado'],...[...A.temas.values()].map(t=>[t.nom,P(t.sp/t.n)])]),'Por tema');
+      ...[...A.rutas.values()].map(r=>[r.sector,r.ruta,r.codigo,r.n,P1(r.sr/r.n),P1(r.apr/r.n),[...r.mods].join('/'),[...r.sups].join(' / '),r.ult,r.sr/r.n>=META?'APROBADO':'REFUERZO'])]),'Por ruta y código');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Tema','% logrado'],...[...A.temas.values()].map(t=>[t.nom,P1(t.sp/t.n)])]),'Por tema');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Semana (lunes)','Evaluados','Promedio %'],...[...A.sem.values()].sort((a,b)=>a.sem.localeCompare(b.sem)).map(w=>[w.sem,w.n,P1(w.sr/w.n)])]),'Por semana');
     XLSX.writeFile(wb,`Indicadores-ETI-${IND.f.desde}_a_${IND.f.hasta}.xlsx`);
   },
   async sincronizar(){
@@ -6483,14 +6708,39 @@ const ETIND={
         let ins=0,ex=0;
         for(let i=0;i<regs.length;i+=100){const r=await azPost(regs.slice(i,i+100));ins+=r.insertados||0;ex+=r.existentes||0;
           if(i%500===0) toast(`🔄 Enviando… ${Math.min(i+100,regs.length)} de ${regs.length}`,'i');}
-        toast(`✅ Azure al día: ${ins} nuevos · ${ex} ya estaban`,'s'); ETIND.cargar();
-      }catch(e){console.error(e);toast('No se pudo sincronizar: '+e.message+' (¿publicaste las funciones de Azure?)','e');}
+        toast(`✅ Azure al día: ${ins} nuevos · ${ex} ya estaban`,'s'); CACHE.clear(); ETIND.cargar(true);
+      }catch(e){console.error(e);toast('No se pudo sincronizar: '+e.message,'e');}
     });
   }
 };
 window.ETIND=ETIND;
 
-/* ── Enganches: pestaña admin, menú del supervisor y accesos ── */
+/* ── Panel estadístico en Estadísticas, Mi Dashboard y Dashboard del supervisor ── */
+const PERIODOS=[['mes','Este mes'],['3m','Últimos 3 meses'],['anio','Este año'],['todo','Todo']];
+function rango(k){const d=new Date(),h=hoyL();
+  if(k==='mes') return [d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-01',h];
+  if(k==='3m'){const a=new Date(d);a.setMonth(a.getMonth()-3);return [iso(a),h];}
+  if(k==='anio') return [d.getFullYear()+'-01-01',h];
+  return ['2020-01-01',h];}
+const PANEL={};
+async function montar(hostId,pid,titulo,soloMio){
+  const host=$(hostId); if(!host) return;
+  let box=$(pid+'-box');
+  if(!box){box=document.createElement('div');box.id=pid+'-box';box.className='ix-panel';
+    const ref=host.querySelector('#es-hero-adm')?host.querySelector('#es-hero-adm').nextSibling:host.firstElementChild?host.firstElementChild.nextSibling:null;
+    host.insertBefore(box,ref);}
+  const per=PANEL[pid]||'mes'; PANEL[pid]=per;
+  box.innerHTML=`<div class="m-head" style="margin:0 0 .8rem;align-items:center"><div><h2 class="m-tit">📊 ${titulo}</h2><p class="m-sub">Evaluaciones manuales y por QR · <span id="${pid}-fu" class="m-mut">cargando…</span></p></div>
+    <div class="ix-seg">${PERIODOS.map(([k,l])=>`<button class="${k===per?'on':''}" onclick="ETIND.periodo('${hostId}','${pid}','${esc(titulo)}',${soloMio?1:0},'${k}')">${l}</button>`).join('')}</div></div>
+    <div id="${pid}"><div class="m-empty">Cargando estadísticas…</div></div>`;
+  try{
+    const [d,h]=rango(per); const r=await cargarFilas(d,h);
+    const filas=soloMio||!esAdmin()?r.filas.filter(x=>_cumCoincide(x.supervisor,SESSION.nom)):r.filas;
+    const fu=$(pid+'-fu'); if(fu) fu.innerHTML='Fuente: <b>'+esc(r.fuente)+'</b> · '+fmtF(d)+' – '+fmtF(h);
+    panelStats(pid,filas);
+  }catch(e){const x=$(pid);if(x)x.innerHTML='<div class="m-empty">No se pudo cargar: '+esc(e.message)+'</div>';}
+}
+ETIND.periodo=(hostId,pid,titulo,soloMio,k)=>{PANEL[pid]=k;montar(hostId,pid,titulo,!!soloMio);};
 function inyectar(){
   if(!esAdmin()) return;
   if(!$('admin-indicadores')){const st=$('admin-stats');if(st){const p=document.createElement('div');p.id='admin-indicadores';p.style.display='none';st.parentNode.insertBefore(p,st);}}
@@ -6502,15 +6752,66 @@ window.adminTab=function(t){
   const r=_at.apply(this,arguments);
   const b=$('atab12'); if(b) b.className=t==='indicadores'?'btn bpri bsm':'btn bout bsm';
   if(t==='indicadores') ETIND.iniciar();
+  if(t==='stats') setTimeout(()=>montar('admin-stats','est-global','Estadística general de evaluaciones',false),60);
+  if(t==='dash') setTimeout(()=>montar('admin-dash','est-mio','Mis indicadores',false),60);
   return r;
 };
 const _go=window.go;
-window.go=function(id){ if(id==='sadmin') inyectar(); return _go.apply(this,arguments); };
-function arr(){ const a=document.querySelector('.screen.active'); if(a&&a.id==='sadmin') inyectar(); }
+window.go=function(id){
+  if(id==='sadmin') inyectar();
+  const r=_go.apply(this,arguments);
+  if(id==='sadmin'){const st=$('admin-stats');if(st&&st.style.display!=='none')setTimeout(()=>montar('admin-stats','est-global','Estadística general de evaluaciones',false),120);}
+  if(id==='sdash') setTimeout(()=>montar('sdash-host','est-sup','Mis indicadores',true),60);
+  return r;
+};
+/* el dashboard del supervisor no tiene id propio en su contenido: se marca su contenedor */
+function marcarSdash(){const d=document.querySelector('#sdash .dlayout');if(d&&!d.id)d.id='sdash-host';}
+function arr(){ marcarSdash(); const a=document.querySelector('.screen.active'); if(a&&a.id==='sadmin'){inyectar();setTimeout(()=>montar('admin-stats','est-global','Estadística general de evaluaciones',false),800);} }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',arr);else arr();
-console.log('[_INDICADORES_V1] listo');
+console.log('[_INDICADORES_V2] listo');
 })();
 </script>
+<style>
+/* ══ _INDICADORES_V2 estilos ══ */
+.ix-panel{margin-bottom:1.4rem}
+.ix-k{margin-bottom:1rem}
+.ix-bar{position:relative;height:7px;background:#E6ECF6;border-radius:9px;overflow:visible;min-width:70px;margin:.35rem 0}
+.ix-bar i{display:block;height:100%;border-radius:9px}
+.ix-bar b{position:absolute;top:-3px;width:2px;height:13px;background:#52514e;border-radius:2px}
+.ix-st{display:inline-flex;align-items:center;gap:.25rem;font-size:.7rem;font-weight:800;border-radius:99px;padding:.18rem .55rem;white-space:nowrap}
+.ix-st.ok{background:#E7F6E7;color:#0a6d0a}.ix-st.bad{background:#FBE7E7;color:#a12a2a}
+.ix-g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-bottom:1rem}
+.ix-ch{position:relative;height:280px}.ix-ch.sm{height:220px}
+.ix-sub{font-size:.78rem;color:#6B7A99;margin:-.45rem 0 .7rem}
+.ix-concl{background:linear-gradient(90deg,#EEF4FF,#fff);border:1px solid #D6E3FA;border-left:5px solid #2a78d6;border-radius:16px;padding:.9rem 1.2rem;margin-bottom:1rem}
+.ix-concl-t{font-weight:800;color:#0B1E45;margin-bottom:.35rem}
+.ix-concl ul{margin:0;padding-left:1.1rem;color:#33415C;font-size:.86rem;line-height:1.7}
+.ix-rank{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.ix-rk-t{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem}
+.ix-rk-t.ok{color:#0a6d0a}.ix-rk-t.bad{color:#a12a2a}
+.ix-rk{display:grid;grid-template-columns:22px 1fr auto;gap:0 .5rem;align-items:center;padding:.45rem 0;border-bottom:1px solid #EEF2F8}
+.ix-rk span{grid-row:span 2;width:22px;height:22px;border-radius:50%;background:#EEF3FB;color:#2a78d6;font-weight:800;font-size:.72rem;display:flex;align-items:center;justify-content:center}
+.ix-rk b{font-size:.84rem;color:#0B1E45}.ix-rk small{grid-column:2;font-size:.7rem;color:#6B7A99}
+.ix-rk em{grid-row:1 / span 2;grid-column:3;font-style:normal;font-weight:800;color:#0a6d0a}.ix-rk em.bad{color:#a12a2a}
+.ix-heat{border-collapse:separate;border-spacing:3px;width:100%;font-size:.78rem}
+.ix-heat th{font-size:.68rem;color:#52514e!important;background:transparent!important;font-weight:700;text-align:center;padding:.3rem;max-width:110px;text-transform:none;letter-spacing:0}
+.ix-heat tbody th{text-align:left;white-space:nowrap}
+.ix-heat td{text-align:center;padding:.55rem .3rem;border-radius:6px;font-weight:700;min-width:58px}
+.ix-filtros{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem;align-items:end}
+.ix-filtros .fg{margin:0}
+.ix-seg{display:inline-flex;background:#EEF3FB;border-radius:12px;padding:3px;gap:2px;flex-wrap:wrap}
+.ix-seg button{border:none;background:transparent;padding:.42rem .8rem;border-radius:9px;font:700 .78rem Barlow,sans-serif;color:#4A5A80;cursor:pointer}
+.ix-seg button.on{background:#fff;color:#0B1E45;box-shadow:0 2px 8px rgba(0,30,90,.12)}
+.ix-acc{white-space:nowrap}
+.ix-modal{position:fixed;inset:0;background:rgba(5,15,40,.55);z-index:9600;display:none;align-items:center;justify-content:center;padding:1rem}
+.ix-modal.on{display:flex}
+.ix-mbox{background:#fff;border-radius:18px;max-width:440px;width:100%;padding:1.4rem 1.5rem;box-shadow:0 24px 60px rgba(0,0,0,.3)}
+.ix-mbox h3{margin:0 0 .4rem;font-size:1.15rem;color:#0B1E45}
+.ix-mbox p{margin:0 0 .8rem;color:#52514e;font-size:.86rem;line-height:1.5}
+.ix-mbox .fl{display:block;margin-top:.6rem}
+.ix-macts{display:flex;gap:.5rem;justify-content:flex-end;margin-top:1.1rem}
+@media(max-width:1000px){.ix-g2,.ix-rank{grid-template-columns:1fr}}
+</style>
 <style>
 /* ══ _SHELL_RL_V1 (29-set-2026): mismo modelo visual del Sistema RR.LL
       barra lateral oscura + barra superior blanca + tarjetas KPI ══ */

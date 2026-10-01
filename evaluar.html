@@ -37,6 +37,7 @@ label{display:block;font-weight:700;font-size:13px;color:var(--text2);margin:14p
 input{width:100%;font:600 18px Barlow,sans-serif;padding:14px 14px;border:2px solid var(--bdr);border-radius:12px;outline:none;color:var(--text);background:#fff}
 input:focus,select:focus{border-color:var(--navy)}
 select{width:100%;font:600 17px Barlow,sans-serif;padding:14px 12px;border:2px solid var(--bdr);border-radius:12px;outline:none;color:var(--text);background:#fff}
+.fijo{font:700 17px Barlow,sans-serif;padding:13px 14px;border-radius:12px;background:#EEF3FB;color:var(--navy)}
 .anon{display:flex;gap:10px;align-items:flex-start;background:#E9F7EF;color:#0B5E33;border-radius:12px;padding:11px 13px;font-size:14px;margin:4px 0 6px}
 .err{background:#FCE4E7;color:var(--red);border-radius:10px;padding:10px 12px;font-size:14px;font-weight:600;margin-top:12px;display:none}
 .btn{display:block;width:100%;border:none;border-radius:14px;padding:16px;font:800 17px Barlow,sans-serif;cursor:pointer;background:var(--navy);color:#fff;box-shadow:0 10px 24px rgba(0,61,165,.28)}
@@ -124,8 +125,9 @@ function ubicacion(){
   var last={}; try{last=JSON.parse(ls('eti_qr_ult')||'{}')||{};}catch(e){}
   var secIni=W.sector||S.sector||last.sector||'', rutaIni=W.ruta||last.ruta||'', codIni=W.cod||last.cod||'';
   var pal=S.tipo==='empleado'?'área':'ruta';
-  app.innerHTML='<div class="card"><h2>¿Dónde trabajas hoy?</h2><p>Estos datos sirven para ver los resultados por sector y '+pal+'. <b>No se guarda tu nombre ni tu DNI.</b></p>'+
-   '<label for="sec">Sector o fundo</label><select id="sec"><option value="">— Elige tu sector o fundo —</option>'+sects.map(function(x){return '<option'+(x===secIni?' selected':'')+'>'+esc(x)+'</option>';}).join('')+'</select>'+
+  app.innerHTML='<div class="card"><h2>¿Dónde trabajas hoy?</h2><p>'+(S.sector?'Solo escribe tu '+pal+' y su código.':'Estos datos sirven para ver los resultados por sector y '+pal+'.')+' <b>No se guarda tu nombre ni tu DNI.</b></p>'+
+   (S.sector?'<label>Sector o fundo</label><div class="fijo">📍 '+esc(S.sector)+'</div><input type="hidden" id="sec" value="'+esc(S.sector)+'">'   /* _QR_ASIGNADO_V3: sector fijado por el admin */
+     :'<label for="sec">Sector o fundo</label><select id="sec"><option value="">— Elige tu sector o fundo —</option>'+sects.map(function(x){return '<option'+(x===secIni?' selected':'')+'>'+esc(x)+'</option>';}).join('')+'</select>')+
    '<label for="ruta">'+(S.tipo==='empleado'?'Área':'Ruta')+'</label><input id="ruta" autocomplete="off" placeholder="'+(S.tipo==='empleado'?'Ej. Riego':'Ej. Ruta 5')+'" value="'+esc(rutaIni)+'">'+
    '<label for="cod">Código de la '+pal+'</label><input id="cod" autocomplete="off" placeholder="Ej. R-05" value="'+esc(codIni)+'">'+
    '<div class="err" id="err"></div><div style="margin-top:18px"><button class="btn" id="bOk">Continuar →</button></div></div>';
