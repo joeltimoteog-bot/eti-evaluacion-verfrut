@@ -13,6 +13,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+<script src="https://joeltimoteog-bot.github.io/sistema-rl-verfrut/frontend/js/progreso.js?v=6"></script>  <!-- _PROGRESO_ETI_V1 (02-oct): circulo "Guardando…" y ✓ al guardar/actualizar/eliminar -->
+<script>try{ if (window.RLProgreso && RLProgreso.firestoreCompat) RLProgreso.firestoreCompat(firebase); }catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
@@ -3972,7 +3974,8 @@ function marcarProgEjecutada(id, fechaEjec){
   const cambios={fechasEjecutadas:ejec, estado:pend.length?'pendiente':'ejecutada'};
   if(!pend.length) cambios.ejecutadaEn=new Date().toISOString();
   if(fbdb && _progsNube!==null){
-    fbdb.collection(_progColeccion(id)).doc(id).update(cambios).catch(e=>console.error('Nube:',e));
+    const _sil=(window.RLProgreso&&RLProgreso.silencio)||(f=>f());   /* _PROGRESO_ETI_V1: marca de 2do plano, sin circulo */
+    _sil(()=>fbdb.collection(_progColeccion(id)).doc(id).update(cambios)).catch(e=>console.error('Nube:',e));
     return;
   }
   const l=getProgs().slice(); const pl=l.find(x=>x.id===id);
@@ -5913,7 +5916,7 @@ const BK={
     if(!fbdb){toast('Sin conexión a la nube','e');return;}
     try{
       await fbdb.collection(COL_CFG).doc(DOC_BANCO).set(doc);
-      fbdb.collection(COL_BHIST).add(doc).catch(()=>{});
+      ((window.RLProgreso&&RLProgreso.silencio)||(f=>f()))(()=>fbdb.collection(COL_BHIST).add(doc)).catch(()=>{});   /* _PROGRESO_ETI_V1: historial en 2do plano */
       draftSucio=false; toast(`✅ Banco guardado (versión ${doc.version})`,'s');
     }catch(e){console.error(e);toast('No se pudo guardar: '+e.message,'e');}
   }
