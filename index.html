@@ -1519,7 +1519,7 @@ function guardarEvalNube(res){
   };
   if(fbdb){
     fbdb.collection(COL_EVAL).add(payload)
-      .then(ref=>{console.log('✅ Evaluación guardada en la nube'); try{ if(window.etiAzureEvalManual) etiAzureEvalManual(payload, ref.id, ref); }catch(e){} })   // _INDICADORES_V1: copia en Azure SQL
+      .then(ref=>{console.log('✅ Evaluación guardada en la nube'); try{ if(window.etiAzureEvalManual) etiAzureEvalManual(payload, ref.id); }catch(e){} })   // _INDICADORES_V1: copia en Azure SQL
       .catch(e=>console.error('Firestore:',e));
   }
   enviarASheets(payload);
@@ -2561,7 +2561,7 @@ function mkCuest(ri){
     html+=`<div class="secblk">
       <div class="sbhdr">
         <span class="sbt">📌 ${sec.nom}</span>
-        <span class="sbm">Peso: ${+(sec.peso*100).toFixed(2)}% · ${sec.pregs.length} preguntas</span>
+        <span class="sbm">Peso: ${(sec.peso*100).toFixed(0)}% · Máx: ${maxSec} pts</span>
       </div>
       <div class="sbody">
       <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
@@ -2586,7 +2586,7 @@ function mkCuest(ri){
         </td>
         <td style="width:${txtW}px;min-width:${txtW}px;padding:6px 8px;vertical-align:middle;position:sticky;left:${numW}px;z-index:2;background:#fff;box-shadow:3px 0 6px -2px rgba(0,61,165,.15);">
           <span class="ptxt" style="display:block;">${preg.t}</span>
-          <span class="pmx">Máx ${preg.max} pt${preg.max>1?'s':''} · escribe 0–${preg.max}${preg.pct!=null?` · vale ${+(+preg.pct).toFixed(2)}%`:''}</span>
+          <span class="pmx">Máx ${preg.max} pt${preg.max>1?'s':''} · escribe 0–${preg.max}</span>
         </td>`;
       for(let ei=0;ei<ne;ei++){
         const v=savedVals[ei];
@@ -2769,7 +2769,7 @@ function recalcSubs(ri){
       let sum=0;
       sec.pregs.forEach(preg=>{
         const v=parseFloat(r.sc?.[sec.id]?.[preg.n]?.[ei]);
-        sum += isNaN(v)?0:v*(preg.f||1); // _PCT_PREGUNTA_V1: puntaje → % del total (blanco = 0)
+        sum += isNaN(v)?0:v; // pregunta en blanco = 0 puntos
       });
       evSubs.push(sum);
     }
@@ -2780,7 +2780,7 @@ function recalcSubs(ri){
       // Paso 2+3: promedio = suma subtotales / N evaluados completos
       const prom=evSubs.reduce((a,b)=>a+b,0)/evSubs.length;
       const pct=(prom/sec.maxSec*100).toFixed(1);
-      stvEl.textContent=prom.toFixed(2)+' de '+(+sec.maxSec.toFixed(2))+'%';
+      stvEl.textContent=prom.toFixed(2)+' pts';
       stvEl.style.color=parseFloat(pct)>=70?'var(--gdim)':'var(--red)';
       stpEl.textContent=` (${pct}%)`;
     } else {
@@ -2858,7 +2858,7 @@ function calcular(){
         let sum=0;
         sec.pregs.forEach(preg=>{
           const v=parseFloat(ruta.sc?.[sec.id]?.[preg.n]?.[ei]);
-          sum += isNaN(v)?0:v*(preg.f||1); // _PCT_PREGUNTA_V1: puntaje → % del total (blanco = 0)
+          sum += isNaN(v)?0:v; // pregunta en blanco = 0 puntos
         });
         evSubs.push(sum);
       }
@@ -2981,7 +2981,7 @@ function renderRes(res){
     return `<div class="scard">
       <div class="scdhdr"><div class="scdname">${s.nom}</div><div class="scdpct${ok2?'':' r'}">${p}%</div></div>
       <div class="btrk"><div class="bfil${ok2?'':' r'}" style="width:${Math.min(100,parseFloat(p))}%"></div></div>
-      <div class="scdmeta"><span>Peso: ${+(s.peso*100).toFixed(2)}%</span><span class="bdg ${ok2?'bg':'br'}">${ok2?'APROBADO':'REFUERZO'}</span></div>
+      <div class="scdmeta"><span>Peso: ${(s.peso*100).toFixed(0)}% · Máx: ${s.maxSec} pts</span><span class="bdg ${ok2?'bg':'br'}">${ok2?'APROBADO':'REFUERZO'}</span></div>
     </div>`;
   }).join('');
 
@@ -3397,7 +3397,7 @@ function exportarExcel(){
     [palabra+' en refuerzo',res.rutas.filter(r=>r.resGrupo<0.7).length+' / '+res.rutas.length],
     [''],
     ['PROMEDIO POR TEMA'],
-    ['Tema','% Cumplimiento','Estado','Peso','Máximo (% del total)'],
+    ['Tema','% Cumplimiento','Estado','Peso','Puntaje Max'],
   ];
 
   const promSecs=SECS.map((sec,si)=>({
@@ -3410,8 +3410,8 @@ function exportarExcel(){
       s.nom,
       parseFloat((s.pct*100).toFixed(1)),
       s.pct>=0.7?'APROBADO':'REQUIERE REFUERZO',
-      +(s.peso*100).toFixed(2)+'%',
-      +(+s.maxSec).toFixed(2)+'%'
+      (s.peso*100).toFixed(0)+'%',
+      s.maxSec+' pts'
     ]);
   });
 
@@ -5768,49 +5768,18 @@ async function sha(txt){const b=await crypto.subtle.digest('SHA-256',new TextEnc
 
 /* ════════════════ 1) BANCO DE PREGUNTAS ════════════════ */
 const SECS_ORIG=clon(SECS);
-/* _PCT_PREGUNTA_V1 (03-oct-2026): cada pregunta tiene su % sobre el 100% total (p.pct).
-   El peso del tema = suma de los % de sus preguntas (se calcula solo).
-   p.max queda como escala de la evaluación manual (0–max); el QR califica directo en %.
-   Bancos antiguos sin p.pct se migran conservando exactamente la ponderación anterior. */
-const r4=v=>Math.round((+v||0)*10000)/10000;
-function normPct(secs){
-  (secs||[]).forEach(s=>{
-    const mx=s.pregs.reduce((a,p)=>a+(+p.max||0),0);
-    s.pregs.forEach(p=>{
-      if(p.pct==null||p.pct===''||isNaN(+p.pct)) p.pct=mx?r4((+s.peso||0)*100*(+p.max||0)/mx):0;
-      else p.pct=+p.pct;
-    });
-    s.peso=r4(s.pregs.reduce((a,p)=>a+p.pct,0)/100);
-  });
-  return secs;
-}
-const sumPct=secs=>r4((secs||[]).reduce((a,s)=>a+s.pregs.reduce((b,p)=>b+(+p.pct||0),0),0));
-/* _BANCO_2026_V1 (03-oct-2026): banco actualizado según "REFUERZO ETI Ayuda Memoria 2026".
-   Se carga con el botón 📥 del módulo; el % de cada pregunta lo define el creador (inicia en partes iguales).
-   'SUS' = se conservan las preguntas de Sustentabilidad del banco anterior. */
-const ETI_BANCO_2026=[{"id": "leg", "nom": "Legislación Laboral", "pregs": [{"t": "¿En qué régimen laboral has sido contratado?", "tipo": "unica", "ops": [{"t": "Régimen laboral agrario", "ok": true}, {"t": "Régimen de construcción civil", "ok": false}, {"t": "Régimen de la pequeña empresa", "ok": false}, {"t": "Régimen del sector público", "ok": false}]}, {"t": "¿Qué tipos de contrato tiene la empresa? (Marca todas las correctas)", "tipo": "multiple", "ops": [{"t": "Contrato de modalidad intermitente", "ok": true}, {"t": "Contrato por incremento de actividades", "ok": true}, {"t": "Locación de servicios con recibo por honorarios", "ok": false}, {"t": "Contrato verbal, sin firmar nada", "ok": false}]}, {"t": "Para conseguir el trabajo, ¿alguien te puede cobrar dinero?", "tipo": "unica", "ops": [{"t": "No. Nadie debe cobrarme por darme trabajo; si pasa, lo reporto en la oficina principal de Gestión Humana", "ok": true}, {"t": "Sí, es normal pagarle a la persona que te hace ingresar", "ok": false}, {"t": "Sí, pero solo la primera campaña", "ok": false}, {"t": "Sí, y se descuenta de la boleta", "ok": false}]}, {"t": "¿Cómo te pagan la CTS y la gratificación?", "tipo": "unica", "ops": [{"t": "Se incluyen como un porcentaje en mi remuneración", "ok": true}, {"t": "Se pagan solo cuando termina el contrato", "ok": false}, {"t": "No me corresponden", "ok": false}, {"t": "Se pagan una vez al año en efectivo", "ok": false}]}, {"t": "¿Cuál es la jornada máxima legal de trabajo?", "tipo": "unica", "ops": [{"t": "8 horas diarias o 48 horas a la semana", "ok": true}, {"t": "10 horas diarias o 60 horas a la semana", "ok": false}, {"t": "12 horas diarias sin límite semanal", "ok": false}, {"t": "6 horas diarias o 36 horas a la semana", "ok": false}]}, {"t": "¿Cómo registras tu ingreso y tu salida?", "tipo": "unica", "ops": [{"t": "En los marcadores del bus, al bajar en el campo", "ok": true}, {"t": "Firmando un cuaderno en la garita", "ok": false}, {"t": "Avisando por teléfono al supervisor", "ok": false}, {"t": "No es necesario registrarlo", "ok": false}]}, {"t": "Si tu jefe te pide horas extras, ¿cuántas puedes hacer?", "tipo": "unica", "ops": [{"t": "Hasta 2 horas extras al día y como máximo 12 a la semana; son voluntarias", "ok": true}, {"t": "Hasta 4 horas al día y son obligatorias", "ok": false}, {"t": "Todas las que pida el jefe, sin pago adicional", "ok": false}, {"t": "No existen las horas extras", "ok": false}]}, {"t": "¿Cuánto es tu tiempo de refrigerio?", "tipo": "unica", "ops": [{"t": "45 minutos: empieza cuando dejo mi línea o cuartel y termina cuando vuelvo a mi faena", "ok": true}, {"t": "30 minutos, contando el tiempo de traslado", "ok": false}, {"t": "1 hora y media", "ok": false}, {"t": "15 minutos", "ok": false}]}, {"t": "¿Qué beneficios tiene el trabajador del régimen laboral agrario? (Marca todas las correctas)", "tipo": "multiple", "ops": [{"t": "Asignación familiar", "ok": true}, {"t": "Vacaciones", "ok": true}, {"t": "Utilidades", "ok": true}, {"t": "Seguro Vida Ley", "ok": true}, {"t": "EsSalud", "ok": true}, {"t": "Préstamos sin devolución", "ok": false}, {"t": "Pago de días faltados sin justificación", "ok": false}]}, {"t": "¿Quién paga EsSalud?", "tipo": "unica", "ops": [{"t": "La empresa lo paga; no se descuenta de mi sueldo", "ok": true}, {"t": "Se descuenta de mi sueldo", "ok": false}, {"t": "Lo pago yo directamente en EsSalud", "ok": false}, {"t": "Nadie, es gratis", "ok": false}]}, {"t": "¿Cuál es la Remuneración Mínima Vital (RMV) desde octubre de 2026?", "tipo": "unica", "ops": [{"t": "S/ 1,230.00", "ok": true}, {"t": "S/ 1,130.00", "ok": false}, {"t": "S/ 1,025.00", "ok": false}, {"t": "S/ 1,500.00", "ok": false}]}, {"t": "¿Dónde encuentras tu Reglamento Interno de Trabajo, el Código de Conducta, tu contrato y tus boletas de pago?", "tipo": "unica", "ops": [{"t": "En la aplicación de Gestión Humana, donde se firman digitalmente (desde computadora, tablet o celular)", "ok": true}, {"t": "Solo en la municipalidad", "ok": false}, {"t": "Solo los tiene el sindicato", "ok": false}, {"t": "No se entregan al trabajador", "ok": false}]}, {"t": "¿En cuántas partes al mes te pagan tu salario?", "tipo": "unica", "ops": [{"t": "En dos partes: el adelanto quincenal y a fin de mes", "ok": true}, {"t": "En una sola parte, a fin de mes", "ok": false}, {"t": "Cada semana", "ok": false}, {"t": "Cada dos meses", "ok": false}]}, {"t": "Si no puedes entrar a la plataforma, ¿cómo obtienes tu boleta de pago?", "tipo": "unica", "ops": [{"t": "Solicitándola en cualquier oficina de Gestión Humana", "ok": true}, {"t": "No se puede obtener", "ok": false}, {"t": "Pidiéndosela a un compañero", "ok": false}, {"t": "Solo al terminar el contrato", "ok": false}]}, {"t": "En el Perú, en general, ¿desde qué edad pueden trabajar los menores de 18 años?", "tipo": "unica", "ops": [{"t": "Desde los 14 años", "ok": true}, {"t": "Desde los 10 años", "ok": false}, {"t": "Desde los 16 años", "ok": false}, {"t": "No pueden trabajar en ningún caso", "ok": false}]}, {"t": "En el régimen agrario, ¿pueden trabajar los menores de 18 años?", "tipo": "unica", "ops": [{"t": "No. No se permite el trabajo infantil; solo desde los 18 años", "ok": true}, {"t": "Sí, desde los 14 años", "ok": false}, {"t": "Sí, con permiso de los padres", "ok": false}, {"t": "Sí, solo en temporada alta", "ok": false}]}]}, {"id": "bie", "nom": "Bienestar Social", "pregs": [{"t": "¿Cuántos días de licencia pagada te dan por fallecimiento de un familiar directo?", "tipo": "unica", "ops": [{"t": "5 días calendario si fallece en la región Piura y 7 días si fallece fuera de Piura", "ok": true}, {"t": "1 día", "ok": false}, {"t": "3 días en cualquier caso", "ok": false}, {"t": "15 días", "ok": false}]}, {"t": "¿Cuántos días de licencia pagada te dan por accidente grave o enfermedad terminal de un familiar directo?", "tipo": "unica", "ops": [{"t": "7 días calendario", "ok": true}, {"t": "1 día", "ok": false}, {"t": "30 días", "ok": false}, {"t": "No existe esa licencia", "ok": false}]}, {"t": "¿Cuántos días de licencia pagada por paternidad le corresponden al trabajador?", "tipo": "unica", "ops": [{"t": "10 días calendario", "ok": true}, {"t": "2 días", "ok": false}, {"t": "30 días", "ok": false}, {"t": "No le corresponde", "ok": false}]}, {"t": "Si quieres hacer una queja o sugerencia, ¿a qué canales puedes acudir? (Marca todas las correctas)", "tipo": "multiple", "ops": [{"t": "Buzones azules de quejas y sugerencias", "ok": true}, {"t": "Asistenta Social", "ok": true}, {"t": "Representante del Comité de Bienestar del Trabajador", "ok": true}, {"t": "QR de canales de quejas de Unifrutti o Tesco", "ok": true}, {"t": "Mi jefe directo o el supervisor de Gestión Humana", "ok": true}, {"t": "Mis redes sociales personales", "ok": false}, {"t": "El personal de vigilancia de la garita", "ok": false}]}, {"t": "¿Cuáles de estos canales son anónimos? (Marca todas las correctas)", "tipo": "multiple", "ops": [{"t": "El buzón de quejas y sugerencias", "ok": true}, {"t": "Los QR de canales de quejas", "ok": true}, {"t": "La Asistenta Social", "ok": false}, {"t": "Mi jefe directo", "ok": false}]}, {"t": "¿Dónde están los buzones de quejas y cuándo los revisan?", "tipo": "unica", "ops": [{"t": "En los comedores e ingresos peatonales de cada campo; se abren todos los viernes", "ok": true}, {"t": "En la oficina del gerente; se abren cada mes", "ok": false}, {"t": "Solo en Lima", "ok": false}, {"t": "No se revisan", "ok": false}]}, {"t": "¿Dónde encuentras los QR para poner una queja?", "tipo": "unica", "ops": [{"t": "En los periódicos murales", "ok": true}, {"t": "En la boleta de pago", "ok": false}, {"t": "En la puerta del bus", "ok": false}, {"t": "No existen", "ok": false}]}, {"t": "¿Te pueden amonestar por hacer una queja?", "tipo": "unica", "ops": [{"t": "No. Las quejas son confidenciales y sin represalias", "ok": true}, {"t": "Sí, si la queja es contra mi jefe", "ok": false}, {"t": "Sí, con un descuento", "ok": false}, {"t": "Sí, si no pongo mi nombre", "ok": false}]}, {"t": "¿Cómo ubicas a la Asistenta Social o al Comité?", "tipo": "unica", "ops": [{"t": "Al Comité en el campo; a la Asistenta Social en la oficina de Bienestar Social o con su teléfono de los periódicos murales", "ok": true}, {"t": "Solo por redes sociales", "ok": false}, {"t": "No es posible ubicarlos", "ok": false}, {"t": "Solo en Lima", "ok": false}]}, {"t": "¿Dónde y qué día se publican las respuestas a las quejas o sugerencias?", "tipo": "unica", "ops": [{"t": "En los periódicos murales de Bienestar Social, todos los jueves", "ok": true}, {"t": "No se publican", "ok": false}, {"t": "En redes sociales, una vez al mes", "ok": false}, {"t": "Se avisan de boca en boca los lunes", "ok": false}]}, {"t": "¿Con quién denuncias un caso de hostigamiento sexual?", "tipo": "unica", "ops": [{"t": "Con la Asistenta Social", "ok": true}, {"t": "Con nadie, debo aguantar", "ok": false}, {"t": "Solo con mis compañeros de ruta", "ok": false}, {"t": "Con el chofer del bus", "ok": false}]}]}, "SUS", {"id": "eti", "nom": "Ética Empresarial – Código de Conducta", "pregs": [{"t": "¿Cuántos principios tiene el Código de Conducta?", "tipo": "unica", "ops": [{"t": "11 principios", "ok": true}, {"t": "5 principios", "ok": false}, {"t": "7 principios", "ok": false}, {"t": "20 principios", "ok": false}]}, {"t": "¿Cuáles son principios del Código de Conducta? (Marca todas las correctas)", "tipo": "multiple", "ops": [{"t": "No trabajo infantil", "ok": true}, {"t": "Trabajo de libre elección y no forzoso", "ok": true}, {"t": "Seguridad y salud en el trabajo", "ok": true}, {"t": "Libertad de asociación y negociación colectiva", "ok": true}, {"t": "No discriminación", "ok": true}, {"t": "Protección especial para trabajadores jóvenes", "ok": true}, {"t": "Horario de trabajo no excesivo", "ok": true}, {"t": "Remuneración digna", "ok": true}, {"t": "Trabajo no precario", "ok": true}, {"t": "Medio ambiente", "ok": true}, {"t": "Comportamiento empresarial ético", "ok": true}, {"t": "Favoritismo", "ok": false}, {"t": "Horas extras obligatorias y sin pago", "ok": false}]}, {"t": "¿Qué significa “trabajo de libre elección y no forzoso”?", "tipo": "unica", "ops": [{"t": "No se cobra por contratar, no retienen mi DNI y puedo renunciar en cualquier momento sin penalidad", "ok": true}, {"t": "La empresa guarda mi DNI hasta que termine el contrato", "ok": false}, {"t": "No puedo renunciar hasta que termine la campaña", "ok": false}, {"t": "Debo quedarme dentro de la empresa aunque termine mi turno", "ok": false}]}, {"t": "¿Qué significa “no discriminación”?", "tipo": "unica", "ops": [{"t": "Nadie es tratado distinto por su raza, color, sexo, procedencia, etnia, edad, capacidades físicas o religión", "ok": true}, {"t": "Solo se contrata a personas de la zona", "ok": false}, {"t": "Se prefiere a los trabajadores jóvenes", "ok": false}, {"t": "Solo se respeta una religión", "ok": false}]}, {"t": "¿Qué significa “protección especial para trabajadores jóvenes”?", "tipo": "unica", "ops": [{"t": "Los menores de 21 años reciben capacitaciones completas sobre prevención de riesgos y su labor", "ok": true}, {"t": "Los jóvenes trabajan más horas", "ok": false}, {"t": "Los jóvenes no reciben EPP", "ok": false}, {"t": "Los jóvenes no firman contrato", "ok": false}]}, {"t": "¿Qué significa “remuneración digna”?", "tipo": "unica", "ops": [{"t": "Se cumple lo del contrato y se paga puntual, al 3.er día hábil de cumplida la quincena", "ok": true}, {"t": "Se paga cuando la empresa puede", "ok": false}, {"t": "Se paga menos que la remuneración mínima", "ok": false}, {"t": "Se paga solo al final de la campaña", "ok": false}]}, {"t": "¿Qué significa “comportamiento empresarial ético”?", "tipo": "unica", "ops": [{"t": "No participar en actividades ilegales (trata de personas, tráfico de sustancias, narcotráfico) ni hacer negocios con quien lo haga", "ok": true}, {"t": "Ganar dinero de cualquier forma", "ok": false}, {"t": "Hacer favores a funcionarios para ganar contratos", "ok": false}, {"t": "Ocultar los problemas de la empresa", "ok": false}]}]}, {"id": "sst", "nom": "Seguridad Alimentaria y Seguridad y Salud en el Trabajo", "pregs": [{"t": "¿Cuándo debes lavarte las manos? (Marca todas las correctas)", "tipo": "multiple", "ops": [{"t": "Antes y después de ir al baño", "ok": true}, {"t": "Antes y después de comer", "ok": true}, {"t": "Después de tocar cosas sucias", "ok": true}, {"t": "Solo al final del día", "ok": false}, {"t": "Solo si se ven sucias", "ok": false}]}, {"t": "¿Por qué debes usar en todo momento los EPP que te entregan? (Marca todas las correctas)", "tipo": "multiple", "ops": [{"t": "Para evitar accidentes", "ok": true}, {"t": "Para no cortarme", "ok": true}, {"t": "Para que no me caigan objetos extraños en los ojos", "ok": true}, {"t": "Solo cuando está el supervisor", "ok": false}, {"t": "Solo para las auditorías", "ok": false}]}, {"t": "¿Cómo debes llevar las tijeras y herramientas punzocortantes?", "tipo": "unica", "ops": [{"t": "En su funda y con la punta siempre hacia abajo", "ok": true}, {"t": "En el bolsillo con la punta hacia arriba", "ok": false}, {"t": "En la mano, apuntando hacia adelante", "ok": false}, {"t": "Sin funda, para usarlas más rápido", "ok": false}]}, {"t": "¿Cómo debes toser o estornudar?", "tipo": "unica", "ops": [{"t": "Tapándome con el antebrazo", "ok": true}, {"t": "Tapándome con la mano", "ok": false}, {"t": "Sin taparme", "ok": false}, {"t": "Bajándome la mascarilla", "ok": false}]}, {"t": "Si hay una emergencia, una caída o sientes dolor, ¿qué debes hacer?", "tipo": "unica", "ops": [{"t": "Avisar al supervisor o jefe inmediato para que llame al tópico", "ok": true}, {"t": "Seguir trabajando sin avisar", "ok": false}, {"t": "Irme a casa sin decir nada", "ok": false}, {"t": "Esperar al día siguiente", "ok": false}]}, {"t": "¿Con qué atención de salud cuenta la empresa?", "tipo": "unica", "ops": [{"t": "Tres tópicos, con enfermeros/as y un médico ocupacional", "ok": true}, {"t": "Un solo tópico, en Lima", "ok": false}, {"t": "Ninguna, debo ir por mi cuenta", "ok": false}, {"t": "Solo una farmacia", "ok": false}]}]}, {"id": "med", "nom": "Compromiso Medioambiental", "pregs": [{"t": "¿Qué residuos van en el contenedor BLANCO?", "tipo": "unica", "ops": [{"t": "Plástico (mangueras, botellas, bolsas, PVC)", "ok": true}, {"t": "Papel y cartón", "ok": false}, {"t": "Residuos no aprovechables (envolturas de galletas, descartables, servilletas, residuos de SS.HH.)", "ok": false}, {"t": "Metales (retazos, alambres, fierros)", "ok": false}, {"t": "Residuos peligrosos (EPP contaminados, envases de agroquímicos, trapos con grasa, envases de aceite)", "ok": false}]}, {"t": "¿Qué residuos van en el contenedor AZUL?", "tipo": "unica", "ops": [{"t": "Plástico (mangueras, botellas, bolsas, PVC)", "ok": false}, {"t": "Papel y cartón", "ok": true}, {"t": "Residuos no aprovechables (envolturas de galletas, descartables, servilletas, residuos de SS.HH.)", "ok": false}, {"t": "Metales (retazos, alambres, fierros)", "ok": false}, {"t": "Residuos peligrosos (EPP contaminados, envases de agroquímicos, trapos con grasa, envases de aceite)", "ok": false}]}, {"t": "¿Qué residuos van en el contenedor NEGRO?", "tipo": "unica", "ops": [{"t": "Plástico (mangueras, botellas, bolsas, PVC)", "ok": false}, {"t": "Papel y cartón", "ok": false}, {"t": "Residuos no aprovechables (envolturas de galletas, descartables, servilletas, residuos de SS.HH.)", "ok": true}, {"t": "Metales (retazos, alambres, fierros)", "ok": false}, {"t": "Residuos peligrosos (EPP contaminados, envases de agroquímicos, trapos con grasa, envases de aceite)", "ok": false}]}, {"t": "¿Qué residuos van en el contenedor AMARILLO?", "tipo": "unica", "ops": [{"t": "Plástico (mangueras, botellas, bolsas, PVC)", "ok": false}, {"t": "Papel y cartón", "ok": false}, {"t": "Residuos no aprovechables (envolturas de galletas, descartables, servilletas, residuos de SS.HH.)", "ok": false}, {"t": "Metales (retazos, alambres, fierros)", "ok": true}, {"t": "Residuos peligrosos (EPP contaminados, envases de agroquímicos, trapos con grasa, envases de aceite)", "ok": false}]}, {"t": "¿Qué residuos van en el contenedor ROJO?", "tipo": "unica", "ops": [{"t": "Plástico (mangueras, botellas, bolsas, PVC)", "ok": false}, {"t": "Papel y cartón", "ok": false}, {"t": "Residuos no aprovechables (envolturas de galletas, descartables, servilletas, residuos de SS.HH.)", "ok": false}, {"t": "Metales (retazos, alambres, fierros)", "ok": false}, {"t": "Residuos peligrosos (EPP contaminados, envases de agroquímicos, trapos con grasa, envases de aceite)", "ok": true}]}, {"t": "Si ves un mal manejo ambiental, ¿cómo lo reportas? (Marca todas las correctas)", "tipo": "multiple", "ops": [{"t": "En cualquier buzón verde", "ok": true}, {"t": "Con los supervisores de BPA", "ok": true}, {"t": "Con mi jefe directo", "ok": true}, {"t": "Publicándolo en mis redes sociales", "ok": false}, {"t": "No se reporta", "ok": false}]}, {"t": "¿Cómo protegemos a los animales silvestres, plantas nativas, jardines y reservorios? (Marca todas las correctas)", "tipo": "multiple", "ops": [{"t": "No quemar ni arrancar las plantas", "ok": true}, {"t": "No cazar ni sacrificar animales", "ok": true}, {"t": "No llevarse animales para venderlos o criarlos", "ok": true}, {"t": "No pescar en los reservorios", "ok": true}, {"t": "No tener animales en cautiverio", "ok": true}, {"t": "Pescar solo los fines de semana", "ok": false}, {"t": "Llevarse crías a casa para cuidarlas", "ok": false}]}]}];
-function banco2026(){
-  const base=bancoBase(), sus=base.find(x=>x.id==='sus');
-  const secs=ETI_BANCO_2026.map(x=>x==='SUS'?clon(sus):{id:x.id,nom:x.nom,peso:0,pregs:x.pregs.map(p=>({n:0,t:p.t,tq:'',max:2,pct:0,tipo:p.tipo,revisar:false,ops:clon(p.ops)}))}).filter(Boolean);
-  const ps=secs.flatMap(x=>x.pregs), v=r4(100/ps.length); let n=1;
-  ps.forEach(p=>{p.pct=v;p.n=n++;}); ps[ps.length-1].pct=r4(100-v*(ps.length-1));
-  return normPct(secs);
-}
 function bancoBase(){
-  return normPct(SECS_ORIG.map(s=>({id:s.id,nom:s.nom,peso:s.peso,pregs:s.pregs.map(p=>{
+  return SECS_ORIG.map(s=>({id:s.id,nom:s.nom,peso:s.peso,pregs:s.pregs.map(p=>{
     const b=(typeof ETI_OPS_BASE!=='undefined'&&ETI_OPS_BASE[p.n])||{};
     return {n:p.n,t:p.t,tq:b.tq||'',max:p.max,tipo:b.tipo||'unica',revisar:!!b.revisar,
       ops:(b.ops||[['Sí',1],['No',0]]).map(o=>({t:o[0],ok:!!o[1]}))};
-  })})));
+  })}));
 }
 let BANCO=bancoBase(), bancoMeta=null;
 function nPregs(){return SECS.reduce((a,s)=>a+s.pregs.length,0);}
 function aplicarBanco(secs){
   SECS.length=0;
-  normPct(clon(secs)).forEach(c=>{
-    c.pregs.forEach(p=>{p.f=(+p.max>0)?p.pct/(+p.max):0;});   /* factor: puntaje manual → % del total */
-    c.maxSec=r4(c.pregs.reduce((a,p)=>a+p.pct,0));             /* máximo del tema, en % */
-    SECS.push(c);});
+  secs.forEach(s=>{const c=clon(s);c.maxSec=c.pregs.reduce((a,p)=>a+(+p.max||0),0);SECS.push(c);});
   document.querySelectorAll('.n-pregs').forEach(e=>e.textContent=nPregs());
 }
 window.etiNPregs=nPregs;
@@ -5818,17 +5787,15 @@ aplicarBanco(BANCO);
 
 function validarBanco(secs){
   const err=[];
-  normPct(secs);
-  const tot=sumPct(secs);
-  if(Math.abs(tot-100)>0.05) err.push(`Los % de las preguntas suman ${tot.toFixed(2)}% (deben sumar 100%).`);
+  const tot=secs.reduce((a,s)=>a+(+s.peso||0),0);
+  if(Math.abs(tot-1)>0.0005) err.push(`Los pesos suman ${(tot*100).toFixed(1)}% (deben sumar 100%).`);
   secs.forEach(s=>{
     if(!String(s.nom).trim()) err.push('Hay una sección sin nombre.');
     if(!s.pregs.length) err.push(`La sección "${s.nom}" no tiene preguntas.`);
     s.pregs.forEach((p,i)=>{
       const q=`${s.nom} · pregunta ${i+1}`;
       if(!String(p.t).trim()) err.push(`${q}: falta el texto.`);
-      if(!(+p.pct>0)) err.push(`${q}: falta el % de la pregunta (debe ser mayor a 0).`);
-      if(!(+p.max>0)) err.push(`${q}: el puntaje de la evaluación manual debe ser mayor a 0.`);
+      if(!(+p.max>0)) err.push(`${q}: el puntaje debe ser mayor a 0.`);
       const ops=p.ops.filter(o=>String(o.t).trim());
       if(ops.length<2) err.push(`${q}: necesita al menos 2 alternativas.`);
       const ok=ops.filter(o=>o.ok).length;
@@ -5843,15 +5810,13 @@ let draft=null, draftSucio=false, bkFiltro='';
 function bkMarcar(){draftSucio=true;const b=$('bk-guardar');if(b){b.disabled=false;b.classList.add('pulso');}bkResumen();}
 function bkResumen(){
   const el=$('bk-resumen'); if(!el||!draft) return;
-  normPct(draft);
-  draft.forEach((s,si)=>{const e=$('bk-sp-'+si);if(e)e.textContent=(+(s.peso*100).toFixed(2))+'%';});
-  const tot=sumPct(draft), np=draft.reduce((a,s)=>a+s.pregs.length,0);
+  const tot=draft.reduce((a,s)=>a+(+s.peso||0),0)*100, np=draft.reduce((a,s)=>a+s.pregs.length,0);
   const rev=draft.reduce((a,s)=>a+s.pregs.filter(p=>p.revisar).length,0);
   const okP=Math.abs(tot-100)<0.05;
   el.innerHTML=`
     <div class="m-kpi"><b>${draft.length}</b><span>Secciones</span></div>
     <div class="m-kpi"><b>${np}</b><span>Preguntas</span></div>
-    <div class="m-kpi ${okP?'ok':'bad'}"><b>${+tot.toFixed(2)}%</b><span>Suma de % por pregunta ${okP?'✓':(tot<100?`(faltan ${+(100-tot).toFixed(2)}%)`:`(sobran ${+(tot-100).toFixed(2)}%)`)}</span></div>
+    <div class="m-kpi ${okP?'ok':'bad'}"><b>${tot.toFixed(1)}%</b><span>Suma de pesos ${okP?'✓':'(debe ser 100%)'}</span></div>
     <div class="m-kpi ${rev?'warn':'ok'}"><b>${rev}</b><span>Por confirmar</span></div>
     <div class="m-pesobar">${draft.map((s,i)=>`<i style="width:${(+s.peso||0)*100}%;background:${['#003DA5','#C8102E','#007A3D','#7A4FD0','#E08A00','#0096A6','#555'][i%7]}" title="${esc(s.nom)} ${((+s.peso||0)*100).toFixed(1)}%"></i>`).join('')}</div>`;
 }
@@ -5863,13 +5828,11 @@ function renderBanco(){
   box.innerHTML=`
   <div class="m-head">
     <div><h2 class="m-tit">🧩 Banco de Preguntas</h2>
-      <p class="m-sub">Preguntas, alternativas, respuesta correcta y <b>% de cada pregunta sobre el 100%</b>. El peso de cada tema se calcula solo (suma de sus preguntas). En el QR la nota se calcula automáticamente: si acierta suma su %, si falla suma 0 (en las de varias correctas, proporcional). Los cambios se aplican a la evaluación manual y a la evaluación por QR.
+      <p class="m-sub">Preguntas, alternativas, respuesta correcta, puntaje y peso (%) de cada tema. Los cambios se aplican a la evaluación manual y a la evaluación por QR.
       ${bancoMeta?`<br><span class="m-mut">Versión ${bancoMeta.version||1} · guardada por ${esc(bancoMeta.por||'—')} · ${bancoMeta.en?new Date(bancoMeta.en).toLocaleString('es-PE'):''}</span>`:'<br><span class="m-mut">Usando el banco base (aún no guardado en la nube).</span>'}</p></div>
     <div class="m-acts">
       <input class="fc m-buscar" placeholder="🔎 Buscar pregunta…" value="${esc(bkFiltro)}" oninput="ETIM.bkBuscar(this.value)">
-      <button class="btn bpri bsm" onclick="ETIM.bkCargar2026()" title="Carga las preguntas de la Ayuda Memoria 2026 (no se guarda hasta que presiones Guardar)">📥 Cargar banco 2026</button>
       <button class="btn bout bsm" onclick="ETIM.bkRestaurar()">↺ Restaurar base</button>
-      <button class="btn bout bsm" onclick="ETIM.bkIgualar()" title="Pone el mismo % a todas las preguntas (100% ÷ N)">⚖ Repartir 100% en partes iguales</button>
       <button class="btn bout bsm" onclick="ETIM.bkAddSec()">➕ Sección</button>
       <button class="btn bpri bsm" id="bk-guardar" onclick="ETIM.bkGuardar()" ${draftSucio?'':'disabled'}>💾 Guardar cambios</button>
     </div>
@@ -5882,9 +5845,8 @@ function renderBanco(){
     return `<div class="m-sec">
       <div class="m-sechead">
         <input class="fc m-secnom" value="${esc(s.nom)}" oninput="ETIM.bkSet(${si},-1,'nom',this.value)">
-        <span class="m-peso" title="Suma de los % de sus preguntas">Peso del tema <b id="bk-sp-${si}">${+((+s.peso||0)*100).toFixed(2)}%</b></span>
-        <span class="m-chip">${s.pregs.length} preg.</span>
-        <button class="btn bout bsm" title="Reparte el % actual del tema en partes iguales entre sus preguntas" onclick="ETIM.bkIgualarSec(${si})">⚖ Igualar</button>
+        <label class="m-peso">Peso <input class="fc" type="number" min="0" max="100" step="0.5" value="${+((+s.peso||0)*100).toFixed(2)}" oninput="ETIM.bkSet(${si},-1,'peso',this.value)"> %</label>
+        <span class="m-chip">${s.pregs.length} preg. · máx ${maxSec} pts</span>
         <button class="m-ico" title="Eliminar sección" onclick="ETIM.bkDelSec(${si})">🗑</button>
       </div>
       ${pregs.map(({p,pi})=>`
@@ -5896,8 +5858,7 @@ function renderBanco(){
           <label class="m-lbl">Texto que ve el trabajador en el QR <span class="m-mut">(vacío = usa el de arriba)</span></label>
           <textarea class="fc" rows="2" oninput="ETIM.bkSet(${si},${pi},'tq',this.value)">${esc(p.tq)}</textarea>
           <div class="m-prow">
-            <label class="m-lbl" style="font-weight:800;color:var(--navy,#003DA5)">% de la pregunta <input class="fc m-num" type="number" min="0" max="100" step="0.01" value="${+(+p.pct||0).toFixed(4)}" oninput="ETIM.bkSet(${si},${pi},'pct',this.value)"> %</label>
-            <label class="m-lbl">Puntaje eval. manual <input class="fc m-num" type="number" min="0.5" step="0.5" value="${p.max}" oninput="ETIM.bkSet(${si},${pi},'max',this.value)"></label>
+            <label class="m-lbl">Puntaje <input class="fc m-num" type="number" min="0.5" step="0.5" value="${p.max}" oninput="ETIM.bkSet(${si},${pi},'max',this.value)"></label>
             <label class="m-lbl">Tipo
               <select class="fc m-sel" onchange="ETIM.bkSet(${si},${pi},'tipo',this.value,1)">
                 <option value="unica" ${p.tipo==='unica'?'selected':''}>Una sola respuesta correcta</option>
@@ -5930,7 +5891,7 @@ const BK={
     if(!esCreador()) return;
     const o=pi<0?draft[si]:draft[si].pregs[pi];
     if(k==='peso') v=(parseFloat(v)||0)/100;
-    if(k==='max'||k==='pct') v=parseFloat(v)||0;
+    if(k==='max') v=parseFloat(v)||0;
     o[k]=v;
     if(k==='tipo'&&v==='unica'){let vis=false;o.ops.forEach(x=>{if(x.ok&&!vis)vis=true;else x.ok=false;});}
     bkMarcar(); if(re) renderBanco();
@@ -5939,25 +5900,9 @@ const BK={
   bkOpT(si,pi,oi,v){draft[si].pregs[pi].ops[oi].t=v;bkMarcar();},
   bkAddOp(si,pi){draft[si].pregs[pi].ops.push({t:'',ok:false});bkMarcar();renderBanco();},
   bkDelOp(si,pi,oi){const p=draft[si].pregs[pi];if(p.ops.length<=2){toast('Cada pregunta necesita al menos 2 alternativas','e');return;}p.ops.splice(oi,1);bkMarcar();renderBanco();},
-  bkAddPreg(si){draft[si].pregs.push({n:0,t:'',tq:'',max:2,pct:0,tipo:'unica',revisar:false,ops:[{t:'',ok:true},{t:'',ok:false},{t:'',ok:false}]});bkMarcar();renderBanco();},
+  bkAddPreg(si){draft[si].pregs.push({n:0,t:'',tq:'',max:2,tipo:'unica',revisar:false,ops:[{t:'',ok:true},{t:'',ok:false},{t:'',ok:false}]});bkMarcar();renderBanco();},
   bkDelPreg(si,pi){confMod('¿Eliminar la pregunta?',draft[si].pregs[pi].t||'(sin texto)',()=>{draft[si].pregs.splice(pi,1);bkMarcar();renderBanco();});},
   bkMover(si,pi,d){const a=draft[si].pregs,j=pi+d;if(j<0||j>=a.length)return;[a[pi],a[j]]=[a[j],a[pi]];bkMarcar();renderBanco();},
-  bkCargar2026(){
-    confMod('¿Cargar el banco 2026?','Se reemplaza el borrador por las preguntas de la Ayuda Memoria 2026 (Legislación ampliada, Bienestar, Código de Conducta, SST y Medio Ambiente; se conserva Sustentabilidad). Todas inician con el mismo %; luego pones el % de cada una y presionas "Guardar cambios".',()=>{draft=banco2026();bkMarcar();renderBanco();});
-  },
-  bkIgualar(){
-    const ps=draft.flatMap(s=>s.pregs); if(!ps.length) return;
-    confMod('¿Repartir 100% en partes iguales?',`Cada una de las ${ps.length} preguntas quedará con ${+(100/ps.length).toFixed(4)}%. Luego puedes ajustar una por una.`,()=>{
-      const v=r4(100/ps.length); ps.forEach(p=>p.pct=v); ps[ps.length-1].pct=r4(100-v*(ps.length-1));
-      bkMarcar(); renderBanco();});
-  },
-  bkIgualarSec(si){
-    const s=draft[si], n=s.pregs.length; if(!n) return;
-    const tot=r4(s.pregs.reduce((a,p)=>a+(+p.pct||0),0));
-    if(!(tot>0)){toast('Primero escribe el % de alguna pregunta del tema, o usa "Repartir 100%"','i');return;}
-    const v=r4(tot/n); s.pregs.forEach(p=>p.pct=v); s.pregs[n-1].pct=r4(tot-v*(n-1));
-    bkMarcar(); renderBanco();
-  },
   bkAddSec(){draft.push({id:'s'+Date.now().toString(36),nom:'Nueva sección',peso:0,pregs:[]});bkMarcar();renderBanco();},
   bkDelSec(si){confMod('¿Eliminar la sección completa?',`"${draft[si].nom}" y sus ${draft[si].pregs.length} preguntas.`,()=>{draft.splice(si,1);bkMarcar();renderBanco();});},
   bkRestaurar(){confMod('¿Restaurar el banco base?','Se cargarán las 36 preguntas originales con sus alternativas sugeridas. No se guarda hasta que presiones "Guardar cambios".',()=>{draft=bancoBase();bkMarcar();renderBanco();});},
@@ -6038,7 +5983,7 @@ async function bancoPublico(id){
     pregs:await Promise.all(s.pregs.map(async p=>{
       const ops=(p.ops||[]).filter(o=>String(o.t).trim());
       const k=[];for(let i=0;i<ops.length;i++) if(ops[i].ok) k.push(await sha(`${id}|${p.n}|${i}|${QR_SAL}`));
-      return {n:p.n,t:p.tq||p.t,max:p.pct,tipo:p.tipo||'unica',ops:ops.map(o=>o.t),k};   /* _PCT_PREGUNTA_V1: max = % de la pregunta (no se muestra al trabajador) */
+      return {n:p.n,t:p.tq||p.t,max:p.max,tipo:p.tipo||'unica',ops:ops.map(o=>o.t),k};
     }))})));
 }
 function miSup(){
@@ -6061,7 +6006,7 @@ function crearPantallaQR(){
     <div class="m-qrgrid">
       <section class="m-card" id="qr-form">
         <h2 class="m-tit">📱 Nueva sesión de evaluación</h2>
-        <p class="m-sub">Genera el QR y muéstralo. La evaluación es <b>anónima</b> y es un solo QR para todo el personal: al escanear, el trabajador indica si es <b>obrero</b> (sector, ruta y código) o <b>empleado</b> (área y sector/zona donde está). El puntaje se calcula solo con el % de cada pregunta.</p>
+        <p class="m-sub">Genera el QR y muéstralo. La evaluación es <b>anónima</b>: cada trabajador elige su sector/fundo e indica su ruta y código desde su celular. El puntaje se calcula solo.</p>
         <div class="m-f2">
           <div class="fg"><label class="fl">Empresa *</label><select class="fc" id="qr-emp"><option value="">— Seleccionar —</option><option>VERFRUT S.A.C.</option><option>RAPEL S.A.C.</option></select></div>
           <div class="fg"><label class="fl">Fecha *</label><input class="fc" type="date" id="qr-fecha"></div>
@@ -6069,12 +6014,12 @@ function crearPantallaQR(){
         <div class="fg"><label class="fl">Asignar a (supervisor que mostrará el QR) *</label><select class="fc" id="qr-sup" onchange="ETIM.qrSupCambio()"></select></div>
         <div class="m-f2">
           <div class="fg"><label class="fl" id="qr-sec-lbl">Sector / fundo</label><select class="fc" id="qr-sector"></select></div>
-          <div class="fg"><label class="fl">Tipo de personal *</label><select class="fc" id="qr-tipo"><option value="todos" selected>👥 Todo el personal (el trabajador elige)</option><option value="obrero">👷 Solo obreros (ruta)</option><option value="empleado">💼 Solo empleados (área)</option></select></div>
+          <div class="fg"><label class="fl">Tipo de personal *</label><select class="fc" id="qr-tipo"><option value="obrero">👷 Obrero (por ruta)</option><option value="empleado">💼 Empleado (por área)</option></select></div>
         </div>
         <button class="btn bpri" style="width:100%;padding:.85rem;" onclick="ETIM.qrCrear()">⚡ Generar QR</button>
         <div class="m-mut" style="margin-top:.6rem;font-size:.75rem;">El QR sirve para todos los trabajadores (hasta 1 000 o más) y queda activo hasta que cierres la sesión, como máximo hasta el final del día elegido.</div>
       </section>
-      <section class="m-card" id="qr-info" style="display:none"><h2 class="m-tit">📱 Mis QR asignados</h2><p class="m-sub">El administrador crea los QR y te los asigna. Elige uno en <b>Mis sesiones</b>, presiona <b>Mostrar QR</b> y muéstralo a los trabajadores de tu ruta: ellos indican si son obreros (sector, ruta y código) o empleados (área y sector/zona).</p></section>
+      <section class="m-card" id="qr-info" style="display:none"><h2 class="m-tit">📱 Mis QR asignados</h2><p class="m-sub">El administrador crea los QR y te los asigna. Elige uno en <b>Mis sesiones</b>, presiona <b>Mostrar QR</b> y muéstralo a los trabajadores de tu ruta: ellos solo escriben su ruta y código.</p></section>
       <section class="m-card" id="qr-activo"></section>
     </div>
     <section class="m-card" style="margin-top:1rem;"><h3 class="m-tit2">🗂 Mis sesiones</h3><div id="qr-lista"></div></section>
@@ -6145,7 +6090,7 @@ function abierta(s){return s&&s.estado==='abierta'&&!(s.expira&&Date.now()>s.exp
 function claveRuta(r){return [r.sector||'—',String(r.ruta||'—').toUpperCase(),String(r.cod||'').toUpperCase()].join('|');}
 function gruposRuta(resps){
   const m=new Map();
-  resps.forEach(r=>{const k=(r.tipo||'')+'#'+claveRuta(r);const g=m.get(k)||{tipo:r.tipo||'',sector:r.sector||'—',ruta:String(r.ruta||'—').toUpperCase(),cod:String(r.cod||'').toUpperCase(),n:0,s:0,apr:0};
+  resps.forEach(r=>{const k=claveRuta(r);const g=m.get(k)||{sector:r.sector||'—',ruta:String(r.ruta||'—').toUpperCase(),cod:String(r.cod||'').toUpperCase(),n:0,s:0,apr:0};
     g.n++;g.s+=(r.resultado||0);if((r.resultado||0)>=0.7)g.apr++;m.set(k,g);});
   return [...m.values()].sort((a,b)=>a.sector.localeCompare(b.sector)||a.ruta.localeCompare(b.ruta,undefined,{numeric:true}));
 }
@@ -6158,7 +6103,7 @@ function renderActiva(){
   el.innerHTML=`
     <div class="m-qrtop"><div><div class="m-eyebrow">${ab?'<span class="m-live"></span> Sesión abierta':'Sesión '+(s.estado==='abierta'?'vencida':'cerrada')}</div>
       <h2 class="m-tit" style="margin:.1rem 0">${esc(nomSesion(s))}</h2>
-      <div class="m-mut">${esc(s.emp)} · ${esc(fmtF(s.fecha))} · 👤 ${esc(s.sup)} · ${s.tipo==='obrero'?'👷 Solo obreros':s.tipo==='empleado'?'💼 Solo empleados':'👥 Todo el personal'} · 🔒 anónima</div></div>
+      <div class="m-mut">${esc(s.emp)} · ${esc(fmtF(s.fecha))} · 👤 ${esc(s.sup)} · 🔒 anónima</div></div>
       <div class="m-codigo" title="Código de sesión">${esc(s.id)}</div></div>
     ${ab?`<div class="m-qrbox">${qrSvg(url,8)}</div>
     <div class="m-link"><input class="fc" readonly value="${esc(url)}" onclick="this.select()"><button class="btn bout bsm" onclick="ETIM.qrCopiar()">📋 Copiar</button></div>`:''}
@@ -6170,13 +6115,13 @@ function renderActiva(){
     </div>
     <div class="m-resp">${n?`
       <div class="m-lbl" style="margin-top:0">Avance por sector, ruta y código · ${apr} aprobados (≥70%)</div>
-      <table class="m-table"><thead><tr><th>Tipo</th><th>Sector</th><th>Ruta / Área</th><th>Código</th><th>Evaluados</th><th>Promedio</th>${adm?'<th></th>':''}</tr></thead><tbody>
-      ${gr.map(g=>`<tr><td>${g.tipo==='empleado'?'💼 Empleado':'👷 Obrero'}</td><td>${esc(g.sector)}</td><td><b>${esc(g.ruta)}</b></td><td>${esc(g.cod||'—')}</td><td>${g.n}</td>
+      <table class="m-table"><thead><tr><th>Sector</th><th>Ruta</th><th>Código</th><th>Evaluados</th><th>Promedio</th>${adm?'<th></th>':''}</tr></thead><tbody>
+      ${gr.map(g=>`<tr><td>${esc(g.sector)}</td><td><b>${esc(g.ruta)}</b></td><td>${esc(g.cod||'—')}</td><td>${g.n}</td>
       <td><b style="color:${g.s/g.n>=0.7?'var(--green)':'var(--red)'}">${pct(g.s/g.n)}</b></td>
       ${adm?`<td style="white-space:nowrap"><button class="m-ico" title="Corregir sector, ruta o código de este grupo" onclick='ETIM.qrEditarGrupo(${JSON.stringify([g.sector,g.ruta,g.cod]).replace(/'/g,"&#39;")})'>✏️</button><button class="m-ico" title="Eliminar las respuestas de este grupo" onclick='ETIM.qrEliminarGrupo(${JSON.stringify([g.sector,g.ruta,g.cod]).replace(/'/g,"&#39;")})'>🗑</button></td>`:''}</tr>`).join('')}</tbody></table>
       <div class="m-lbl">Últimas respuestas</div>
-      <table class="m-table"><thead><tr><th>Hora</th><th>Tipo</th><th>Sector</th><th>Ruta / Área</th><th>Código</th><th>Resultado</th>${adm?'<th></th>':''}</tr></thead><tbody>
-      ${respuestas.slice(-25).reverse().map(r=>`<tr><td>${r.ts?new Date(r.ts).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}):''}</td><td>${r.tipo==='empleado'?'💼':'👷'}</td><td>${esc(r.sector||'—')}</td><td>${esc(r.ruta||'—')}</td><td>${esc(r.cod||'—')}</td>
+      <table class="m-table"><thead><tr><th>Hora</th><th>Sector</th><th>Ruta</th><th>Código</th><th>Resultado</th>${adm?'<th></th>':''}</tr></thead><tbody>
+      ${respuestas.slice(-25).reverse().map(r=>`<tr><td>${r.ts?new Date(r.ts).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}):''}</td><td>${esc(r.sector||'—')}</td><td>${esc(r.ruta||'—')}</td><td>${esc(r.cod||'—')}</td>
       <td><b style="color:${(r.resultado||0)>=0.7?'var(--green)':'var(--red)'}">${pct(r.resultado)}</b></td>
       ${adm?`<td style="white-space:nowrap"><button class="m-ico" title="Corregir" onclick="ETIM.qrEditarResp('${r.id}')">✏️</button><button class="m-ico" title="Eliminar" onclick="ETIM.qrEliminarResp('${r.id}')">🗑</button></td>`:''}</tr>`).join('')}</tbody></table>`
       :'<div class="m-empty">Esperando respuestas… aparecerán aquí automáticamente.</div>'}</div>`;
@@ -6196,43 +6141,20 @@ function renderFull(){
 /* Consolida: 1 evaluación por sector, con 1 "ruta" por cada ruta+código */
 function consolidar(s,resps){
   const porSector=new Map();
-  const tipoDe=r=>r.tipo||(s.tipo==='empleado'?'empleado':'obrero');
-  resps.forEach(r=>{const k=(r.sector||s.sector||'—')+'|'+tipoDe(r);if(!porSector.has(k))porSector.set(k,[]);porSector.get(k).push(r);});
+  resps.forEach(r=>{const k=r.sector||s.sector||'—';if(!porSector.has(k))porSector.set(k,[]);porSector.get(k).push(r);});
   const secsDe=(lista)=> (s.banco||[]).map(sec=>{
     const subs=lista.map(r=>{const x=(r.secs||[]).find(y=>y.id===sec.id);return x?x.pts:0;});
     const promSec=subs.length?subs.reduce((a,b)=>a+b,0)/subs.length:0;
     const cum=sec.maxSec?promSec/sec.maxSec:0;
     return {id:sec.id,nom:sec.nom,peso:sec.peso,maxSec:sec.maxSec,promSec,cum,pond:cum*sec.peso,evSubs:subs};
   });
-  return [...porSector.entries()].map(([kk,lista])=>{const [sector,tipo]=kk.split('|');
+  return [...porSector.entries()].map(([sector,lista])=>{
     const rm=new Map();
     lista.forEach(r=>{const k=String(r.ruta||s.ruta||'—').toUpperCase()+'|'+String(r.cod||s.cod||'').toUpperCase();if(!rm.has(k))rm.set(k,[]);rm.get(k).push(r);});
     const rutas=[...rm.entries()].map(([k,l])=>{const [nom,cod]=k.split('|');const secs=secsDe(l);return {nom,cod,ne:l.length,tot:l.length,secs,resGrupo:secs.reduce((a,x)=>a+x.pond,0)};});
     const n=lista.length, resGen=rutas.reduce((a,r)=>a+r.resGrupo*r.ne,0)/n;
-    return {emp:s.emp,sup:s.sup,sector,tipo,fecha:s.fecha,destiempo:null,modalidad:'QR',sesionQR:s.id,rutas,resGen,n};
+    return {emp:s.emp,sup:s.sup,sector,tipo:s.tipo,fecha:s.fecha,destiempo:null,modalidad:'QR',sesionQR:s.id,rutas,resGen,n};
   });
-}
-/* _RECALIFICA_V1 (03-oct-2026): al cerrar, el panel vuelve a calificar cada respuesta con el
-   banco de la sesión (respuestas correctas + % de cada pregunta). Lo que haya calculado el celular
-   del trabajador no manda: si difiere, se corrige en Firebase y se reenvía a Azure. */
-async function correctasSesion(s){
-  const m={};
-  for(const sec of (s.banco||[])) for(const p of (sec.pregs||[])){
-    const c=[]; for(let i=0;i<(p.ops||[]).length;i++){ if((p.k||[]).includes(await sha(`${s.id}|${p.n}|${i}|${QR_SAL}`))) c.push(i); }
-    m[p.n]=c;
-  }
-  return m;
-}
-function calificarResp(s,corr,resp){
-  const ptsN={};
-  const secs=(s.banco||[]).map(sec=>{let t=0;
-    (sec.pregs||[]).forEach(p=>{const c=corr[p.n]||[], sel=((resp||{})[p.n]||[]).map(Number); let pts=0;
-      if(p.tipo==='multiple'){const a=sel.filter(i=>c.includes(i)).length,b=sel.length-a;pts=c.length?Math.max(0,(a-b)/c.length)*p.max:0;}
-      else pts=(sel.length===1&&c.includes(sel[0]))?p.max:0;
-      pts=Math.round(pts*100)/100; ptsN[p.n]=pts; t+=pts;});
-    return {id:sec.id,nom:sec.nom,peso:sec.peso,max:sec.maxSec,pts:Math.round(t*100)/100,pct:sec.maxSec?t/sec.maxSec:0};});
-  const resultado=Math.round(secs.reduce((a,x)=>a+x.pct*x.peso,0)*10000)/10000;
-  return {pts:ptsN,secs,resultado,estado:resultado>=0.7?'APROBADO':'REFUERZO'};
 }
 function editarForm(titulo,nota,v,sects,onOk){
   let m=$('ix-modal');if(!m){m=document.createElement('div');m.id='ix-modal';m.className='ix-modal';document.body.appendChild(m);}
@@ -6268,7 +6190,7 @@ const QR={
     const btn=event&&event.target; if(btn){btn.disabled=true;btn.textContent='Generando…';}
     try{
       const id=idSesion(), [y,m,dd]=d.fecha.split('-').map(Number);
-      const doc={...d,asignado:userDeSup(d.sup),ruta:'',cod:'',anonima:true,sectores:SECTORES_TODOS.slice(),areas:(typeof AREAS!=='undefined'?AREAS.slice():[]),id,estado:'abierta',usuario:SESSION.user,nomUsuario:SESSION.nom,
+      const doc={...d,asignado:userDeSup(d.sup),ruta:'',cod:'',anonima:true,sectores:SECTORES_TODOS.slice(),id,estado:'abierta',usuario:SESSION.user,nomUsuario:SESSION.nom,
         creadoEn:new Date().toISOString(),ts:Date.now(),expira:new Date(y,m-1,dd,23,59,59).getTime(),banco:await bancoPublico(id),bancoVersion:(bancoMeta&&bancoMeta.version)||0};
       await fbdb.collection(COL_SES).doc(id).set(doc);
       sesActiva=doc; escucharResp(id); renderActiva(); toast(SESSION.rol==='admin'?'✅ QR generado y asignado a '+d.sup+'. Ya lo ve en su panel.':'✅ QR generado. Muéstralo a los trabajadores.','s');
@@ -6312,19 +6234,10 @@ const QR={
   qrFull(on){fullOn=on;renderFull();if(on&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{});else if(!on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});},
   qrCerrar(){
     const s=sesActiva; if(!s) return;
-    confMod('¿Cerrar la sesión QR?',`Ya no se aceptarán más respuestas. Se calculará el resultado de ${respuestas.length} trabajador(es), agrupado por sector, tipo (obrero/empleado), ruta o área y código, y se guardará en Registros.`,async()=>{
+    confMod('¿Cerrar la sesión QR?',`Ya no se aceptarán más respuestas. Se calculará el resultado de ${respuestas.length} trabajador(es), agrupado por sector, ruta y código, y se guardará en Registros.`,async()=>{
       try{
         const snap=await fbdb.collection(COL_RESP).where('sesion','==',s.id).get();
-        const corr=await correctasSesion(s), fix=[];
-        const resps=snap.docs.map(d=>{const x=d.data();
-          if(x.resp&&(s.banco||[]).length){const c=calificarResp(s,corr,x.resp);
-            if(Math.abs((+x.resultado||0)-c.resultado)>0.00005||x.resultado==null) fix.push([d.ref,d.id,c]);
-            Object.assign(x,c);}
-          return x;});
-        if(fix.length){
-          await Promise.all(fix.map(([ref,,c])=>ref.update({...c,recalificado:new Date().toISOString()}).catch(e=>console.warn('recalificar',e))));
-          try{window.etiAzureRespQR&&window.etiAzureRespQR(fix.map(([,id])=>[snap.docs.find(d=>d.id===id).data(),id]),fix.map(([,,c])=>c),fix.map(([ref])=>ref));}catch(e){}
-        }
+        const resps=snap.docs.map(d=>d.data());
         const upd={estado:'cerrada',cerradaEn:new Date().toISOString(),cerradaPor:SESSION.user,n:resps.length};
         fullOn=false; renderFull();
         if(!resps.length){await fbdb.collection(COL_SES).doc(s.id).update(upd);toast('Sesión cerrada sin respuestas','i');return;}
@@ -6471,27 +6384,7 @@ function regDeRespuesta(d,id){
     ruta:d.ruta,codigo:d.cod,evaluados:1,resultado:d.resultado||0,banco_version:d.bancoVersion||0,
     secciones:(d.secs||[]).map(s=>({id:s.id,nom:s.nom,peso:s.peso,pct:s.pct}))};
 }
-/* _TRAFICO_V1: helpers de Azure para el panel de tráfico */
-window.etiAzure={post:azPost,regQR:regDeRespuesta,regsManual:regsDeEval};
-/* Recalificación al cerrar: Azure no actualiza registros existentes, así que (con token de admin) se borra y se vuelve a insertar.
-   Se marca azOk:false antes, para que el panel de tráfico lo reenvíe si algo falla a mitad. */
-window.etiAzureRespQR=async function(lista,calif,refs){
-  const regs=lista.map(([d,id],i)=>regDeRespuesta({...d,...(calif&&calif[i]||{})},id)); if(!regs.length) return;
-  if(!sessionStorage.getItem('eti_token')){console.warn('Recalificación: sin sesión de administrador; Azure conserva el valor original de',regs.length,'respuesta(s)');return;}
-  try{
-    await Promise.all((refs||[]).map(r=>r.update({azOk:false}).catch(()=>{})));
-    await azAdmin('eliminar',{sesion_id:regs[0].sesion_id,ids:regs.map(r=>r.id)});
-    await azPost(regs);
-    const en=new Date().toISOString(); await Promise.all((refs||[]).map(r=>r.update({azOk:true,azEn:en}).catch(()=>{})));
-  }catch(e){console.warn('Azure recalificación (el panel de tráfico lo reenvía):',e.message);}
-};
-/* Manual → Azure con 3 intentos; al confirmar marca azOk en Firebase */
-window.etiAzureEvalManual=function(ev,docId,ref){
-  const regs=regsDeEval(ev,docId); if(!regs.length) return Promise.resolve(false);
-  const go=n=>azPost(regs).then(()=>{if(ref)ref.update({azOk:true,azEn:new Date().toISOString()}).catch(()=>{});return true;},
-    e=>{if(n<3)return new Promise(r=>setTimeout(r,3000*n)).then(()=>go(n+1));console.warn('Azure ETI (lo reenvía el panel de tráfico):',e.message);return false;});
-  return go(1);
-};
+window.etiAzureEvalManual=function(ev,docId){const regs=regsDeEval(ev,docId);if(regs.length)azPost(regs).catch(e=>console.warn('Azure ETI (se sincroniza después):',e.message));};
 
 /* ── Lectura ── */
 const binDe=v=>Math.min(9,Math.max(0,Math.floor((v||0)*10+1e-9)));
@@ -7028,7 +6921,7 @@ body.side-open #gDock,body.side-open #gFab,body.side-open #chat-fab{display:none
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const TIT={sind:'Indicadores',sm:'Inicio',sp1:'Nueva Evaluación',sp2:'Nueva Evaluación',sp3:'Nueva Evaluación',sres:'Resultados',sdash:'Dashboard',sqr:'Evaluación por QR'};
-const TAB_TIT={stats:'Estadísticas',users:'Usuarios',registros:'Registros',eval:'Nueva Evaluación',dash:'Mi Dashboard',prog:'Programación',conectados:'Conectados',cumplimiento:'Cumplimiento',banco:'Banco de Preguntas',accesos:'Control de Accesos',indicadores:'Indicadores',trafico:'Tráfico en vivo'};
+const TAB_TIT={stats:'Estadísticas',users:'Usuarios',registros:'Registros',eval:'Nueva Evaluación',dash:'Mi Dashboard',prog:'Programación',conectados:'Conectados',cumplimiento:'Cumplimiento',banco:'Banco de Preguntas',accesos:'Control de Accesos',indicadores:'Indicadores'};
 let tabActual='stats';
 function crear(){
   if($('eti-side')) return;
@@ -7057,7 +6950,7 @@ function armarNav(){
   if(rol==='admin'){
     // devolver botones previos por si se rearma
     nav.innerHTML='';
-    sec(nav,'Principal');['atab1','atab12','atab13','atab5','atab4','atab3'].forEach(i=>mover(nav,i));
+    sec(nav,'Principal');['atab1','atab12','atab5','atab4','atab3'].forEach(i=>mover(nav,i));
     sec(nav,'Gestión');['atab6','atab8','atab7','atab2'].forEach(i=>mover(nav,i));
     sec(nav,'Evaluación en campo');mover(nav,'atab9');
     if($('atab10')){sec(nav,'Configuración 🔒');['atab10','atab11'].forEach(i=>mover(nav,i));}
@@ -7127,174 +7020,5 @@ console.log('[_SHELL_RL_V1] listo');
 <script>/* _SOLREPROG_V1 (30-set-2026): supervisor para "Actividad no realizada / pedir reprogramación" */
 window._etiUsuarioReprog=function(){try{if(!SESSION||!SESSION.user)return null;var r=String(SESSION.rol||'').toLowerCase();if(r==='admin'||r==='administrador'||String(SESSION.user).toLowerCase()==='jtimoteo')return null;return {usuario:SESSION.user,nombre:SESSION.nom||SESSION.user};}catch(e){return null;}};</script>
 <script src="solreprog.js?v=1"></script>
-<script>
-/* ══════════════════════════════════════════════════════════════
-   _TRAFICO_V1 (03-oct-2026) — 📡 Tráfico en vivo (solo administrador)
-   Muestra en tiempo real cada evaluación del día: QR (cada trabajador) y
-   manual (supervisor / usuario), con su estado en Azure.
-   - Lee Firebase en vivo (onSnapshot por ts del día elegido).
-   - "En Azure ✓" = el registro tiene azOk:true (lo marca el celular del
-     trabajador, el guardado manual o este panel al reenviar).
-   - Reenvío automático cada 60 s de lo que no tenga confirmación de Azure
-     (Azure no duplica: lo que ya existe responde "existentes").
-   ══════════════════════════════════════════════════════════════ */
-(function(){
-'use strict';
-const $=id=>document.getElementById(id);
-const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-const esAdm=()=>typeof SESSION!=='undefined'&&!!SESSION&&SESSION.rol==='admin';
-const db=()=>(typeof fbdb!=='undefined'?fbdb:null);
-const hoy=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
-const pc=v=>(Math.round((v||0)*1000)/10).toFixed(1)+'%';
-const hora=ts=>ts?new Date(ts).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'—';
-const T={dia:hoy(),qr:[],man:[],unsub:[],auto:true,sync:false,ultSync:null,ultMsg:'',vistos:null,err:'',timer:null,pintT:null};
-
-function css(){
-  if($('tf-css')) return;
-  const s=document.createElement('style');s.id='tf-css';
-  s.textContent=`.tf-top{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;justify-content:space-between;margin-bottom:1rem}
-  .tf-live{display:inline-flex;align-items:center;gap:6px;font-size:.75rem;font-weight:800;color:#007A3D;background:#E6F7EE;border-radius:99px;padding:4px 10px}
-  .tf-live i{width:8px;height:8px;border-radius:50%;background:#1DB954;animation:tfp 1.4s infinite}
-  @keyframes tfp{0%{box-shadow:0 0 0 0 rgba(29,185,84,.6)}100%{box-shadow:0 0 0 8px rgba(29,185,84,0)}}
-  .tf-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.7rem;margin-bottom:1rem}
-  .tf-k{background:#fff;border:1px solid #D9E0EC;border-radius:14px;padding:.8rem .9rem}
-  .tf-k b{display:block;font-size:1.5rem;line-height:1.1;color:#14213D}.tf-k span{font-size:.72rem;color:#5B6B85;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
-  .tf-k.ok b{color:#007A3D}.tf-k.bad b{color:#C8102E}
-  .tf-grid{display:grid;grid-template-columns:2fr 1fr;gap:1rem}@media(max-width:1000px){.tf-grid{grid-template-columns:1fr}}
-  .tf-wrap{overflow:auto;max-height:560px}
-  .tf-t{width:100%;border-collapse:collapse;font-size:.8rem}.tf-t th{position:sticky;top:0;background:#F4F6FB;text-align:left;padding:.45rem .5rem;font-size:.7rem;text-transform:uppercase;color:#5B6B85}
-  .tf-t td{padding:.42rem .5rem;border-top:1px solid #EEF1F6;vertical-align:top}
-  .tf-nuevo td{animation:tff 3s ease}@keyframes tff{0%{background:#FFF4C2}100%{background:transparent}}
-  .tf-b{display:inline-block;border-radius:99px;padding:2px 8px;font-size:.68rem;font-weight:800}
-  .tf-qr{background:#EEF3FB;color:#003DA5}.tf-man{background:#F3ECFF;color:#6A3FC0}
-  .tf-az{background:#E6F7EE;color:#007A3D}.tf-pe{background:#FFF4E5;color:#B86E00}
-  .tf-msg{font-size:.75rem;color:#5B6B85;margin-top:.4rem}`;
-  document.head.appendChild(s);
-}
-function filaQR(d){return {id:d.id,ref:d.ref,raw:d.data,mod:'QR',ts:d.data.ts||0,emp:d.data.emp,sup:d.data.sup,sector:d.data.sector,tipo:d.data.tipo,
-  ruta:d.data.ruta,cod:d.data.cod,n:1,res:+d.data.resultado||0,apr:(+d.data.resultado||0)>=0.7?1:0,az:d.data.azOk===true,ses:d.data.sesion,por:'Trabajador (QR)'};}
-function filaMan(d){const x=d.data, rs=x.rutas||[], n=rs.reduce((a,r)=>a+(+r.ne||1),0)||1;
-  return {id:d.id,ref:d.ref,raw:x,mod:'MANUAL',ts:x.ts||0,emp:x.emp,sup:x.sup,sector:x.sector,tipo:x.tipo,
-  ruta:rs.map(r=>r.nom).filter(Boolean).join(', '),cod:rs.map(r=>r.cod).filter(Boolean).join(', '),n,res:+x.resGen||0,
-  apr:rs.reduce((a,r)=>a+((+r.resGrupo||0)>=0.7?(+r.ne||1):0),0),az:x.azOk===true,por:x.nomUsuario||x.usuario||'—'};}
-function escuchar(){
-  T.unsub.forEach(u=>{try{u();}catch(e){}}); T.unsub=[]; T.qr=[]; T.man=[]; T.vistos=null; T.err='';
-  const f=db(); if(!f){T.err='Sin conexión a Firebase';pintar();return;}
-  const t0=new Date(T.dia+'T00:00:00').getTime(), t1=t0+864e5;
-  const fe=e=>{console.error('Tráfico:',e);T.err=e.message;pintar();};
-  T.unsub.push(f.collection('respuestas_qr').where('ts','>=',t0).where('ts','<',t1).onSnapshot(s=>{
-    T.qr=s.docs.map(d=>filaQR({id:d.id,ref:d.ref,data:d.data()}));pintar();},fe));
-  T.unsub.push(f.collection('evaluaciones_conocimiento').where('ts','>=',t0).where('ts','<',t1).onSnapshot(s=>{
-    T.man=s.docs.map(d=>({id:d.id,ref:d.ref,data:d.data()})).filter(d=>d.data.modalidad!=='QR').map(filaMan);pintar();},fe));
-}
-function filas(){return [...T.qr,...T.man].sort((a,b)=>b.ts-a.ts);}
-function pintar(){clearTimeout(T.pintT);T.pintT=setTimeout(render,300);}
-function render(){
-  const box=$('admin-trafico'); if(!box||box.style.display==='none') return;
-  const F=filas(), now=Date.now();
-  const nQR=T.qr.length, nMan=T.man.reduce((a,r)=>a+r.n,0), tot=nQR+nMan;
-  const prom=tot?(T.qr.reduce((a,r)=>a+r.res,0)+T.man.reduce((a,r)=>a+r.res*r.n,0))/tot:0;
-  const apr=T.qr.reduce((a,r)=>a+r.apr,0)+T.man.reduce((a,r)=>a+r.apr,0);
-  const az=F.filter(r=>r.az).length, pend=F.length-az, ult10=T.qr.filter(r=>r.ts>now-600000).length;
-  const sups=new Map(); F.forEach(r=>{const k=r.sup||'—';const g=sups.get(k)||{sup:k,qr:0,man:0,s:0,n:0,ult:0};
-    if(r.mod==='QR')g.qr++;else g.man+=r.n; g.s+=r.res*r.n; g.n+=r.n; g.ult=Math.max(g.ult,r.ts); sups.set(k,g);});
-  const primera=T.vistos===null; const vistos=T.vistos||new Set();
-  box.innerHTML=`
-  <div class="tf-top"><div><h2 class="m-tit" style="margin:0">📡 Tráfico en vivo <span class="tf-live"><i></i>Tiempo real</span></h2>
-    <div class="m-mut" style="font-size:.8rem">Cada evaluación aparece aquí apenas se guarda: QR (cada trabajador) y manual (supervisor / usuario).</div></div>
-    <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
-      <input type="date" class="fc" style="width:auto" value="${esc(T.dia)}" onchange="ETITF.dia(this.value)">
-      <label class="m-mut" style="font-size:.8rem;display:flex;gap:4px;align-items:center"><input type="checkbox" ${T.auto?'checked':''} onchange="ETITF.auto(this.checked)"> Reenvío automático a Azure</label>
-      <button class="btn bpri bsm" ${T.sync?'disabled':''} onclick="ETITF.sincronizar(true)">${T.sync?'⏳ Enviando…':'☁ Enviar pendientes a Azure'}</button>
-    </div></div>
-  ${T.err?`<div class="m-empty" style="color:#C8102E">No se pudo leer Firebase: ${esc(T.err)}</div>`:''}
-  <div class="tf-kpis">
-    <div class="tf-k"><b>${tot}</b><span>Trabajadores evaluados</span></div>
-    <div class="tf-k"><b>${nQR}</b><span>📱 Por QR</span></div>
-    <div class="tf-k"><b>${nMan}</b><span>📋 Manual (${T.man.length} registros)</span></div>
-    <div class="tf-k ${prom>=0.7?'ok':tot?'bad':''}"><b>${tot?pc(prom):'—'}</b><span>Promedio</span></div>
-    <div class="tf-k"><b>${apr}</b><span>Aprobados ≥70%</span></div>
-    <div class="tf-k ok"><b>${az}</b><span>☁ Confirmados en Azure</span></div>
-    <div class="tf-k ${pend?'bad':'ok'}"><b>${pend}</b><span>⏳ Por confirmar en Azure</span></div>
-    <div class="tf-k"><b>${ult10}</b><span>QR últimos 10 min</span></div>
-  </div>
-  <div class="tf-msg">${T.ultSync?'Último envío a Azure: '+hora(T.ultSync)+' · '+esc(T.ultMsg):'Aún no se reenvió nada en esta sesión.'}</div>
-  <div class="tf-grid" style="margin-top:.8rem">
-    <section class="m-card"><h3 class="m-tit2">Evaluaciones del día (más recientes primero)</h3>
-      ${F.length?`<div class="tf-wrap"><table class="tf-t"><thead><tr><th>Hora</th><th>Modalidad</th><th>Empresa</th><th>Supervisor</th><th>Sector</th><th>Tipo</th><th>Ruta / Área</th><th>Código</th><th>Eval.</th><th>Resultado</th><th>Azure</th></tr></thead><tbody>
-      ${F.slice(0,300).map(r=>`<tr class="${!primera&&!vistos.has(r.mod+r.id)?'tf-nuevo':''}" title="${esc(r.por)}">
-        <td>${hora(r.ts)}</td><td><span class="tf-b ${r.mod==='QR'?'tf-qr':'tf-man'}">${r.mod==='QR'?'📱 QR':'📋 Manual'}</span></td>
-        <td>${esc(String(r.emp||'').replace(' S.A.C.',''))}</td><td>${esc(r.sup||'—')}</td><td>${esc(r.sector||'—')}</td>
-        <td>${r.tipo==='empleado'?'💼 Empleado':r.tipo==='obrero'?'👷 Obrero':esc(r.tipo||'—')}</td><td><b>${esc(r.ruta||'—')}</b></td><td>${esc(r.cod||'—')}</td><td>${r.n}</td>
-        <td><b style="color:${r.res>=0.7?'var(--green,#007A3D)':'var(--red,#C8102E)'}">${pc(r.res)}</b></td>
-        <td>${r.az?'<span class="tf-b tf-az">☁ ✓</span>':'<span class="tf-b tf-pe">⏳</span>'}</td></tr>`).join('')}
-      </tbody></table></div>${F.length>300?`<div class="tf-msg">Mostrando 300 de ${F.length}.</div>`:''}`
-      :'<div class="m-empty">Aún no hay evaluaciones este día. Aparecerán aquí automáticamente.</div>'}
-    </section>
-    <section class="m-card"><h3 class="m-tit2">Por supervisor</h3>
-      ${sups.size?`<div class="tf-wrap"><table class="tf-t"><thead><tr><th>Supervisor</th><th>QR</th><th>Manual</th><th>Prom.</th><th>Último</th></tr></thead><tbody>
-      ${[...sups.values()].sort((a,b)=>b.ult-a.ult).map(g=>`<tr><td>${esc(g.sup)}</td><td>${g.qr}</td><td>${g.man}</td>
-        <td><b style="color:${g.s/g.n>=0.7?'var(--green,#007A3D)':'var(--red,#C8102E)'}">${pc(g.s/g.n)}</b></td><td>${hora(g.ult).slice(0,5)}</td></tr>`).join('')}
-      </tbody></table></div>`:'<div class="m-empty">—</div>'}
-    </section>
-  </div>`;
-  T.vistos=new Set(F.map(r=>r.mod+r.id));
-}
-async function sincronizar(manual){
-  if(T.sync||!esAdm()) return;
-  const AZ=window.etiAzure; if(!AZ){if(manual)toast('Módulo de Azure no disponible','e');return;}
-  const lim=Date.now()-(manual?0:120000);   /* en automático, se da 2 min al celular para confirmar solo */
-  const pend=filas().filter(r=>!r.az&&r.ts<lim);
-  if(!pend.length){if(manual)toast('✅ Todo está confirmado en Azure','s');return;}
-  T.sync=true; render();
-  let ok=0,ins=0,ex=0,fallo='';
-  try{
-    for(let i=0;i<pend.length;i+=50){
-      const lote=pend.slice(i,i+50);
-      const regs=lote.flatMap(r=>r.mod==='QR'?[AZ.regQR(r.raw,r.id)]:AZ.regsManual(r.raw,r.id));
-      if(regs.length){const j=await AZ.post(regs);ins+=j.insertados||0;ex+=j.existentes||0;}
-      const en=new Date().toISOString();
-      await Promise.all(lote.map(r=>r.ref.update({azOk:true,azEn:en}).then(()=>{ok++;},e=>console.warn('marcar azOk',e))));
-    }
-  }catch(e){fallo=e.message;console.error('Tráfico → Azure:',e);}
-  T.sync=false; T.ultSync=Date.now();
-  T.ultMsg=fallo?`falló: ${fallo} (se reintenta)`:`${ok} confirmados · ${ins} nuevos en Azure · ${ex} ya estaban`;
-  if(manual) toast(fallo?'⚠ Azure: '+fallo:`✅ ${ok} registros confirmados en Azure`,fallo?'e':'s');
-  render();
-}
-function abrir(){
-  if(!esAdm()) return;
-  css();
-  if(!T.unsub.length) escuchar(); else render();
-  if(!T.timer) T.timer=setInterval(()=>{if(T.auto&&esAdm())sincronizar(false);render();},60000);
-}
-window.ETITF={
-  dia(v){if(!v)return;T.dia=v;escuchar();},
-  auto(v){T.auto=!!v;},
-  sincronizar(m){return sincronizar(!!m);}
-};
-function inyectar(){
-  if(!esAdm()) return;
-  if(!$('admin-trafico')){const st=$('admin-stats');if(st){const p=document.createElement('div');p.id='admin-trafico';p.style.display='none';st.parentNode.insertBefore(p,st);}}
-  if(!$('atab13')){
-    const ref=$('atab12')||$('atab1'); if(!ref) return;
-    const b=document.createElement('button');b.className='btn bout bsm';b.id='atab13';b.innerHTML='📡 Tráfico en vivo';
-    b.onclick=()=>{document.body.classList.remove('side-open');const a=document.querySelector('.screen.active');if(a&&a.id!=='sadmin')go('sadmin');adminTab('trafico');};
-    ref.parentNode.insertBefore(b,ref.nextSibling);
-  }
-}
-const _at=window.adminTab;
-window.adminTab=function(t){
-  const p=$('admin-trafico'); if(p) p.style.display='none';
-  const r=_at.apply(this,arguments);
-  const b=$('atab13'); if(b) b.className=t==='trafico'?'btn bpri bsm':'btn bout bsm';
-  if(t==='trafico'){inyectar();const q=$('admin-trafico');if(q)q.style.display='block';abrir();}
-  return r;
-};
-const _go=window.go;
-window.go=function(id){const r=_go.apply(this,arguments);if(id==='sadmin')inyectar();return r;};
-setTimeout(()=>{const a=document.querySelector('.screen.active');if(a&&a.id==='sadmin')inyectar();},900);
-})();
-</script>
 </body>
 </html>
