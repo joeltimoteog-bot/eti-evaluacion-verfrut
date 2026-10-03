@@ -68,6 +68,15 @@ select{width:100%;font:600 17px Barlow,sans-serif;padding:14px 12px;border:2px s
 .spin{width:38px;height:38px;border:4px solid #E4E9F3;border-top-color:var(--navy);border-radius:50%;animation:sp 1s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 .hide{display:none!important}
+.tipos{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 4px}
+.tipo{border:2px solid var(--bdr);background:#fff;border-radius:14px;padding:14px 10px;font:700 16px Barlow,sans-serif;color:var(--text);cursor:pointer;text-align:center}
+.tipo span{display:block;font-size:30px;line-height:1.1;margin-bottom:4px}
+.tipo small{display:block;font-weight:600;font-size:12px;color:var(--text2);margin-top:2px}
+.tipo.sel{border-color:var(--navy);background:#F1F5FD;color:var(--navy)}
+.nota{font-size:12.5px;color:var(--text2);margin-top:6px}
+.pasos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 12px}
+.pasos div{background:var(--surf);border-radius:12px;padding:10px 8px;font-size:12.5px;font-weight:700;text-align:center;color:var(--text)}
+.pasos i{display:flex;width:26px;height:26px;margin:0 auto 6px;border-radius:50%;background:var(--navy);color:#fff;font-style:normal;align-items:center;justify-content:center;font-size:13px}
 .foot{text-align:center;font-size:11.5px;color:#9AA7C2;margin-top:10px}
 </style>
 </head>
@@ -85,7 +94,10 @@ var COL_SES='sesiones_qr', COL_RESP='respuestas_qr', SAL='ETI-QR';
 var AZ_ETI='https://rl-functions-verfrut-c0ctfjc0cjf5f0hz.brazilsouth-01.azurewebsites.net/api/etieval/guardar';   /* _ANONIMA_V2: copia en Azure SQL */
 var SECTORES_BASE=['San Vicente','Algarrobos','Punta Arenas','Planta Rapel','El Papayo','Limones','Olivares Bajo','Los Olivares','Aproa','Santa Rosa'];
 var app=document.getElementById('app'), bar=document.getElementById('bar'), bPrev=document.getElementById('bPrev'), bNext=document.getElementById('bNext');
-var db=null, S=null, SID=null, P=[], idx=0, R={}, W={sector:'',ruta:'',cod:''}, ORD={}, SEED=Math.floor(Math.random()*100000)+7;
+/* _QR_PERMANENTE_V1: el QR permanente usa la fecha del día en que responde el trabajador; vista=1 = vista previa del supervisor (no guarda nada) */
+var PREVIA=new URLSearchParams(location.search).get('vista')==='1', FECHA='';
+function hoyLocal(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+var db=null, S=null, SID=null, P=[], idx=0, R={}, W={tipo:'',sector:'',ruta:'',cod:''}, ORD={}, SEED=Math.floor(Math.random()*100000)+7;
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fmtF(f){if(!f)return'';var p=f.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
 function sha(t){return crypto.subtle.digest('SHA-256',new TextEncoder().encode(t)).then(function(b){return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0');}).join('').slice(0,16);});}
@@ -98,11 +110,12 @@ function mezclar(n,seed){var a=[];for(var i=0;i<n;i++)a.push(i);var s=seed;for(v
 function iniciar(){
   SID=(new URLSearchParams(location.search).get('s')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
   if(!SID){mensaje('🔍','Código no válido','Escanea nuevamente el código QR que te muestra tu supervisor.');return;}
-  try{firebase.initializeApp(FB_CONFIG);db=firebase.firestore();}catch(e){mensaje('📶','Sin conexión','No se pudo conectar. Revisa tu señal o datos móviles e inténtalo de nuevo.');return;}
+  try{firebase.initializeApp(FB_CONFIG);db=firebase.firestore();try{db.enablePersistence({synchronizeTabs:true}).catch(function(){});}catch(e){} if(!PREVIA)setTimeout(reenviarPendientes,1500);}catch(e){mensaje('📶','Sin conexión','No se pudo conectar. Revisa tu señal o datos móviles e inténtalo de nuevo.');return;}
   db.collection(COL_SES).doc(SID).get().then(function(d){
     if(!d.exists){mensaje('🔍','Evaluación no encontrada','El código QR no corresponde a una evaluación activa. Pide a tu supervisor que lo muestre de nuevo.');return;}
     S=d.data();
     if(S.estado!=='abierta'||(S.expira&&Date.now()>S.expira)){mensaje('⏹','Evaluación cerrada','Esta sesión de evaluación ya fue cerrada por el supervisor.');return;}
+    FECHA=S.permanente?hoyLocal():S.fecha;
     P=[];(S.banco||[]).forEach(function(sec){(sec.pregs||[]).forEach(function(p){P.push({sec:sec,p:p});});});
     if(!P.length){mensaje('⚠️','Evaluación sin preguntas','Comunícate con tu supervisor.');return;}
     bienvenida();
@@ -112,43 +125,87 @@ function iniciar(){
 function bienvenida(){
   barra(false);
   app.innerHTML='<div class="card"><h1>¡Hola! 👋</h1><p>Esta evaluación nos ayuda a saber cuánto conoces sobre tus derechos, beneficios y buenas prácticas en la empresa. <b>No afecta tu sueldo ni tu contrato.</b></p>'+
-   '<div class="info"><div><span>Empresa</span><b>'+esc(S.emp)+'</b></div><div><span>Fecha</span><b>'+esc(fmtF(S.fecha))+'</b></div></div>'+
-   '<div class="anon">🔒 <span><b>Es anónima:</b> no te pediremos DNI ni nombre. Solo tu sector o fundo, tu ruta y su código.</span></div>'+
+   (PREVIA?'<div class="hint" style="margin:0 0 10px">👁 <b>Vista previa para supervisores:</b> puedes recorrer las preguntas; no se guarda nada.</div>':'')+
+   '<div class="info"><div><span>Empresa</span><b>'+esc(S.emp||'VERFRUT / RAPEL')+'</b></div><div><span>Fecha</span><b>'+esc(fmtF(FECHA))+'</b></div></div>'+
+   '<div class="pasos"><div><i>1</i>Dinos dónde trabajas</div><div><i>2</i>Responde '+P.length+' preguntas</div><div><i>3</i>Envía y listo</div></div>'+
+   '<div class="anon">🔒 <span><b>Es anónima:</b> no te pediremos DNI ni nombre. Solo si eres obrero o empleado, tu sector y tu ruta o área.</span></div>'+
    '<ul class="tips"><li>📝 <span><b>'+P.length+' preguntas</b> de opción múltiple.</span></li><li>👆 <span>Toca la respuesta que creas correcta. Algunas permiten marcar varias.</span></li><li>⏱ <span>Toma entre 8 y 12 minutos. Responde tú solo, con calma.</span></li></ul>'+
    '<div style="margin-top:16px"><button class="btn" id="bIr">Comenzar →</button></div></div><div class="foot">Supervisor: '+esc(S.sup)+'</div>';
-  document.getElementById('bIr').onclick=ubicacion;
+  document.getElementById('bIr').onclick=PREVIA?function(){W={tipo:'obrero',emp:'',sector:'VISTA PREVIA',ruta:'-',cod:'-'};idx=0;R={};pregunta();window.scrollTo(0,0);}:ubicacion;
 }
-/* 3) Ubicación del trabajador (anónima): sector/fundo de lista, ruta y código escritos */
+/* 3) Ubicación del trabajador (anónima)
+   _QR_PERSONAL_V1 (03-oct-2026): un solo QR para todo el personal.
+   Obrero   → sector/fundo + ruta + código de ruta.
+   Empleado → área + sector/zona donde trabaja hoy (puede ser distinto a su área; sin código). */
 function ubicacion(){
   barra(false);
-  var sects=(S.sectores&&S.sectores.length?S.sectores:SECTORES_BASE);
+  var sects=(S.sectores&&S.sectores.length?S.sectores:SECTORES_BASE), areas=(S.areas||[]);
   var last={}; try{last=JSON.parse(ls('eti_qr_ult')||'{}')||{};}catch(e){}
-  var secIni=W.sector||S.sector||last.sector||'', rutaIni=W.ruta||last.ruta||'', codIni=W.cod||last.cod||'';
-  var pal=S.tipo==='empleado'?'área':'ruta';
-  app.innerHTML='<div class="card"><h2>¿Dónde trabajas hoy?</h2><p>'+(S.sector?'Solo escribe tu '+pal+' y su código.':'Estos datos sirven para ver los resultados por sector y '+pal+'.')+' <b>No se guarda tu nombre ni tu DNI.</b></p>'+
-   (S.sector?'<label>Sector o fundo</label><div class="fijo">📍 '+esc(S.sector)+'</div><input type="hidden" id="sec" value="'+esc(S.sector)+'">'   /* _QR_ASIGNADO_V3: sector fijado por el admin */
-     :'<label for="sec">Sector o fundo</label><select id="sec"><option value="">— Elige tu sector o fundo —</option>'+sects.map(function(x){return '<option'+(x===secIni?' selected':'')+'>'+esc(x)+'</option>';}).join('')+'</select>')+
-   '<label for="ruta">'+(S.tipo==='empleado'?'Área':'Ruta')+'</label><input id="ruta" autocomplete="off" placeholder="'+(S.tipo==='empleado'?'Ej. Riego':'Ej. Ruta 5')+'" value="'+esc(rutaIni)+'">'+
-   '<label for="cod">Código de la '+pal+'</label><input id="cod" autocomplete="off" placeholder="Ej. R-05" value="'+esc(codIni)+'">'+
-   '<div class="err" id="err"></div><div style="margin-top:18px"><button class="btn" id="bOk">Continuar →</button></div></div>';
-  var err=document.getElementById('err');
-  document.getElementById('bOk').onclick=function(){
-    var sec=document.getElementById('sec').value, ruta=document.getElementById('ruta').value.trim().replace(/\s+/g,' ').toUpperCase(), cod=document.getElementById('cod').value.trim().replace(/\s+/g,'').toUpperCase();
+  var fijo=(S.tipo==='obrero'||S.tipo==='empleado')?S.tipo:'';
+  var empFija=S.emp||'';
+  var st={emp:empFija||W.emp||last.emp||'',tipo:fijo||W.tipo||last.tipo||'',sector:W.sector||S.sector||last.sector||'',ruta:W.ruta||'',cod:W.cod||'',area:''};
+  if(st.tipo==='empleado'){st.area=st.ruta||(last.tipo==='empleado'?last.ruta:'')||'';st.ruta='';}
+  else if(!st.ruta&&last.tipo!=='empleado'){st.ruta=last.ruta||'';st.cod=st.cod||last.cod||'';}
+  function leer(){var g=function(id){var e=document.getElementById(id);return e?e.value:null;};
+    var v;if((v=g('sec'))!==null)st.sector=v;if((v=g('ruta'))!==null)st.ruta=v;if((v=g('cod'))!==null)st.cod=v;if((v=g('area'))!==null)st.area=v;}
+  function selSector(lbl){
+    return S.sector?'<label>'+lbl+'</label><div class="fijo">📍 '+esc(S.sector)+'</div><input type="hidden" id="sec" value="'+esc(S.sector)+'">'
+      :'<label for="sec">'+lbl+'</label><select id="sec"><option value="">— Elige —</option>'+sects.map(function(x){return '<option'+(x===st.sector?' selected':'')+'>'+esc(x)+'</option>';}).join('')+'</select>';
+  }
+  function pintar(){
+    var h='<div class="card"><h2>¿Dónde trabajas hoy?</h2><p>Estos datos sirven para ver los resultados por sector, ruta o área. <b>No se guarda tu nombre ni tu DNI.</b></p>';
+    if(!empFija) h+='<label>¿En qué empresa trabajas?</label><div class="tipos">'+
+      ['VERFRUT S.A.C.','RAPEL S.A.C.'].map(function(e){return '<button type="button" class="tipo emp'+(st.emp===e?' sel':'')+'" data-e="'+e+'"><span>🏢</span>'+e.replace(' S.A.C.','')+'</button>';}).join('')+'</div>';
+    if(!fijo) h+='<label>¿Qué tipo de trabajador eres?</label><div class="tipos">'+
+      '<button type="button" class="tipo'+(st.tipo==='obrero'?' sel':'')+'" data-t="obrero"><span>👷</span>Obrero<small>Trabajo por ruta</small></button>'+
+      '<button type="button" class="tipo'+(st.tipo==='empleado'?' sel':'')+'" data-t="empleado"><span>💼</span>Empleado<small>Trabajo en un área</small></button></div>';
+    else h+='<label>Tipo de trabajador</label><div class="fijo">'+(fijo==='obrero'?'👷 Obrero':'💼 Empleado')+'</div>';
+    if(st.tipo==='obrero'){
+      h+=selSector('Sector o fundo')+
+        '<label for="ruta">Ruta</label><input id="ruta" autocomplete="off" placeholder="Ej. Ruta 5" value="'+esc(st.ruta)+'">'+
+        '<label for="cod">Código de la ruta</label><input id="cod" autocomplete="off" placeholder="Ej. R-05" value="'+esc(st.cod)+'">';
+    }else if(st.tipo==='empleado'){
+      h+='<label for="area">Área a la que perteneces</label><input id="area" list="lAreas" autocomplete="off" placeholder="Ej. Administración" value="'+esc(st.area)+'">'+
+        '<datalist id="lAreas">'+areas.map(function(a){return '<option value="'+esc(a)+'">';}).join('')+'</datalist>'+
+        selSector('Sector o zona donde estás trabajando')+
+        '<div class="nota">Ej.: si eres de Administración pero hoy estás en Algarrobos, elige Algarrobos.</div>';
+    }
+    h+='<div class="err" id="err"></div><div style="margin-top:18px"><button class="btn" id="bOk"'+(st.tipo?'':' disabled')+'>Continuar →</button></div></div>';
+    app.innerHTML=h;
+    Array.prototype.forEach.call(app.querySelectorAll('.tipo'),function(b){b.onclick=function(){leer();if(b.getAttribute('data-e'))st.emp=b.getAttribute('data-e');else st.tipo=b.getAttribute('data-t');pintar();};});
+    document.getElementById('bOk').onclick=continuar;
+  }
+  function continuar(){
+    leer();
+    var err=document.getElementById('err'), up=function(x){return String(x||'').trim().replace(/\s+/g,' ').toUpperCase();};
+    var falla=function(t){err.textContent=t;err.style.display='block';};
     err.style.display='none';
-    if(!sec){err.textContent='Elige tu sector o fundo.';err.style.display='block';return;}
-    if(ruta.length<1){err.textContent='Escribe tu '+pal+'.';err.style.display='block';return;}
-    if(cod.length<1){err.textContent='Escribe el código de tu '+pal+'.';err.style.display='block';return;}
-    W={sector:sec,ruta:ruta.slice(0,60),cod:cod.slice(0,30)}; ls('eti_qr_ult',JSON.stringify(W));
+    if(!st.emp) return falla('Elige tu empresa.');
+    if(!st.tipo) return falla('Elige si eres obrero o empleado.');
+    if(st.tipo==='obrero'){
+      var ruta=up(st.ruta), cod=up(st.cod).replace(/\s+/g,'');
+      if(!st.sector) return falla('Elige tu sector o fundo.');
+      if(!ruta) return falla('Escribe tu ruta.');
+      if(!cod) return falla('Escribe el código de tu ruta.');
+      W={emp:st.emp,tipo:'obrero',sector:st.sector,ruta:ruta.slice(0,60),cod:cod.slice(0,30)};
+    }else{
+      var area=up(st.area);
+      if(!area) return falla('Escribe tu área.');
+      if(!st.sector) return falla('Elige el sector o zona donde estás trabajando.');
+      W={emp:st.emp,tipo:'empleado',sector:st.sector,ruta:area.slice(0,60),cod:''};
+    }
+    ls('eti_qr_ult',JSON.stringify(W));
     idx=0;R={};pregunta();window.scrollTo(0,0);
-  };
+  }
+  pintar();
 }
 /* 4) Preguntas: una por pantalla */
 function pregunta(){
   var it=P[idx], p=it.p, multi=p.tipo==='multiple', sel=R[p.n]||[];
   if(!ORD[p.n]) ORD[p.n]=mezclar(p.ops.length,SEED+p.n*31);
   var hechas=Object.keys(R).filter(function(k){return R[k]&&R[k].length;}).length;
-  app.innerHTML='<div class="card"><div class="prog"><span>Pregunta '+(idx+1)+' de '+P.length+'</span><span>'+Math.round(hechas/P.length*100)+'%</span></div>'+
-   '<div class="track"><i style="width:'+(hechas/P.length*100)+'%"></i></div><span class="tema">'+esc(it.sec.nom)+'</span><h2>'+esc(p.t)+'</h2>'+
+  app.innerHTML='<div class="card"><div class="prog"><span>Pregunta '+(idx+1)+' de '+P.length+'</span><span>'+hechas+' respondida'+(hechas===1?'':'s')+'</span></div>'+
+   '<div class="track"><i style="width:'+(hechas/P.length*100)+'%"></i></div><span class="tema">Tema '+((S.banco||[]).indexOf(it.sec)+1)+' de '+(S.banco||[]).length+' · '+esc(it.sec.nom)+'</span><h2>'+esc(p.t)+'</h2>'+
    (multi?'<div class="hint">✔ Puedes marcar varias respuestas</div>':'')+
    ORD[p.n].map(function(i){var on=sel.indexOf(i)>=0;return '<button class="op'+(multi?' multi':'')+(on?' sel':'')+'" data-i="'+i+'"><span class="mk">'+(on?'✓':'')+'</span><span>'+esc(p.ops[i])+'</span></button>';}).join('')+'</div>';
   Array.prototype.forEach.call(app.querySelectorAll('.op'),function(b){b.onclick=function(){
@@ -158,7 +215,7 @@ function pregunta(){
     if(!multi) setTimeout(function(){if(P[idx]&&P[idx].p.n===p.n&&idx<P.length-1){idx++;pregunta();window.scrollTo(0,0);}},350);
   };});
   barra(true);
-  bPrev.textContent=idx===0?'← Mi ruta':'← Atrás';
+  bPrev.textContent=idx===0?(W.tipo==='empleado'?'← Mi área':'← Mi ruta'):'← Atrás';
   bPrev.onclick=function(){if(idx===0)ubicacion();else{idx--;pregunta();}window.scrollTo(0,0);};
   bNext.disabled=!(R[p.n]&&R[p.n].length);
   bNext.textContent=idx===P.length-1?'Revisar y enviar →':'Siguiente →';
@@ -174,6 +231,7 @@ function revisar(){
   barra(true);
   bPrev.textContent='← Volver';bPrev.onclick=function(){idx=P.length-1;pregunta();};
   bNext.disabled=!!falt.length;bNext.textContent='Enviar evaluación ✓';bNext.onclick=enviar;
+  if(PREVIA){bNext.disabled=false;bNext.textContent='Terminar vista previa';bNext.onclick=function(){mensaje('👁','Fin de la vista previa','Así verán la evaluación los trabajadores. No se guardó ninguna respuesta.');};}
 }
 /* 6) Calificación automática y envío */
 function calificar(){
@@ -194,38 +252,96 @@ function calificar(){
     return {ptsN:ptsN,secs:secs,resultado:Math.round(resultado*10000)/10000};
   });
 }
+/* _ENVIO_SEGURO_V1 (03-oct-2026)
+   - La respuesta se guarda primero en el celular (localStorage) y recién luego se envía.
+   - Firebase es la fuente principal (de ahí se consolida al cerrar la sesión); Azure es la copia.
+   - Reintentos automáticos con espera creciente, al recuperar señal y la próxima vez que se abra la página.
+   - Mismo id en todos los reintentos: nunca se duplica. El trabajador nunca ve puntajes ni %. */
+var PEND_K='eti_qr_pend', PACK=null, autoT=null;
+function espera(ms){return new Promise(function(r){setTimeout(r,ms);});}
+function pendLeer(){try{return JSON.parse(ls(PEND_K)||'{}')||{};}catch(e){return {};}}
+function pendPoner(p){var m=pendLeer();m[p.id]=p;ls(PEND_K,JSON.stringify(m));}
+function pendQuitar(id){var m=pendLeer();delete m[id];ls(PEND_K,JSON.stringify(m));}
+function subirFS(p,intentos){
+  var ref=db.collection(COL_RESP).doc(p.id);
+  var go=function(n){
+    return Promise.race([ref.set(p.doc),espera(15000).then(function(){throw new Error('timeout');})])
+      .then(function(){return true;},function(e){console.warn('Firebase intento '+n,e&&e.message);
+        if(n<intentos) return espera(1500*n).then(function(){return go(n+1);}); return false;});
+  };
+  return go(1);
+}
+function subirAZ(p,intentos){
+  var go=function(n){
+    return fetch(AZ_ETI,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({registros:[p.reg]}),keepalive:true})
+      .then(function(r){if(!r.ok)throw new Error('Azure '+r.status);return r.json().catch(function(){return {};});})
+      .then(function(j){if(j&&j.success===false)throw new Error(j.error||'Azure rechazó');return true;})
+      .catch(function(e){console.warn('Azure intento '+n,e&&e.message);if(n<intentos)return espera(2000*n).then(function(){return go(n+1);});return false;});
+  };
+  return go(1);
+}
+function despachar(p,iFs,iAz){
+  var t=[];
+  if(!p.fs&&db) t.push(subirFS(p,iFs||4).then(function(ok){if(ok)p.fs=true;}));
+  if(!p.az) t.push(subirAZ(p,iAz||4).then(function(ok){if(ok)p.az=true;}));
+  return Promise.all(t).then(function(){
+    /* _TRAFICO_V1: marca en Firebase que Azure ya lo tiene (el panel de tráfico lo muestra con ☁ ✓) */
+    if(p.fs&&p.az&&!p.azMarcado&&db) return db.collection(COL_RESP).doc(p.id).set({azOk:true,azEn:new Date().toISOString()},{merge:true})
+      .then(function(){p.azMarcado=true;},function(e){console.warn('marca azOk',e&&e.message);p.azMarcado=true;});
+  }).then(function(){if(p.fs&&p.az)pendQuitar(p.id);else pendPoner(p);return p;});
+}
+function reenviarPendientes(){
+  var m=pendLeer(), lim=Date.now()-10*864e5;
+  Object.keys(m).forEach(function(id){var p=m[id];
+    if(!p||!p.doc||(p.t||0)<lim){pendQuitar(id);return;}
+    if(PACK&&PACK.id===id) return;
+    despachar(p,2,1);});
+}
 function enviar(){
+  if(PREVIA) return;
+  clearTimeout(autoT);
   bNext.disabled=true;bPrev.disabled=true;bNext.textContent='Enviando…';
   var er=document.getElementById('err');if(er)er.style.display='none';
-  calificar().then(function(c){
+  var prep=PACK?Promise.resolve(PACK):calificar().then(function(c){
     if(!W.docId) W.docId=db.collection(COL_RESP).doc().id;   /* mismo id en reintentos: no duplica */
-    var doc={sesion:SID,anonima:true,emp:S.emp,sup:S.sup,sector:W.sector,tipo:S.tipo,ruta:W.ruta,cod:W.cod,fecha:S.fecha,
+    var doc={sesion:SID,anonima:true,emp:W.emp||S.emp,sup:S.sup,sector:W.sector,tipo:W.tipo||S.tipo,ruta:W.ruta,cod:W.cod,fecha:FECHA,
       usuarioSup:S.usuario||'',resp:R,pts:c.ptsN,secs:c.secs,resultado:c.resultado,estado:c.resultado>=0.7?'APROBADO':'REFUERZO',
       bancoVersion:S.bancoVersion||0,creadoEn:new Date().toISOString(),ts:Date.now()};
-    var ref=db.collection(COL_RESP).doc(W.docId);
-    var intento=function(n){
-      return Promise.race([ref.set(doc),new Promise(function(_,rej){setTimeout(function(){rej(new Error('timeout'));},15000);})])
-        .catch(function(e){if(n<3)return new Promise(function(r){setTimeout(r,2500);}).then(function(){return intento(n+1);});throw e;});
-    };
-    var reg={id:W.docId,modalidad:'QR',sesion_id:SID,fecha:S.fecha,empresa:S.emp,supervisor:S.sup,usuario:S.usuario||'',sector:W.sector,tipo:S.tipo,
+    var reg={id:W.docId,modalidad:'QR',sesion_id:SID,fecha:FECHA,empresa:W.emp||S.emp,supervisor:S.sup,usuario:S.usuario||'',sector:W.sector,tipo:W.tipo||S.tipo,
       ruta:W.ruta,codigo:W.cod,evaluados:1,resultado:c.resultado,banco_version:S.bancoVersion||0,
       secciones:c.secs.map(function(x){return {id:x.id,nom:x.nom,peso:x.peso,pct:x.pct};})};
-    var az=fetch(AZ_ETI,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({registros:[reg]}),keepalive:true})
-      .then(function(r){return r.ok;},function(){return false;});
-    var fs=intento(1).then(function(){return true;},function(){return false;});
-    /* basta con que llegue a una de las dos; lo que falte se sincroniza desde el panel del administrador */
-    return new Promise(function(ok,no){var pend=2,listo=false;
-      function uno(v){if(listo)return;if(v){listo=true;ok();return;}if(--pend===0)no(new Error('sin envio'));}
-      fs.then(uno);az.then(uno);});
-  }).then(fin).catch(function(e){
+    PACK={id:W.docId,doc:doc,reg:reg,fs:false,az:false,t:Date.now()};
+    pendPoner(PACK);   /* respaldo en el celular ANTES de enviar */
+    return PACK;
+  });
+  prep.then(function(p){return despachar(p);}).then(function(p){
+    if(p.fs||p.az){fin();return;}   /* lo que falte (Firebase o Azure) se sigue reintentando en segundo plano */
+    throw new Error('sin envio');
+  }).catch(function(e){
     console.error(e);bNext.disabled=false;bPrev.disabled=false;bNext.textContent='Reintentar envío ↻';
-    var er=document.getElementById('err');if(er){er.textContent='No se pudo enviar (sin señal o sesión cerrada). Tus respuestas siguen aquí: toca "Reintentar envío".';er.style.display='block';}
+    var er=document.getElementById('err');if(er){er.textContent='Sin señal por ahora. Tus respuestas están guardadas en tu celular y se reintentará solo en unos segundos. No cierres esta página.';er.style.display='block';}
+    autoT=setTimeout(enviar,10000);
   });
 }
+window.addEventListener('online',function(){if(PACK&&!PACK.fs){if(W.enviado)despachar(PACK).then(function(p){if(p.fs)cierre();});else enviar();}else reenviarPendientes();});
 /* 7) Fin: mensaje y salida del sitio */
 function fin(){
   W.enviado=true;
   barra(false);
+  if(PACK&&!(PACK.fs&&PACK.az)){   /* esperamos que Firebase Y Azure confirmen antes de cerrar (Azure: máx. ~25 s; luego lo reenvía el panel) */
+    app.innerHTML='<div class="card center"><div class="ok-anim"><svg viewBox="0 0 24 24" fill="none" stroke="#007A3D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>'+
+     '<h1>Evaluación recibida</h1><p style="font-size:17px;color:var(--text)"><b>¡Gracias por participar!</b></p><p id="cuenta">Terminando de guardar… espera unos segundos antes de cerrar.</p></div>';
+    var t0=Date.now();
+    var listo=function(){return PACK.fs&&(PACK.az||Date.now()-t0>25000);};
+    var loop=function(){if(listo()){cierre();return;}despachar(PACK,2,2).then(function(){setTimeout(loop,listo()?0:6000);});};
+    setTimeout(loop,1500);
+    return;
+  }
+  cierre();
+}
+var _cerrando=false;
+function cierre(){
+  if(_cerrando) return; _cerrando=true;
   var t=6;
   app.innerHTML='<div class="card center"><div class="ok-anim"><svg viewBox="0 0 24 24" fill="none" stroke="#007A3D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>'+
    '<h1>Evaluación enviada</h1><p style="font-size:17px;color:var(--text)"><b>¡Gracias por participar!</b></p><p>Tus respuestas fueron registradas correctamente.</p>'+
@@ -235,14 +351,14 @@ function fin(){
     if(t<=0){clearInterval(iv);salir();}},1000);
 }
 function salir(){
-  R={};W={sector:'',ruta:'',cod:''};
+  R={};W={tipo:'',sector:'',ruta:'',cod:''};
   try{window.open('','_self');window.close();}catch(e){}
   setTimeout(function(){
     app.innerHTML='<div class="card center"><div class="big">👋</div><h1>¡Hasta pronto!</h1><p>Ya puedes cerrar esta pestaña.</p></div>';
     try{location.replace('about:blank');}catch(e){}
   },400);
 }
-window.addEventListener('beforeunload',function(e){if(P.length&&Object.keys(R).length&&!W.enviado){e.preventDefault();e.returnValue='';}});
+window.addEventListener('beforeunload',function(e){if((P.length&&Object.keys(R).length&&!W.enviado)||(PACK&&!PACK.fs)){e.preventDefault();e.returnValue='';}});
 iniciar();
 })();
 </script>
