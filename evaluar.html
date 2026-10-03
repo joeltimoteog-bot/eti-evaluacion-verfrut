@@ -127,7 +127,7 @@ function iniciar(){
 /* 2) Bienvenida */
 function bienvenida(){
   barra(false);
-  app.innerHTML='<div class="card"><h1>¡Hola! 👋</h1><p>Esta evaluación nos ayuda a saber cuánto conoces sobre tus derechos, beneficios y buenas prácticas en la empresa. <b>No afecta tu sueldo ni tu contrato.</b></p>'+
+  app.innerHTML='<div class="card"><h1>¡Hola! 👋</h1><p>Bienvenido a la evaluación de conocimiento ETI.</p>'+
    (PREVIA?'<div class="hint" style="margin:0 0 10px">👁 <b>Vista previa para supervisores:</b> puedes recorrer las preguntas; no se guarda nada.</div>':'')+
    '<div class="info"><div><span>Empresa</span><b>'+esc(S.emp||'VERFRUT / RAPEL')+'</b></div><div><span>Fecha</span><b>'+esc(fmtF(FECHA))+'</b></div></div>'+
    '<div class="pasos"><div><i>1</i>Dinos dónde trabajas</div><div><i>2</i>Responde '+P.length+' preguntas</div><div><i>3</i>Envía y listo</div></div>'+
@@ -152,8 +152,9 @@ function ubicacion(){
   function leer(){var g=function(id){var e=document.getElementById(id);return e?e.value:null;};
     var v;if((v=g('sec'))!==null)st.sector=v;if((v=g('ruta'))!==null)st.ruta=v;if((v=g('cod'))!==null)st.cod=v;if((v=g('area'))!==null)st.area=v;}
   function selSector(lbl){
-    return S.sector?'<label>'+lbl+'</label><div class="fijo">📍 '+esc(S.sector)+'</div><input type="hidden" id="sec" value="'+esc(S.sector)+'">'
-      :'<label for="sec">'+lbl+'</label><select id="sec"><option value="">— Elige —</option>'+sects.map(function(x){return '<option'+(x===st.sector?' selected':'')+'>'+esc(x)+'</option>';}).join('')+'</select>';
+    /* _SECTOR_EDITABLE_V1: el sector del QR solo viene preseleccionado; el trabajador siempre puede cambiarlo */
+    var ops=sects.slice(); if(st.sector&&ops.indexOf(st.sector)<0) ops.unshift(st.sector);
+    return '<label for="sec">'+lbl+'</label><select id="sec"><option value="">— Elige —</option>'+ops.map(function(x){return '<option'+(x===st.sector?' selected':'')+'>'+esc(x)+'</option>';}).join('')+'</select>';
   }
   function pintar(){
     var h='<div class="card"><h2>¿Dónde trabajas hoy?</h2><p>Estos datos sirven para ver los resultados por sector, ruta o área. <b>No se guarda tu nombre ni tu DNI.</b></p>';
