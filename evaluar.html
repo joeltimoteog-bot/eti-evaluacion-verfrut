@@ -114,7 +114,10 @@ function iniciar(){
   db.collection(COL_SES).doc(SID).get().then(function(d){
     if(!d.exists){mensaje('🔍','Evaluación no encontrada','El código QR no corresponde a una evaluación activa. Pide a tu supervisor que lo muestre de nuevo.');return;}
     S=d.data();
-    if(S.estado!=='abierta'||(S.expira&&Date.now()>S.expira)){mensaje('⏹','Evaluación cerrada','Esta sesión de evaluación ya fue cerrada por el supervisor.');return;}
+    if(S.estado!=='abierta'||(S.expira&&Date.now()>S.expira)){
+      if(S.permanente) mensaje('⏸','QR pausado','Este código QR no está activo en este momento. Pide a tu supervisor o a Gestión Humana el QR vigente.');
+      else mensaje('⏹','Evaluación cerrada','Esta sesión de evaluación ya fue cerrada por el supervisor.');
+      return;}
     FECHA=S.permanente?hoyLocal():S.fecha;
     P=[];(S.banco||[]).forEach(function(sec){(sec.pregs||[]).forEach(function(p){P.push({sec:sec,p:p});});});
     if(!P.length){mensaje('⚠️','Evaluación sin preguntas','Comunícate con tu supervisor.');return;}
@@ -305,9 +308,9 @@ function enviar(){
   var prep=PACK?Promise.resolve(PACK):calificar().then(function(c){
     if(!W.docId) W.docId=db.collection(COL_RESP).doc().id;   /* mismo id en reintentos: no duplica */
     var doc={sesion:SID,anonima:true,emp:W.emp||S.emp,sup:S.sup,sector:W.sector,tipo:W.tipo||S.tipo,ruta:W.ruta,cod:W.cod,fecha:FECHA,
-      usuarioSup:S.usuario||'',resp:R,pts:c.ptsN,secs:c.secs,resultado:c.resultado,estado:c.resultado>=0.7?'APROBADO':'REFUERZO',
+      usuarioSup:S.asignado||S.usuario||'',resp:R,pts:c.ptsN,secs:c.secs,resultado:c.resultado,estado:c.resultado>=0.7?'APROBADO':'REFUERZO',
       bancoVersion:S.bancoVersion||0,creadoEn:new Date().toISOString(),ts:Date.now()};
-    var reg={id:W.docId,modalidad:'QR',sesion_id:SID,fecha:FECHA,empresa:W.emp||S.emp,supervisor:S.sup,usuario:S.usuario||'',sector:W.sector,tipo:W.tipo||S.tipo,
+    var reg={id:W.docId,modalidad:'QR',sesion_id:SID,fecha:FECHA,empresa:W.emp||S.emp,supervisor:S.sup,usuario:S.asignado||S.usuario||'',sector:W.sector,tipo:W.tipo||S.tipo,
       ruta:W.ruta,codigo:W.cod,evaluados:1,resultado:c.resultado,banco_version:S.bancoVersion||0,
       secciones:c.secs.map(function(x){return {id:x.id,nom:x.nom,peso:x.peso,pct:x.pct};})};
     PACK={id:W.docId,doc:doc,reg:reg,fs:false,az:false,t:Date.now()};

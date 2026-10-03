@@ -8,7 +8,7 @@ Archivos que cambian: **index.html** y **evaluar.html**.
 cd "C:\Sistema - Evaluacion Eti"
 Remove-Item .git\index.lock -Force -ErrorAction SilentlyContinue
 git add index.html evaluar.html PASOS_PRODUCCION_03oct.md
-git commit -m "ETI: QR permanente por supervisor, % por pregunta, banco 2026, envio seguro Firebase+Azure, Trafico en vivo"
+git commit -m "ETI: QR permanente por supervisor, usuarios desactivar/eliminar, % por pregunta, banco 2026, envio seguro Firebase+Azure, Trafico en vivo"
 git push
 ```
 

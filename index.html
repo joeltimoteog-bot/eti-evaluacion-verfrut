@@ -1296,9 +1296,17 @@ const USUARIOS_BASE = [
 ];
 
 // Cargar usuarios extras agregados por admin
-function getUsuarios(){
-  const extras=JSON.parse(localStorage.getItem('eti_usuarios_extra')||'[]');
-  return [...USUARIOS_BASE, ...extras];
+/* _USUARIOS_NUBE_V1 (03-oct-2026): estado de cada usuario en la nube (config_eti/accesos → usuarios[user]):
+   activo:false = desactivado (no entra a los módulos y su QR permanente se pausa)
+   eliminado:true = oculto en todo el sistema (se puede restaurar; su historial se conserva)
+   extra:true,nom,rol = usuario agregado por el admin (visible en todos los dispositivos) */
+function getUsuarios(incluirEliminados){
+  let extras=[]; try{extras=JSON.parse(localStorage.getItem('eti_usuarios_extra')||'[]')||[];}catch(e){}
+  const acc=(window.etiAccData&&window.etiAccData().usuarios)||{};
+  const vistos=new Set([...USUARIOS_BASE,...extras].map(u=>String(u.user).toLowerCase()));
+  Object.entries(acc).forEach(([k,r])=>{if(r&&r.extra&&!vistos.has(k)){extras.push({user:k,nom:r.nom||k,rol:r.rol||'supervisor'});vistos.add(k);}});
+  const todos=[...USUARIOS_BASE,...extras];
+  return incluirEliminados?todos:todos.filter(u=>!(acc[String(u.user).toLowerCase()]||{}).eliminado);
 }
 
 function saveUsuariosExtra(lista){
@@ -2057,9 +2065,43 @@ function renderAdminChartSup(supList){
   });
 }
 
+let _verElim=false;
 function renderAdminUsers(){
   const usuarios=getUsuarios();
+  const acc=(window.etiAccData&&window.etiAccData().usuarios)||{};
+  const est=u=>acc[String(u).toLowerCase()]||{};
+  const elim=getUsuarios(true).filter(u=>est(u.user).eliminado);
   const _todosH=getAllHist();   // _HIST_ROL_V1: conteo real desde la nube
+  const yo=String(SESSION&&SESSION.user||'').toLowerCase();
+  document.getElementById('admin-user-list').innerHTML=`
+    <table class="rtbl">
+      <thead><tr><th>#</th><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th>Registros</th><th>Acción</th></tr></thead>
+      <tbody>
+        ${usuarios.map((u,i)=>{
+          const regs=_todosH.filter(r=>r.usuario===u.user).length;
+          const k=String(u.user).toLowerCase(), off=est(u.user).activo===false, prot=(k==='jtimoteo'||k===yo);
+          return `<tr style="${off?'opacity:.6':''}">
+            <td>${i+1}</td>
+            <td><code style="background:var(--sf2);padding:2px 6px;border-radius:4px;font-size:.8rem;">${u.user}</code></td>
+            <td style="font-weight:700;">${u.nom}</td>
+            <td><span class="bdg ${u.rol==='admin'?'bg':'br'}" style="font-size:.7rem;">${u.rol==='admin'?'ADMIN':'SUPERVISOR'}</span></td>
+            <td><span class="bdg ${off?'br':'bg'}" style="font-size:.7rem;">${off?'DESACTIVADO':'ACTIVO'}</span></td>
+            <td style="text-align:center;">${regs}</td>
+            <td style="white-space:nowrap">${prot?'<span style="font-size:.72rem;color:var(--text2);">'+(k==='jtimoteo'?'Creador':'Tú')+'</span>':
+              `<button class="btn ${off?'bpri':'bout'} bsm" onclick="etiUsrActivo('${u.user}',${off})" style="font-size:.72rem;">${off?'▶ Activar':'⏸ Desactivar'}</button>
+               <button class="btn bdng bsm" onclick="delUser('${u.user}')" style="font-size:.72rem;">🗑 Eliminar</button>`}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+    ${elim.length?`<div style="margin-top:.8rem"><button class="btn bout bsm" onclick="_verElim=!_verElim;renderAdminUsers()">${_verElim?'▲ Ocultar':'▼ Ver'} usuarios eliminados (${elim.length})</button></div>
+    ${_verElim?`<table class="rtbl" style="margin-top:.5rem"><thead><tr><th>Usuario</th><th>Nombre</th><th>Eliminado</th><th>Acción</th></tr></thead><tbody>
+      ${elim.map(u=>`<tr style="opacity:.75"><td><code>${u.user}</code></td><td>${u.nom}</td><td style="font-size:.75rem">${est(u.user).eliminadoEn?new Date(est(u.user).eliminadoEn).toLocaleString('es-PE'):'—'}${est(u.user).eliminadoPor?' · '+est(u.user).eliminadoPor:''}</td>
+        <td><button class="btn bpri bsm" onclick="etiUsrRestaurar('${u.user}')" style="font-size:.72rem;">↺ Restaurar</button></td></tr>`).join('')}</tbody></table>`:''}`:''}`;
+}
+function _renderAdminUsersViejo(){
+  const usuarios=getUsuarios();
+  const _todosH=getAllHist();
   document.getElementById('admin-user-list').innerHTML=`
     <table class="rtbl">
       <thead><tr><th>#</th><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Registros</th><th>Acción</th></tr></thead>
@@ -2086,10 +2128,11 @@ async function addUser(){
   const n=document.getElementById('nu-nom').value.trim();
   if(!u||!p||!n){toast('Completa todos los campos','e');return;}
   const todos=getUsuarios();
-  if(todos.find(x=>x.user===u)){toast('Ese usuario ya existe','e');return;}
+  if(getUsuarios(true).find(x=>String(x.user).toLowerCase()===u.toLowerCase())){toast('Ese usuario ya existe (si fue eliminado, restáuralo desde "Ver usuarios eliminados")','e');return;}
   const extras=JSON.parse(localStorage.getItem('eti_usuarios_extra')||'[]');
   extras.push({user:u,ph:await etiHash(u,p),nom:n,rol:'supervisor'});
   localStorage.setItem('eti_usuarios_extra',JSON.stringify(extras));
+  if(window.etiUsrNube) etiUsrNube(u,{extra:true,nom:n,rol:'supervisor',activo:true,eliminado:false});   /* _USUARIOS_NUBE_V1: visible en todos los dispositivos */
   document.getElementById('nu-user').value='';
   document.getElementById('nu-pwd').value='';
   document.getElementById('nu-nom').value='';
@@ -2098,13 +2141,31 @@ async function addUser(){
 }
 
 function delUser(userKey){
-  confMod('¿Eliminar usuario?','Se eliminará el usuario "'+userKey+'" y sus datos.',()=>{
-    const extras=JSON.parse(localStorage.getItem('eti_usuarios_extra')||'[]');
-    const nuevos=extras.filter(u=>u.user!==userKey);
-    localStorage.setItem('eti_usuarios_extra',JSON.stringify(nuevos));
-    localStorage.removeItem('eti_v4_'+userKey);
-    renderAdminUsers();
-    toast('Usuario eliminado','i');
+  confMod('¿Eliminar usuario?','El usuario "'+userKey+'" ya no podrá entrar, desaparece de las listas y su QR permanente se pausa. Sus evaluaciones e historial se conservan, y puedes restaurarlo cuando quieras.',async()=>{
+    if(!window.etiUsrNube){toast('Sin conexión a la nube','e');return;}
+    try{
+      await etiUsrNube(userKey,{eliminado:true,activo:false,eliminadoEn:new Date().toISOString(),eliminadoPor:SESSION.user});
+      const n=window.etiQRDeUsuario?await etiQRDeUsuario(userKey,false):0;
+      renderAdminUsers(); toast('🗑 Usuario eliminado'+(n?` · ${n} QR pausado(s)`:''),'s');
+    }catch(e){toast('No se pudo eliminar: '+e.message,'e');}
+  });
+}
+function etiUsrActivo(userKey,activar){
+  confMod(activar?'¿Activar usuario?':'¿Desactivar usuario?',activar?'"'+userKey+'" vuelve a tener acceso y su QR permanente se reactiva.':'"'+userKey+'" no podrá usar los módulos y su QR permanente se pausa (los trabajadores verán que está pausado). Sus datos se conservan.',async()=>{
+    try{
+      await etiUsrNube(userKey,{activo:!!activar});
+      const n=window.etiQRDeUsuario?await etiQRDeUsuario(userKey,!!activar):0;
+      renderAdminUsers(); toast((activar?'▶ Usuario activado':'⏸ Usuario desactivado')+(n?` · ${n} QR ${activar?'reactivado(s)':'pausado(s)'}`:''),'s');
+    }catch(e){toast('No se pudo actualizar: '+e.message,'e');}
+  });
+}
+function etiUsrRestaurar(userKey){
+  confMod('¿Restaurar usuario?','"'+userKey+'" vuelve a aparecer y queda activo; su QR permanente se reactiva.',async()=>{
+    try{
+      await etiUsrNube(userKey,{eliminado:false,activo:true,restauradoEn:new Date().toISOString()});
+      const n=window.etiQRDeUsuario?await etiQRDeUsuario(userKey,true):0;
+      renderAdminUsers(); toast('↺ Usuario restaurado'+(n?` · ${n} QR reactivado(s)`:''),'s');
+    }catch(e){toast('No se pudo restaurar: '+e.message,'e');}
   });
 }
 
@@ -5992,6 +6053,25 @@ function tiene(k){
   return !(u.mods&&u.mods[k]===false);
 }
 window.etiTieneAcceso=tiene;
+/* _USUARIOS_NUBE_V1 */
+window.etiAccData=()=>ACC;
+window.etiUsrNube=async(user,patch)=>{
+  if(!fbdb) throw new Error('Sin conexión a la nube');
+  const k=String(user).toLowerCase();
+  await fbdb.collection(COL_CFG).doc(DOC_ACC).set({usuarios:{[k]:patch},por:SESSION.user,en:new Date().toISOString()},{merge:true});
+  ACC.usuarios[k]=Object.assign(ACC.usuarios[k]||{},patch); accDraft=null;
+};
+/* pausa (false) o reactiva (true) los QR permanentes asignados al usuario */
+window.etiQRDeUsuario=async(user,activar)=>{
+  if(!fbdb) return 0;
+  const k=String(user).toLowerCase();
+  const q=await fbdb.collection(COL_SES).where('permanente','==',true).where('asignado','==',k).get(); let n=0;
+  for(const d of q.docs){const x=d.data();
+    if(!activar&&x.estado==='abierta'){await d.ref.update({estado:'cerrada',pausaMotivo:'usuario',pausadoEn:new Date().toISOString()});n++;}
+    if(activar&&x.estado!=='abierta'&&x.pausaMotivo==='usuario'){await d.ref.update({estado:'abierta',pausaMotivo:null});n++;}}
+  return n;
+};
+const usrOff=nom=>{const u=getUsuarios(true).find(x=>x.rol!=='admin'&&(x.nom===nom||_cumCoincide(x.nom,nom)));if(!u)return false;const r=ACC.usuarios[String(u.user).toLowerCase()]||{};return !!(r.eliminado||r.activo===false);};
 function aplicarAccesosMenu(){
   const g=document.querySelector('#sm .mgrid'); if(!g||!SESSION||SESSION.rol==='admin') return;
   const map={'iniciar()':'eval','irDash()':'dash','verUlt()':'ult','ETIM.abrirQR()':'qr'};
@@ -6106,12 +6186,12 @@ function qrSvg(txt,cell){
   return q.createSvgTag({cellSize:cell||8,margin:2,scalable:true});
 }
 function puedeCrear(){return SESSION&&(SESSION.rol==='admin'||tiene('qrc'));}
-function userDeSup(nom){const u=getUsuarios().find(x=>x.rol!=='admin'&&(x.nom===nom||_cumCoincide(x.nom,nom)));return u?u.user:'';}
+function userDeSup(nom){const u=getUsuarios(true).find(x=>x.rol!=='admin'&&(x.nom===nom||_cumCoincide(x.nom,nom)));return u?u.user:'';}
 function prepararFormQR(){
   const fc=puedeCrear(); $('qr-form').style.display=fc?'':'none'; $('qr-info').style.display=fc?'none':'';
   const sel=$('qr-sup'); if(!sel) return;
   const ms=miSup();
-  const lista=SESSION.rol==='admin'?SUPERVISORES.filter(s=>s.rol!=='Administrador'):[ms||{nom:SESSION.nom,sector:'',reemplazante:true}];
+  const lista=SESSION.rol==='admin'?SUPERVISORES.filter(s=>s.rol!=='Administrador'&&!usrOff(s.nom)):[ms||{nom:SESSION.nom,sector:'',reemplazante:true}];
   sel.innerHTML=(SESSION.rol==='admin'?'<option value="">— Seleccionar —</option>':'')+lista.map(s=>`<option>${esc(s.nom)}</option>`).join('');
   sel.disabled=SESSION.rol!=='admin';
   if(!$('qr-fecha').value) $('qr-fecha').value=hoyL();
@@ -6318,6 +6398,7 @@ const QR={
   qrClase(){const p=$('qr-clase').value!=='dia';$('qr-fecha-g').style.display=p?'none':'';},
   async qrCrearPerm(d,silencio){
     if(!d.sup){toast('Elige el supervisor','e');return null;}
+    if(usrOff(d.sup)){if(!silencio)toast(d.sup+' está desactivado o eliminado','e');return null;}
     if(!fbdb){toast('Sin conexión a la nube','e');return null;}
     const ya=await fbdb.collection(COL_SES).where('permanente','==',true).where('sup','==',d.sup).get();
     if(!ya.empty){const x={id:ya.docs[0].id,...ya.docs[0].data()};if(!silencio){sesActiva=x;escucharResp(x.id);renderActiva();toast('ℹ '+d.sup+' ya tiene su QR permanente (se muestra abajo). Para cambiarlo, edítalo en la lista.','i');}return null;}
@@ -6331,7 +6412,7 @@ const QR={
   },
   async qrPermTodos(){
     const emp=$('qr-emp').value==='*'?'':$('qr-emp').value;
-    const sups=SUPERVISORES.filter(x=>x.rol!=='Administrador');
+    const sups=SUPERVISORES.filter(x=>x.rol!=='Administrador'&&!usrOff(x.nom));
     confMod('¿Generar QR permanentes?',`Se creará un QR permanente para cada supervisor que aún no tenga (${sups.length} supervisores en la lista). Empresa: ${emp||'el trabajador elige'}.`,async()=>{
       let c=0; toast('⏳ Generando QR permanentes…','i');
       for(const x of sups){try{const sector=x.multiSector?'':(x.reemplazante?'':(x.sector||''));if(await QR.qrCrearPerm({emp,sup:x.nom,sector,tipo:'todos',fecha:''},true))c++;}catch(e){console.warn(x.nom,e);}}
@@ -6507,6 +6588,7 @@ if(fbdb){
   fbdb.collection(COL_CFG).doc(DOC_ACC).onSnapshot(d=>{
     ACC=(d.exists&&d.data())||{usuarios:{}}; ACC.usuarios=ACC.usuarios||{};
     aplicarAccesosMenu();
+    try{const ul=document.getElementById('admin-users');if(ul&&ul.style.display!=='none'&&typeof renderAdminUsers==='function')renderAdminUsers();}catch(e){}
   },e=>console.warn('Accesos nube:',e));
 }
 function arranque(){
