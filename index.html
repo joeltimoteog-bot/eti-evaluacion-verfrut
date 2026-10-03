@@ -2067,6 +2067,7 @@ function renderAdminChartSup(supList){
 
 let _verElim=false;
 function renderAdminUsers(){
+  if(window.etiSubirExtras) window.etiSubirExtras();
   const usuarios=getUsuarios();
   const acc=(window.etiAccData&&window.etiAccData().usuarios)||{};
   const est=u=>acc[String(u).toLowerCase()]||{};
@@ -6071,6 +6072,24 @@ window.etiQRDeUsuario=async(user,activar)=>{
     if(activar&&x.estado!=='abierta'&&x.pausaMotivo==='usuario'){await d.ref.update({estado:'abierta',pausaMotivo:null});n++;}}
   return n;
 };
+/* _QR_TODOS_V1 (03-oct-2026): candidatos a QR = supervisores de la lista de Gestión + usuarios del módulo Usuarios */
+function candidatosQR(){
+  const adm=SUPERVISORES.filter(x=>x.rol==='Administrador').map(x=>x.nom);
+  const out=SUPERVISORES.filter(x=>x.rol!=='Administrador').map(x=>({nom:x.nom,sector:x.multiSector||x.reemplazante?'':(x.sector||''),user:userDeSup(x.nom),fuente:'Gestión'}));
+  getUsuarios().filter(u=>u.rol!=='admin').forEach(u=>{
+    if(adm.some(n=>n===u.nom||_cumCoincide(n,u.nom))) return;
+    if(out.some(o=>o.nom===u.nom||_cumCoincide(o.nom,u.nom))) return;
+    out.push({nom:u.nom,sector:'',user:u.user,fuente:'Usuarios'});
+  });
+  return out.filter(x=>!usrOff(x.nom)).sort((a,b)=>a.nom.localeCompare(b.nom));
+}
+/* usuarios agregados antes solo en este navegador → se suben a la nube (una vez por carga, solo admin) */
+window.etiSubirExtras=function(){
+  try{if(!SESSION||SESSION.rol!=='admin'||window._extrasSubidos||!fbdb)return;window._extrasSubidos=true;
+    const loc=JSON.parse(localStorage.getItem('eti_usuarios_extra')||'[]')||[];
+    loc.forEach(u=>{const k=String(u.user).toLowerCase();if(!ACC.usuarios[k]||!ACC.usuarios[k].extra)window.etiUsrNube(k,{extra:true,nom:u.nom,rol:u.rol||'supervisor'}).catch(()=>{});});
+  }catch(e){}
+};
 const usrOff=nom=>{const u=getUsuarios(true).find(x=>x.rol!=='admin'&&(x.nom===nom||_cumCoincide(x.nom,nom)));if(!u)return false;const r=ACC.usuarios[String(u.user).toLowerCase()]||{};return !!(r.eliminado||r.activo===false);};
 function aplicarAccesosMenu(){
   const g=document.querySelector('#sm .mgrid'); if(!g||!SESSION||SESSION.rol==='admin') return;
@@ -6169,7 +6188,7 @@ function crearPantallaQR(){
           <div class="fg"><label class="fl">Tipo de personal *</label><select class="fc" id="qr-tipo"><option value="todos" selected>👥 Todo el personal (el trabajador elige)</option><option value="obrero">👷 Solo obreros (ruta)</option><option value="empleado">💼 Solo empleados (área)</option></select></div>
         </div>
         <button class="btn bpri" style="width:100%;padding:.85rem;" onclick="ETIM.qrCrear()">⚡ Generar QR</button>
-        <button class="btn bout" style="width:100%;padding:.7rem;margin-top:.5rem" onclick="ETIM.qrPermTodos()">📌 Generar QR permanente para TODOS los supervisores que no tienen</button>
+        <button class="btn bout" style="width:100%;padding:.7rem;margin-top:.5rem" onclick="ETIM.qrPermTodos()">📌 Cargar QR de todos los supervisores y usuarios (crea los que faltan)</button>
         <div class="m-mut" style="margin-top:.6rem;font-size:.75rem;" id="qr-ayuda"><b>Permanente:</b> se imprime una vez y sirve siempre; cuando actualizas el banco, el mismo QR ya trae las preguntas nuevas. <b>Especial:</b> solo para una evaluación puntual en una fecha.</div>
       </section>
       <section class="m-card" id="qr-info" style="display:none"><h2 class="m-tit">📱 Mis QR asignados</h2><p class="m-sub">El administrador crea los QR y te los asigna. Tu <b>📌 QR permanente</b> se muestra abajo: imprímelo o muéstralo en pantalla completa. Si tienes un QR especial, elígelo en <b>Mis sesiones</b> y presiona <b>Mostrar QR</b> y muéstralo a los trabajadores de tu ruta: ellos indican si son obreros (sector, ruta y código) o empleados (área y sector/zona).</p></section>
@@ -6191,7 +6210,7 @@ function prepararFormQR(){
   const fc=puedeCrear(); $('qr-form').style.display=fc?'':'none'; $('qr-info').style.display=fc?'none':'';
   const sel=$('qr-sup'); if(!sel) return;
   const ms=miSup();
-  const lista=SESSION.rol==='admin'?SUPERVISORES.filter(s=>s.rol!=='Administrador'&&!usrOff(s.nom)):[ms||{nom:SESSION.nom,sector:'',reemplazante:true}];
+  const lista=SESSION.rol==='admin'?candidatosQR():[ms||{nom:SESSION.nom,sector:'',reemplazante:true}];
   sel.innerHTML=(SESSION.rol==='admin'?'<option value="">— Seleccionar —</option>':'')+lista.map(s=>`<option>${esc(s.nom)}</option>`).join('');
   sel.disabled=SESSION.rol!=='admin';
   if(!$('qr-fecha').value) $('qr-fecha').value=hoyL();
@@ -6370,6 +6389,7 @@ const QR={
   },
   qrSupCambio(){
     const nom=$('qr-sup').value, sd=SUPERVISORES.find(s=>s.nom===nom), sel=$('qr-sector');
+    if(!sd){sel.innerHTML='<option value="">— Varios (el trabajador elige) —</option>'+SECTORES_TODOS.map(x=>`<option>${esc(x)}</option>`).join('');return;}
     let ops=SECTORES_TODOS;
     if(sd&&sd.multiSector) ops=sd.sectores; else if(sd&&sd.sector&&!sd.reemplazante) ops=[sd.sector];
     sel.innerHTML='<option value="">— Varios (el trabajador elige) —</option>'+ops.map(x=>`<option>${esc(x)}</option>`).join('');
@@ -6411,13 +6431,34 @@ const QR={
     return doc;
   },
   async qrPermTodos(){
+    if(!fbdb){toast('Sin conexión a la nube','e');return;}
+    window.etiSubirExtras();
     const emp=$('qr-emp').value==='*'?'':$('qr-emp').value;
-    const sups=SUPERVISORES.filter(x=>x.rol!=='Administrador'&&!usrOff(x.nom));
-    confMod('¿Generar QR permanentes?',`Se creará un QR permanente para cada supervisor que aún no tenga (${sups.length} supervisores en la lista). Empresa: ${emp||'el trabajador elige'}.`,async()=>{
-      let c=0; toast('⏳ Generando QR permanentes…','i');
-      for(const x of sups){try{const sector=x.multiSector?'':(x.reemplazante?'':(x.sector||''));if(await QR.qrCrearPerm({emp,sup:x.nom,sector,tipo:'todos',fecha:''},true))c++;}catch(e){console.warn(x.nom,e);}}
-      toast(`✅ ${c} QR permanente(s) nuevo(s). Los supervisores ya los ven en "Evaluación por QR".`,'s');
-    });
+    const q=await fbdb.collection(COL_SES).where('permanente','==',true).get();
+    const perms=q.docs.map(d=>({id:d.id,ref:d.ref,...d.data()}));
+    const tiene=nom=>perms.find(p=>p.sup===nom||_cumCoincide(p.sup,nom));
+    const cand=candidatosQR(), falt=cand.filter(c=>!tiene(c.nom));
+    /* QR ya creados que no tenían usuario vinculado (o lo tenían distinto): se vinculan */
+    const vincular=perms.map(p=>({p,u:userDeSup(p.sup)})).filter(x=>x.u&&x.u!==x.p.asignado);
+    let m=$('ix-modal');if(!m){m=document.createElement('div');m.id='ix-modal';m.className='ix-modal';document.body.appendChild(m);}
+    m.innerHTML=`<div class="ix-mbox" style="max-width:560px"><h3>📌 Cargar QR permanentes de todos</h3>
+      <p>Revisa la lista de <b>Gestión</b> y el módulo <b>Usuarios</b>. ${cand.length} supervisor(es) activos · ${cand.length-falt.length} ya tienen QR${vincular.length?` · ${vincular.length} QR se vincularán a su usuario`:''}.</p>
+      ${falt.length?`<div style="max-height:320px;overflow:auto;border:1px solid #D9E0EC;border-radius:10px;padding:.4rem .6rem">
+        <label style="display:flex;gap:.5rem;align-items:center;font-weight:800;padding:.3rem 0;border-bottom:1px solid #EEF1F6"><input type="checkbox" checked onchange="document.querySelectorAll('.qt-c').forEach(c=>c.checked=this.checked)"> Marcar todos (${falt.length} sin QR)</label>
+        ${falt.map((c,i)=>`<label style="display:flex;gap:.5rem;align-items:center;padding:.3rem 0"><input type="checkbox" class="qt-c" data-i="${i}" checked>
+          <span><b>${esc(c.nom)}</b> <span class="m-mut" style="font-size:.75rem">· ${esc(c.sector||'varios sectores')} · ${c.user?'usuario '+esc(c.user):'⚠ sin usuario (no podrá verlo en su panel)'} · ${c.fuente}</span></span></label>`).join('')}
+      </div>`:'<div class="m-empty">✅ Todos los supervisores activos ya tienen su QR permanente.</div>'}
+      <p class="m-mut" style="font-size:.75rem;margin-top:.5rem">Empresa de los nuevos QR: <b>${esc(emp||'el trabajador elige')}</b> (cámbiala arriba en el formulario si hace falta).</p>
+      <div class="ix-macts"><button class="btn bout" id="qt-no">Cancelar</button><button class="btn bpri" id="qt-ok" ${!falt.length&&!vincular.length?'disabled':''}>Crear / actualizar</button></div></div>`;
+    m.classList.add('on'); $('qt-no').onclick=()=>m.classList.remove('on');
+    $('qt-ok').onclick=async()=>{
+      const sel=[...document.querySelectorAll('.qt-c')].filter(c=>c.checked).map(c=>falt[+c.dataset.i]);
+      m.classList.remove('on'); toast('⏳ Creando QR permanentes…','i');
+      let c=0,v=0;
+      for(const x of sel){try{if(await QR.qrCrearPerm({emp,sup:x.nom,sector:x.sector,tipo:'todos',fecha:''},true))c++;}catch(e){console.warn(x.nom,e);}}
+      for(const {p,u} of vincular){try{await p.ref.update({asignado:u});v++;}catch(e){console.warn(p.sup,e);}}
+      toast(`✅ ${c} QR nuevo(s)${v?` · ${v} vinculado(s) a su usuario`:''}. Ya aparecen en la lista y en el panel de cada supervisor.`,'s');
+    };
   },
   qrDia(v){if(!v)return;diaPerm=v;if(sesActiva)escucharResp(sesActiva.id);renderActiva();},
   qrPrevia(id){window.open(urlEval(id)+'&vista=1','_blank');},
@@ -6588,6 +6629,7 @@ if(fbdb){
   fbdb.collection(COL_CFG).doc(DOC_ACC).onSnapshot(d=>{
     ACC=(d.exists&&d.data())||{usuarios:{}}; ACC.usuarios=ACC.usuarios||{};
     aplicarAccesosMenu();
+    window.etiSubirExtras();
     try{const ul=document.getElementById('admin-users');if(ul&&ul.style.display!=='none'&&typeof renderAdminUsers==='function')renderAdminUsers();}catch(e){}
   },e=>console.warn('Accesos nube:',e));
 }
