@@ -7452,6 +7452,7 @@ function render(){
     <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
       <input type="date" class="fc" style="width:auto" value="${esc(T.dia)}" onchange="ETITF.dia(this.value)">
       <label class="m-mut" style="font-size:.8rem;display:flex;gap:4px;align-items:center"><input type="checkbox" ${T.auto?'checked':''} onchange="ETITF.auto(this.checked)"> Reenvío automático a Azure</label>
+      <button class="btn bout bsm" onclick="ETITF.exportarDlg()" title="Descarga en Excel todas las evaluaciones (QR y manuales) de un rango de fechas">📥 Exportar Excel</button>
       <button class="btn bpri bsm" ${T.sync?'disabled':''} onclick="ETITF.sincronizar(true)">${T.sync?'⏳ Enviando…':'☁ Enviar pendientes a Azure'}</button>
     </div></div>
   ${T.err?`<div class="m-empty" style="color:#C8102E">No se pudo leer Firebase: ${esc(T.err)}</div>`:''}
@@ -7515,8 +7516,74 @@ function abrir(){
   if(!T.unsub.length) escuchar(); else render();
   if(!T.timer) T.timer=setInterval(()=>{if(T.auto&&esAdm())sincronizar(false);render();},60000);
 }
+/* _EXPORTAR_V1 (03-oct-2026): Excel de evaluaciones por rango de fechas
+   Hojas: Evaluaciones (1 fila por trabajador QR / por ruta manual, con % por tema) · Por supervisor · Por pregunta (QR) */
+async function exportar(desde,hasta){
+  const f=db(); if(!f){toast('Sin conexión a Firebase','e');return;}
+  if(typeof XLSX==='undefined'){toast('No cargó la librería de Excel; recarga la página','e');return;}
+  if(!desde||!hasta||hasta<desde){toast('Revisa el rango de fechas','e');return;}
+  toast('⏳ Preparando Excel…','i');
+  try{
+    const t0=new Date(desde+'T00:00:00').getTime(), t1=new Date(hasta+'T00:00:00').getTime()+864e5;
+    const [qs,ms]=await Promise.all([f.collection('respuestas_qr').where('ts','>=',t0).where('ts','<',t1).get(),
+      f.collection('evaluaciones_conocimiento').where('ts','>=',t0).where('ts','<',t1).get()]);
+    const qr=qs.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.ts||0)-(b.ts||0));
+    const man=ms.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.modalidad!=='QR').sort((a,b)=>(a.ts||0)-(b.ts||0));
+    if(!qr.length&&!man.length){toast('No hay evaluaciones en ese rango','i');return;}
+    const temas=[]; const addT=n=>{if(n&&!temas.includes(n))temas.push(n);};
+    qr.forEach(r=>(r.secs||[]).forEach(x=>addT(x.nom))); man.forEach(m=>(m.rutas||[]).forEach(r=>(r.secs||[]).forEach(x=>addT(x.nom))));
+    const P=v=>Math.round((+v||0)*1000)/10, fch=ts=>ts?new Date(ts):null;
+    const filas=[];
+    qr.forEach(r=>{const o={'Fecha':r.fecha||'','Hora':fch(r.ts)?fch(r.ts).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}):'','Modalidad':'QR',
+      'Empresa':r.emp||'','Supervisor':r.sup||'','Sector / zona':r.sector||'','Tipo':r.tipo==='empleado'?'Empleado':'Obrero','Ruta / Área':r.ruta||'','Código':r.cod||'',
+      'Evaluados':1,'Resultado %':P(r.resultado),'Estado':(+r.resultado||0)>=0.7?'APROBADO':'REFUERZO','En Azure':r.azOk?'Sí':'Pendiente','Código QR':r.sesion||''};
+      temas.forEach(t=>{const x=(r.secs||[]).find(y=>y.nom===t);o[t+' %']=x?P(x.pct):'';}); filas.push(o);});
+    man.forEach(m=>(m.rutas||[]).forEach(r=>{const o={'Fecha':m.fecha||'','Hora':fch(m.ts)?fch(m.ts).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}):'','Modalidad':'Manual',
+      'Empresa':m.emp||'','Supervisor':m.sup||'','Sector / zona':m.sector||'','Tipo':m.tipo==='empleado'?'Empleado':'Obrero','Ruta / Área':r.nom||'','Código':r.cod||'',
+      'Evaluados':+r.ne||1,'Resultado %':P(r.resGrupo),'Estado':(+r.resGrupo||0)>=0.7?'APROBADO':'REFUERZO','En Azure':m.azOk?'Sí':'Pendiente','Código QR':'','Registrado por':m.nomUsuario||m.usuario||''};
+      temas.forEach(t=>{const x=(r.secs||[]).find(y=>y.nom===t);o[t+' %']=x?P(x.pct!=null?x.pct:x.cum):'';}); filas.push(o);}));
+    /* por supervisor */
+    const sm=new Map(); filas.forEach(o=>{const g=sm.get(o.Supervisor)||{Supervisor:o.Supervisor,'Evaluados QR':0,'Evaluados manual':0,s:0,n:0,apr:0};
+      if(o.Modalidad==='QR')g['Evaluados QR']+=o.Evaluados;else g['Evaluados manual']+=o.Evaluados; g.s+=o['Resultado %']*o.Evaluados; g.n+=o.Evaluados; if(o.Estado==='APROBADO')g.apr+=o.Evaluados; sm.set(o.Supervisor,g);});
+    const sups=[...sm.values()].map(g=>({Supervisor:g.Supervisor,'Evaluados QR':g['Evaluados QR'],'Evaluados manual':g['Evaluados manual'],'Total':g.n,'Promedio %':Math.round(g.s/g.n*10)/10,'Aprobados ≥70%':g.apr})).sort((a,b)=>b.Total-a.Total);
+    /* por pregunta (QR): % de logro de cada pregunta */
+    /* cada respuesta se mide con la versión del banco con la que se respondió (sesión o historial del banco) */
+    const ses={}; for(const id of [...new Set(qr.map(r=>r.sesion).filter(Boolean))]){try{const d=await f.collection('sesiones_qr').doc(id).get();if(d.exists)ses[id]=d.data();}catch(e){}}
+    const hist={}; for(const v of [...new Set(qr.map(r=>r.bancoVersion||0))].filter(v=>v>0)){try{const h=await f.collection('banco_historial').where('version','==',v).limit(1).get();
+      if(!h.empty){const x=h.docs[0].data();hist[v]=(x.secs||[]).map(sec=>({nom:sec.nom,pregs:(sec.pregs||[]).filter(p=>p.vb!==false).map(p=>({n:p.n,t:p.tq||p.t,max:+p.pct||0}))})).filter(sec=>sec.pregs.length);}}catch(e){}}
+    const bancoDe=r=>{const S=ses[r.sesion];if(S&&(S.bancoVersion||0)===(r.bancoVersion||0))return S.banco||[];return hist[r.bancoVersion||0]||null;};
+    const pq=new Map(); let sinDet=0;
+    qr.forEach(r=>{const B=bancoDe(r); if(!B){sinDet++;return;}
+      B.forEach(sec=>(sec.pregs||[]).forEach(p=>{const k=sec.nom+'|'+p.t;const g=pq.get(k)||{Tema:sec.nom,Pregunta:p.t,Respondieron:0,'Respuesta completa':0,lo:0,mx:0};
+        const v=+((r.pts||{})[p.n])||0; g.Respondieron++; if(v>=(+p.max||0)-1e-6)g['Respuesta completa']++; g.lo+=v; g.mx+=(+p.max||0); pq.set(k,g);}));});
+    if(sinDet) console.warn('Exportar: '+sinDet+' respuesta(s) sin detalle por pregunta (versión de banco no encontrada)');
+    const preg=[...pq.values()].map(g=>({Tema:g.Tema,Pregunta:g.Pregunta,Respondieron:g.Respondieron,'Respuesta completa':g['Respuesta completa'],'% de logro':g.mx?Math.round(g.lo/g.mx*1000)/10:0})).sort((a,b)=>a['% de logro']-b['% de logro']);
+    const wb=XLSX.utils.book_new();
+    const ws1=XLSX.utils.json_to_sheet(filas); ws1['!cols']=Object.keys(filas[0]).map(k=>({wch:Math.max(10,Math.min(40,k.length+4))}));
+    XLSX.utils.book_append_sheet(wb,ws1,'Evaluaciones');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(sups),'Por supervisor');
+    if(preg.length){const ws3=XLSX.utils.json_to_sheet(preg);ws3['!cols']=[{wch:28},{wch:70},{wch:12},{wch:18},{wch:12}];XLSX.utils.book_append_sheet(wb,ws3,'Por pregunta (QR)');}
+    XLSX.writeFile(wb,desde<='2000-01-01'?`ETI-Base-completa-al-${hasta}.xlsx`:`ETI-Evaluaciones-${desde}${hasta!==desde?'_a_'+hasta:''}.xlsx`);
+    toast(`✅ Excel listo: ${qr.length} evaluaciones QR · ${man.length} registros manuales`,'s');
+  }catch(e){console.error(e);toast('No se pudo exportar: '+e.message,'e');}
+}
 window.ETITF={
   dia(v){if(!v)return;T.dia=v;escuchar();},
+  exportarDlg(){
+    let m=$('ix-modal');if(!m){m=document.createElement('div');m.id='ix-modal';m.className='ix-modal';document.body.appendChild(m);}
+    m.innerHTML=`<div class="ix-mbox"><h3>📥 Exportar evaluaciones a Excel</h3><p>Incluye QR (cada trabajador) y manuales, con su % por tema, más un resumen por supervisor y el % de logro de cada pregunta.</p>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin:.2rem 0 .4rem">
+        <button class="btn bout bsm" onclick="document.getElementById('ex-d').value='${esc(T.dia)}';document.getElementById('ex-h').value='${esc(T.dia)}'">Día elegido</button>
+        <button class="btn bout bsm" onclick="document.getElementById('ex-d').value='${esc(T.dia.slice(0,8))}01';document.getElementById('ex-h').value='${esc(T.dia)}'">Este mes</button>
+        <button class="btn bpri bsm" onclick="document.getElementById('ex-d').value='2000-01-01';document.getElementById('ex-h').value='${esc(hoy())}'" title="Todas las evaluaciones registradas desde el inicio (para auditoría)">🗄 Toda la base</button>
+      </div>
+      <label class="fl">Desde</label><input class="fc" type="date" id="ex-d" value="${esc(T.dia)}">
+      <label class="fl">Hasta</label><input class="fc" type="date" id="ex-h" value="${esc(T.dia)}">
+      <div class="ix-macts"><button class="btn bout" id="ex-no">Cancelar</button><button class="btn bpri" id="ex-ok">📥 Descargar Excel</button></div></div>`;
+    m.classList.add('on'); $('ex-no').onclick=()=>m.classList.remove('on');
+    $('ex-ok').onclick=()=>{const d=$('ex-d').value,h=$('ex-h').value;m.classList.remove('on');exportar(d,h);};
+  },
+  exportar,
   auto(v){T.auto=!!v;},
   sincronizar(m){return sincronizar(!!m);}
 };

@@ -150,11 +150,15 @@ function ubicacion(){
   if(st.tipo==='empleado'){st.area=st.ruta||(last.tipo==='empleado'?last.ruta:'')||'';st.ruta='';}
   else if(!st.ruta&&last.tipo!=='empleado'){st.ruta=last.ruta||'';st.cod=st.cod||last.cod||'';}
   function leer(){var g=function(id){var e=document.getElementById(id);return e?e.value:null;};
-    var v;if((v=g('sec'))!==null)st.sector=v;if((v=g('ruta'))!==null)st.ruta=v;if((v=g('cod'))!==null)st.cod=v;if((v=g('area'))!==null)st.area=v;}
+    var v;if((v=g('sec'))!==null){st.otro=(v==='__otro__');if(!st.otro)st.sector=v;}if(st.otro&&(v=g('secOtro'))!==null)st.sector=v;if((v=g('ruta'))!==null)st.ruta=v;if((v=g('cod'))!==null)st.cod=v;if((v=g('area'))!==null)st.area=v;}
   function selSector(lbl){
     /* _SECTOR_EDITABLE_V1: el sector del QR solo viene preseleccionado; el trabajador siempre puede cambiarlo */
-    var ops=sects.slice(); if(st.sector&&ops.indexOf(st.sector)<0) ops.unshift(st.sector);
-    return '<label for="sec">'+lbl+'</label><select id="sec"><option value="">— Elige —</option>'+ops.map(function(x){return '<option'+(x===st.sector?' selected':'')+'>'+esc(x)+'</option>';}).join('')+'</select>';
+    /* _SECTOR_OTRO_V1: si su sector, planta o zona no está en la lista, elige "Otro" y lo escribe */
+    var ops=sects.slice(), otro=st.otro||(st.sector&&ops.indexOf(st.sector)<0&&st.sector!==S.sector);
+    if(!otro&&st.sector&&ops.indexOf(st.sector)<0) ops.unshift(st.sector);
+    return '<label for="sec">'+lbl+'</label><select id="sec"><option value="">— Elige —</option>'+ops.map(function(x){return '<option'+(!otro&&x===st.sector?' selected':'')+'>'+esc(x)+'</option>';}).join('')+
+      '<option value="__otro__"'+(otro?' selected':'')+'>✏️ Otro (no está en la lista: escribirlo)</option></select>'+
+      (otro?'<input id="secOtro" autocomplete="off" placeholder="Escribe tu sector, planta o zona" value="'+esc(st.sector||'')+'" style="margin-top:8px">':'');
   }
   function pintar(){
     var h='<div class="card"><h2>¿Dónde trabajas hoy?</h2><p>Estos datos sirven para ver los resultados por sector, ruta o área. <b>No se guarda tu nombre ni tu DNI.</b></p>';
@@ -172,10 +176,11 @@ function ubicacion(){
       h+='<label for="area">Área a la que perteneces</label><input id="area" list="lAreas" autocomplete="off" placeholder="Ej. Administración" value="'+esc(st.area)+'">'+
         '<datalist id="lAreas">'+areas.map(function(a){return '<option value="'+esc(a)+'">';}).join('')+'</datalist>'+
         selSector('Sector o zona donde estás trabajando')+
-        '<div class="nota">Ej.: si eres de Administración pero hoy estás en Algarrobos, elige Algarrobos.</div>';
+        '<div class="nota">Ej.: si eres de Administración pero hoy estás en Algarrobos, elige Algarrobos. Si tu sector, planta o zona no está en la lista, elige <b>✏️ Otro</b> y escríbelo.</div>';
     }
     h+='<div class="err" id="err"></div><div style="margin-top:18px"><button class="btn" id="bOk"'+(st.tipo?'':' disabled')+'>Continuar →</button></div></div>';
     app.innerHTML=h;
+    var se=document.getElementById('sec'); if(se) se.onchange=function(){var era=st.otro;leer();if(st.otro!==era){if(st.otro)st.sector='';pintar();var i=document.getElementById('secOtro');if(i)i.focus();}};
     Array.prototype.forEach.call(app.querySelectorAll('.tipo'),function(b){b.onclick=function(){leer();if(b.getAttribute('data-e'))st.emp=b.getAttribute('data-e');else st.tipo=b.getAttribute('data-t');pintar();};});
     document.getElementById('bOk').onclick=continuar;
   }
@@ -188,14 +193,16 @@ function ubicacion(){
     if(!st.tipo) return falla('Elige si eres obrero o empleado.');
     if(st.tipo==='obrero'){
       var ruta=up(st.ruta), cod=up(st.cod).replace(/\s+/g,'');
-      if(!st.sector) return falla('Elige tu sector o fundo.');
+      st.sector=String(st.sector||'').trim().replace(/\s+/g,' ').slice(0,60);if(st.otro)st.sector=st.sector.toLowerCase().replace(/(^|\s)\S/g,function(c){return c.toUpperCase();});
+      if(!st.sector) return falla(st.otro?'Escribe tu sector o fundo.':'Elige tu sector o fundo.');
       if(!ruta) return falla('Escribe tu ruta.');
       if(!cod) return falla('Escribe el código de tu ruta.');
       W={emp:st.emp,tipo:'obrero',sector:st.sector,ruta:ruta.slice(0,60),cod:cod.slice(0,30)};
     }else{
       var area=up(st.area);
       if(!area) return falla('Escribe tu área.');
-      if(!st.sector) return falla('Elige el sector o zona donde estás trabajando.');
+      st.sector=String(st.sector||'').trim().replace(/\s+/g,' ').slice(0,60);if(st.otro)st.sector=st.sector.toLowerCase().replace(/(^|\s)\S/g,function(c){return c.toUpperCase();});
+      if(!st.sector) return falla(st.otro?'Escribe el sector o zona donde estás trabajando.':'Elige el sector o zona donde estás trabajando.');
       W={emp:st.emp,tipo:'empleado',sector:st.sector,ruta:area.slice(0,60),cod:''};
     }
     ls('eti_qr_ult',JSON.stringify(W));
