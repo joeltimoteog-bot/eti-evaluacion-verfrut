@@ -1537,8 +1537,14 @@ function guardarEvalNube(res){
 function enviarASheets(p){
   if(!SHEETS_WEBHOOK_URL) return;
   try{
+    /* _SHEETS_ORDEN_V1: el Apps Script lee los temas por posición (Legislación, Bienestar, Sustentabilidad, Ética, SST, Medioambiente).
+       Si un tema no tiene preguntas con visto bueno, se envía vacío en su lugar para que la fila no falle ni se corra de columna. */
+    const ORD=['leg','bie','sus','eti','sst','med'];
+    const q={...p,rutas:(p.rutas||[]).map(r=>{const by={};(r.secs||[]).forEach(x=>{if(x&&x.id)by[x.id]=x;});
+      const fijo=ORD.map(id=>by[id]||{id,pct:null});
+      return {...r,secs:(r.secs||[]).every(x=>x&&x.id)?fijo:(r.secs||[])};})};
     fetch(SHEETS_WEBHOOK_URL,{method:'POST',mode:'no-cors',
-      headers:{'Content-Type':'text/plain'},body:JSON.stringify(p)});
+      headers:{'Content-Type':'text/plain'},body:JSON.stringify(q)});
   }catch(e){console.error('Sheets:',e);}
 }
 
