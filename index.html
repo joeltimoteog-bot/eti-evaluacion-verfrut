@@ -7571,7 +7571,27 @@ async function exportar(desde,hasta){
     if(preg.length){const ws3=XLSX.utils.json_to_sheet(preg);ws3['!cols']=[{wch:28},{wch:70},{wch:12},{wch:18},{wch:12}];XLSX.utils.book_append_sheet(wb,ws3,'Por pregunta (QR)');}
     XLSX.writeFile(wb,desde<='2000-01-01'?`ETI-Base-completa-al-${hasta}.xlsx`:`ETI-Evaluaciones-${desde}${hasta!==desde?'_a_'+hasta:''}.xlsx`);
     toast(`✅ Excel listo: ${qr.length} evaluaciones QR · ${man.length} registros manuales`,'s');
-  }catch(e){console.error(e);toast('No se pudo exportar: '+e.message,'e');}
+    if(desde<='2000-01-01'){try{await f.collection('config_eti').doc('respaldo').set({ultimo:hoy(),en:new Date().toISOString(),por:(SESSION&&SESSION.user)||'',qr:qr.length,manual:man.length},{merge:true});}catch(e){}
+      const b=$('tf-respaldo'); if(b) b.remove();}
+    return true;
+  }catch(e){console.error(e);toast('No se pudo exportar: '+e.message,'e');return false;}
+}
+/* _RESPALDO_MENSUAL_V1 (03-oct-2026): si pasaron 30 días desde el último respaldo "Toda la base", el admin ve un aviso con un botón */
+async function avisoRespaldo(){
+  try{
+    if(!esAdm()||$('tf-respaldo')||window._respChk) return; const f=db(); if(!f) return; window._respChk=true;
+    const d=await f.collection('config_eti').doc('respaldo').get(); const x=d.exists?d.data():{};
+    const dias=x.ultimo?Math.floor((new Date(hoy()+'T00:00:00')-new Date(x.ultimo+'T00:00:00'))/864e5):null;
+    if(dias!==null&&dias<30) return;
+    const st=$('admin-stats')||$('admin-trafico'); if(!st) return;
+    const b=document.createElement('div'); b.id='tf-respaldo';
+    b.style.cssText='display:flex;gap:.8rem;align-items:center;justify-content:space-between;flex-wrap:wrap;background:#FFF4E5;border:1px solid #F3C27A;color:#7A4A00;border-radius:12px;padding:.75rem 1rem;margin:0 0 1rem';
+    b.innerHTML=`<div>📦 <b>Respaldo mensual pendiente.</b> ${x.ultimo?'El último fue el '+x.ultimo.split('-').reverse().join('/')+' ('+dias+' días).':'Aún no se ha hecho ninguno.'} Descarga la base completa y guárdala en tu Drive o PC.</div>
+      <div style="display:flex;gap:.5rem"><button class="btn bpri bsm" id="tf-resp-ok">📥 Descargar respaldo</button><button class="btn bout bsm" id="tf-resp-no">Luego</button></div>`;
+    st.parentNode.insertBefore(b,st);
+    $('tf-resp-no').onclick=()=>b.remove();
+    $('tf-resp-ok').onclick=async()=>{const k=$('tf-resp-ok');k.disabled=true;k.textContent='⏳ Preparando…';if(!(await exportar('2000-01-01',hoy()))){k.disabled=false;k.textContent='📥 Descargar respaldo';}};
+  }catch(e){console.warn('aviso respaldo',e);}
 }
 window.ETITF={
   dia(v){if(!v)return;T.dia=v;escuchar();},
@@ -7612,8 +7632,8 @@ window.adminTab=function(t){
   return r;
 };
 const _go=window.go;
-window.go=function(id){const r=_go.apply(this,arguments);if(id==='sadmin')inyectar();return r;};
-setTimeout(()=>{const a=document.querySelector('.screen.active');if(a&&a.id==='sadmin')inyectar();},900);
+window.go=function(id){const r=_go.apply(this,arguments);if(id==='sadmin'){inyectar();setTimeout(avisoRespaldo,1500);}return r;};
+setTimeout(()=>{const a=document.querySelector('.screen.active');if(a&&a.id==='sadmin'){inyectar();setTimeout(avisoRespaldo,1500);}},900);
 })();
 </script>
 </body>
