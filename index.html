@@ -6201,6 +6201,10 @@ function crearPantallaQR(){
   <header class="hdr"><div class="logo">ETICA<span>·</span>SOCIAL <span class="m-crumb">› Evaluación por QR</span></div>
     <div style="display:flex;align-items:center;gap:.6rem;"><button class="btn bpri bsm" onclick="ETIM.qrManual()" title="El supervisor registra la evaluación manualmente (sin QR)">📋 Evaluación manual</button><button class="btn bgho bsm" onclick="volverAdmin()">← Menú</button><div class="logo-uni" role="img" aria-label="Unifrutti" style="height:36px;"></div></div></header>
   <div class="m-wrap">
+    <div id="qr-manualbar" style="display:flex;justify-content:space-between;align-items:center;gap:.7rem;flex-wrap:wrap;background:#fff;border:1px solid #D9E0EC;border-left:5px solid #6A3FC0;border-radius:14px;padding:.8rem 1rem;margin-bottom:1rem;box-shadow:0 4px 14px rgba(0,30,90,.06)">
+      <div><b style="font-size:.95rem">📋 Evaluación manual</b><div class="m-mut" style="font-size:.8rem">¿Sin celulares o sin señal? El supervisor registra la evaluación directamente en el sistema.</div></div>
+      <button class="btn bpri" style="padding:.6rem 1.1rem" onclick="ETIM.qrManual()">📋 Hacer evaluación manual</button>
+    </div>
     <div class="m-qrgrid">
       <section class="m-card" id="qr-form">
         <h2 class="m-tit">📱 Crear QR de evaluación</h2>
@@ -6221,7 +6225,7 @@ function crearPantallaQR(){
         <button class="btn bout" style="width:100%;padding:.7rem;margin-top:.5rem" onclick="ETIM.qrPermTodos()">📌 Cargar QR de todos los supervisores y usuarios (crea los que faltan)</button>
         <div class="m-mut" style="margin-top:.6rem;font-size:.75rem;" id="qr-ayuda"><b>Permanente:</b> se imprime una vez y sirve siempre; cuando actualizas el banco, el mismo QR ya trae las preguntas nuevas. <b>Especial:</b> solo para una evaluación puntual en una fecha.</div>
       </section>
-      <section class="m-card" id="qr-info" style="display:none"><div style="display:flex;justify-content:space-between;align-items:center;gap:.6rem;flex-wrap:wrap;background:#F3ECFF;border-radius:12px;padding:.7rem .9rem;margin-bottom:.9rem"><span style="font-size:.85rem"><b>¿Sin celulares o sin señal?</b> Registra la evaluación tú mismo.</span><button class="btn bpri bsm" onclick="ETIM.qrManual()">📋 Hacer evaluación manual</button></div><h2 class="m-tit">📱 Mis QR asignados</h2><p class="m-sub">El administrador crea los QR y te los asigna. Tu <b>📌 QR permanente</b> se muestra abajo: imprímelo o muéstralo en pantalla completa. Si tienes un QR especial, elígelo en <b>Mis sesiones</b> y presiona <b>Mostrar QR</b> y muéstralo a los trabajadores de tu ruta: ellos indican si son obreros (sector, ruta y código) o empleados (área y sector/zona).</p></section>
+      <section class="m-card" id="qr-info" style="display:none"><h2 class="m-tit">📱 Mis QR asignados</h2><p class="m-sub">El administrador crea los QR y te los asigna. Tu <b>📌 QR permanente</b> se muestra abajo: imprímelo o muéstralo en pantalla completa. Si tienes un QR especial, elígelo en <b>Mis sesiones</b> y presiona <b>Mostrar QR</b> y muéstralo a los trabajadores de tu ruta: ellos indican si son obreros (sector, ruta y código) o empleados (área y sector/zona).</p></section>
       <section class="m-card" id="qr-activo"></section>
     </div>
     <section class="m-card" style="margin-top:1rem;"><h3 class="m-tit2">🗂 Mis sesiones</h3><div id="qr-lista"></div></section>
