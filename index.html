@@ -6010,7 +6010,8 @@ function renderBanco(){
           <button class="m-ico" title="Eliminar" onclick="ETIM.bkDelPreg(${si},${pi})">🗑</button>
         </div>
       </div>`).join('')}
-      <button class="btn bout bsm m-addp" onclick="ETIM.bkAddPreg(${si})">➕ Agregar pregunta a ${esc(s.nom)}</button>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn bout bsm m-addp" onclick="ETIM.bkAddPreg(${si})">➕ Agregar pregunta (alternativas) a ${esc(s.nom)}</button>
+      <button class="btn bout bsm m-addp" onclick="ETIM.bkAddPreg(${si},1)">➕ Agregar Verdadero / Falso</button></div>
     </div>`;}).join('')}`;
   bkResumen();
 }
@@ -6031,7 +6032,15 @@ const BK={
   bkOpT(si,pi,oi,v){draft[si].pregs[pi].ops[oi].t=v;bkMarcar();},
   bkAddOp(si,pi){draft[si].pregs[pi].ops.push({t:'',ok:false});bkMarcar();renderBanco();},
   bkDelOp(si,pi,oi){const p=draft[si].pregs[pi];if(p.ops.length<=2){toast('Cada pregunta necesita al menos 2 alternativas','e');return;}p.ops.splice(oi,1);bkMarcar();renderBanco();},
-  bkAddPreg(si){draft[si].pregs.push({n:0,t:'',tq:'',max:2,pct:0,tipo:'unica',revisar:false,ops:[{t:'',ok:true},{t:'',ok:false},{t:'',ok:false}]});bkMarcar();renderBanco();},
+  /* _AGREGAR_PREG_V2 (06-oct-2026): la pregunta nueva entra SIN visto bueno (no altera la evaluación ni los % hasta que la apruebes) */
+  bkAddPreg(si,vf){
+    const ops=vf?[{t:'Verdadero',ok:true},{t:'Falso',ok:false}]:[{t:'',ok:true},{t:'',ok:false},{t:'',ok:false}];
+    draft[si].pregs.push({n:0,t:'',tq:'',max:2,pct:0,tipo:'unica',revisar:false,vb:false,origen:'Agregada',ops});
+    bkMarcar();renderBanco();
+    setTimeout(()=>{const ps=document.querySelectorAll('#admin-banco .m-sec')[si];const ult=ps&&ps.querySelectorAll('.m-preg');const el=ult&&ult[ult.length-1];
+      if(el){el.scrollIntoView({behavior:'smooth',block:'center'});const t=el.querySelector('textarea');if(t)t.focus();}},80);
+    toast(vf?'➕ Pregunta Verdadero/Falso agregada: escribe la afirmación y marca cuál es la correcta. Dale ✅ cuando esté lista.':'➕ Pregunta agregada: escribe el texto y las alternativas. Dale ✅ cuando esté lista.','i');
+  },
   bkDelPreg(si,pi){confMod('¿Eliminar la pregunta?',draft[si].pregs[pi].t||'(sin texto)',()=>{draft[si].pregs.splice(pi,1);bkMarcar();renderBanco();});},
   bkMover(si,pi,d){const a=draft[si].pregs,j=pi+d;if(j<0||j>=a.length)return;[a[pi],a[j]]=[a[j],a[pi]];bkMarcar();renderBanco();},
   bkCargar2026(){

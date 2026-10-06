@@ -74,6 +74,8 @@ select{width:100%;font:600 17px Barlow,sans-serif;padding:14px 12px;border:2px s
 .tipo small{display:block;font-weight:600;font-size:12px;color:var(--text2);margin-top:2px}
 .tipo.sel{border-color:var(--navy);background:#F1F5FD;color:var(--navy)}
 .nota{font-size:12.5px;color:var(--text2);margin-top:6px}
+.btn.seguir{margin-top:14px;font-size:18px;padding:16px;background:linear-gradient(90deg,var(--navy),#1E6BE0)}
+.btn.seguir:disabled{background:#AAB6CE}
 .pasos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 12px}
 .pasos div{background:var(--surf);border-radius:12px;padding:10px 8px;font-size:12.5px;font-weight:700;text-align:center;color:var(--text)}
 .pasos i{display:flex;width:26px;height:26px;margin:0 auto 6px;border-radius:50%;background:var(--navy);color:#fff;font-style:normal;align-items:center;justify-content:center;font-size:13px}
@@ -218,12 +220,15 @@ function pregunta(){
   app.innerHTML='<div class="card"><div class="prog"><span>Pregunta '+(idx+1)+' de '+P.length+'</span><span>'+hechas+' respondida'+(hechas===1?'':'s')+'</span></div>'+
    '<div class="track"><i style="width:'+(hechas/P.length*100)+'%"></i></div><span class="tema">Tema '+((S.banco||[]).indexOf(it.sec)+1)+' de '+(S.banco||[]).length+' · '+esc(it.sec.nom)+'</span><h2>'+esc(p.t)+'</h2>'+
    (multi?'<div class="hint">✔ Puedes marcar varias respuestas</div>':'')+
-   ORD[p.n].map(function(i){var on=sel.indexOf(i)>=0;return '<button class="op'+(multi?' multi':'')+(on?' sel':'')+'" data-i="'+i+'"><span class="mk">'+(on?'✓':'')+'</span><span>'+esc(p.ops[i])+'</span></button>';}).join('')+'</div>';
+   ORD[p.n].map(function(i){var on=sel.indexOf(i)>=0;return '<button class="op'+(multi?' multi':'')+(on?' sel':'')+'" data-i="'+i+'"><span class="mk">'+(on?'✓':'')+'</span><span>'+esc(p.ops[i])+'</span></button>';}).join('')+''+
+   '<button class="btn seguir" id="bSeguir"'+(sel.length?'':' disabled')+'>'+(idx===P.length-1?'Revisar y enviar →':'Seguir →')+'</button>'+
+   (sel.length?'':'<div class="nota center" style="margin-top:8px">Marca una respuesta para poder seguir.</div>')+'</div>';
   Array.prototype.forEach.call(app.querySelectorAll('.op'),function(b){b.onclick=function(){
     var i=+b.getAttribute('data-i'), a=(R[p.n]||[]).slice();
     if(multi){var k=a.indexOf(i);if(k>=0)a.splice(k,1);else a.push(i);}else a=[i];
     R[p.n]=a; pregunta();
-    if(!multi) setTimeout(function(){if(P[idx]&&P[idx].p.n===p.n&&idx<P.length-1){idx++;pregunta();window.scrollTo(0,0);}},350);
+    /* _BOTON_SEGUIR_V1 (06-oct-2026): ya no pasa sola; el trabajador ve su respuesta marcada y toca "Seguir" */
+    var bs=document.getElementById('bSeguir'); if(bs) setTimeout(function(){try{bs.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e){}},60);
   };});
   barra(true);
   bPrev.textContent=idx===0?(W.tipo==='empleado'?'← Mi área':'← Mi ruta'):'← Atrás';
@@ -231,6 +236,7 @@ function pregunta(){
   bNext.disabled=!(R[p.n]&&R[p.n].length);
   bNext.textContent=idx===P.length-1?'Revisar y enviar →':'Siguiente →';
   bNext.onclick=function(){if(idx<P.length-1){idx++;pregunta();}else revisar();window.scrollTo(0,0);};
+  var bS=document.getElementById('bSeguir'); if(bS) bS.onclick=function(){if(!(R[p.n]&&R[p.n].length))return;bNext.onclick();};
 }
 /* 5) Revisión */
 function revisar(){
