@@ -5959,7 +5959,8 @@ function bkResumen(){
     <div class="m-kpi"><b>${np}</b><span>Preguntas en el banco</span></div>
     <div class="m-kpi ok"><b>${nvb}</b><span>✅ Con visto bueno (salen en la evaluación)</span></div>
     <div class="m-kpi ${np-nvb?'warn':'ok'}"><b>${np-nvb}</b><span>Sin visto bueno (no salen)</span></div>
-    <div class="m-kpi ${okP?'ok':'bad'}"><b>${+tot.toFixed(2)}%</b><span>Suma de % (con visto bueno) ${okP?'✓':(tot<100?`(faltan ${+(100-tot).toFixed(2)}%)`:`(sobran ${+(tot-100).toFixed(2)}%)`)}</span></div>
+    <div class="m-kpi ${okP?'ok':'bad'}"><b>${+tot.toFixed(2)}%</b><span>Suma de % (con visto bueno) ${okP?'✓':(tot<100?`(faltan ${+(100-tot).toFixed(2)}%)`:`(sobran ${+(tot-100).toFixed(2)}%)`)}</span>
+      ${okP||!(tot>0)?'':`<div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.5rem"><button class="btn bpri bsm" onclick="ETIM.bkAjustar()" title="Mantiene la importancia relativa de cada pregunta y lleva el total a 100%">⚖ Ajustar a 100% (proporcional)</button><button class="btn bout bsm" onclick="ETIM.bkIgualar()">Repartir en partes iguales</button></div>`}</div>
     <div class="m-kpi ${rev?'warn':'ok'}"><b>${rev}</b><span>Por confirmar</span></div>
     <div class="m-pesobar">${draft.map((s,i)=>`<i style="width:${(+s.peso||0)*100}%;background:${['#003DA5','#C8102E','#007A3D','#7A4FD0','#E08A00','#0096A6','#555'][i%7]}" title="${esc(s.nom)} ${((+s.peso||0)*100).toFixed(1)}%"></i>`).join('')}</div>`;
 }
@@ -6070,6 +6071,13 @@ const BK={
   bkMover(si,pi,d){const a=draft[si].pregs,j=pi+d;if(j<0||j>=a.length)return;[a[pi],a[j]]=[a[j],a[pi]];bkMarcar();renderBanco();},
   bkCargar2026(){
     confMod('¿Cargar el banco completo?','Se cargan TODAS las preguntas: las anteriores (con la respuesta actualizada donde coinciden con la Ayuda Memoria 2026) con ✅ visto bueno, y las nuevas 2026 sin visto bueno para que tú decidas cuáles salen. Nada se guarda hasta que presiones "Guardar cambios".',()=>{draft=banco2026();bkMarcar();renderBanco();});
+  },
+  /* _AJUSTE_100_V1 (07-oct-2026): lleva los % con visto bueno a 100% manteniendo su proporción */
+  bkAjustar(){
+    const ps=draft.flatMap(s=>s.pregs).filter(vbOk), tot=ps.reduce((a,p)=>a+(+p.pct||0),0);
+    if(!ps.length||!(tot>0)){toast('Primero da ✅ a las preguntas y ponles un %','i');return;}
+    let acc=0; ps.forEach((p,i)=>{if(i<ps.length-1){p.pct=r4((+p.pct||0)*100/tot);acc+=p.pct;}else p.pct=r4(100-acc);});
+    bkMarcar(); renderBanco(); toast('✅ Listo: los '+ps.length+' % suman 100%. Ahora presiona 💾 Guardar cambios.','s');
   },
   bkIgualar(){
     const ps=draft.flatMap(s=>s.pregs).filter(vbOk); if(!ps.length){toast('Primero da ✅ visto bueno a las preguntas que saldrán','i');return;}
