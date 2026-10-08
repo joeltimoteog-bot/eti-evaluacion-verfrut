@@ -1525,13 +1525,38 @@ function guardarEvalNube(res){
       secs:r.secs.map(s=>({id:s.id, nom:s.nom, peso:s.peso, pct:s.cum, pond:s.pond, promSec:s.promSec}))})),
     creadoEn:new Date().toISOString(), ts:Date.now()
   };
-  if(fbdb){
-    fbdb.collection(COL_EVAL).add(payload)
-      .then(ref=>{console.log('✅ Evaluación guardada en la nube'); try{ if(window.etiAzureEvalManual) etiAzureEvalManual(payload, ref.id, ref); }catch(e){} })   // _INDICADORES_V1: copia en Azure SQL
-      .catch(e=>console.error('Firestore:',e));
-  }
+  /* _BANDEJA_MANUAL_V1 (07-oct-2026): se guarda primero en el equipo (bandeja) con un id fijo y luego en la nube.
+     Si no hay señal o se cierra la página, se reintenta sola al volver la conexión o al abrir el sistema. Nunca se duplica. */
+  const id=(fbdb?fbdb.collection(COL_EVAL).doc().id:('L'+Date.now().toString(36)+Math.random().toString(36).slice(2,8)));
+  etiBandeja.poner(id,payload);
+  etiBandeja.subir(id,payload);
   enviarASheets(payload);
 }
+const etiBandeja=(function(){
+  const K='eti_bandeja_eval';
+  const leer=()=>{try{return JSON.parse(localStorage.getItem(K)||'{}')||{};}catch(e){return {};}};
+  const grabar=m=>{try{localStorage.setItem(K,JSON.stringify(m));}catch(e){}};
+  const enCurso=new Set();
+  function poner(id,p){const m=leer();m[id]={p,t:Date.now()};grabar(m);}
+  function quitar(id){const m=leer();delete m[id];grabar(m);}
+  async function subir(id,p){
+    if(!fbdb||enCurso.has(id)) return false; enCurso.add(id);
+    try{
+      const ref=fbdb.collection(COL_EVAL).doc(id);
+      await Promise.race([ref.set(p),new Promise((_,no)=>setTimeout(()=>no(new Error('sin respuesta de la nube')),20000))]);
+      quitar(id); console.log('✅ Evaluación guardada en la nube');
+      try{ if(window.etiAzureEvalManual) etiAzureEvalManual(p, id, ref); }catch(e){}   // _INDICADORES_V1: copia en Azure SQL
+      return true;
+    }catch(e){console.warn('Evaluación en bandeja (se reintenta sola):',e.message);return false;}
+    finally{enCurso.delete(id);}
+  }
+  function reintentar(){const m=leer();Object.entries(m).forEach(([id,x])=>{if(x&&x.p&&Date.now()-(x.t||0)<30*864e5)subir(id,x.p);else quitar(id);});}
+  window.addEventListener('online',reintentar);
+  setInterval(reintentar,60000);
+  setTimeout(reintentar,4000);
+  return {poner,subir,reintentar,pendientes:()=>Object.keys(leer()).length};
+})();
+window.etiBandeja=etiBandeja;
 
 // Enviar a Google Sheets (Apps Script webhook)
 function enviarASheets(p){
@@ -6659,6 +6684,7 @@ if(typeof _renderRes==='function') window.renderRes=function(res){const r=_rende
 const _go=window.go;
 window.go=function(id){
   if(id!=='sqr'&&fullOn){fullOn=false;renderFull();}
+  if(window._bancoPend&&!['sp2','sp3','sres'].includes(id)){aplicarBanco(window._bancoPend);window._bancoPend=null;}
   const r=_go.apply(this,arguments);
   if(id==='sadmin'){inyectarAdmin();if(window.innerWidth>=1100)setTimeout(()=>{const gd=$('gDock');if(gd)gd.classList.add('min');},60);}
   if(id==='sm'){inyectarMenu();aplicarAccesosMenu();}
@@ -6671,7 +6697,11 @@ if(fbdb){
   fbdb.collection(COL_CFG).doc(DOC_BANCO).onSnapshot(d=>{
     const x=d.exists?d.data():null;
     if(x&&Array.isArray(x.secs)&&x.secs.length&&!validarBanco(x.secs).length){
-      BANCO=x.secs; bancoMeta={version:x.version,por:x.por,en:x.en}; aplicarBanco(BANCO);
+      BANCO=x.secs; bancoMeta={version:x.version,por:x.por,en:x.en};
+      /* _BANCO_DIFERIDO_V1: si hay una evaluación manual en curso, no se le cambian las preguntas a mitad */
+      const act=document.querySelector('.screen.active'), enCurso=act&&['sp2','sp3','sres'].includes(act.id);
+      if(enCurso&&SECS.length){window._bancoPend=BANCO;toast('ℹ El banco de preguntas se actualizó; se aplicará al terminar esta evaluación.','i');}
+      else{window._bancoPend=null;aplicarBanco(BANCO);}
       if(!draftSucio){draft=null; const p=$('admin-banco'); if(p&&p.style.display!=='none') renderBanco();}
     }
   },e=>console.warn('Banco nube:',e));
@@ -7028,7 +7058,9 @@ const ETIND={
     if(!$('sind')){const d=document.createElement('div');d.className='screen';d.id='sind';d.innerHTML='<div class="dlayout"><div id="ind-sup"></div></div>';document.body.appendChild(d);}
     go('sind'); ETIND.iniciar();
   },
-  iniciar(){ if(!IND.f) IND.f=filtrosIni(); pintarBase(); ETIND.cargar(); },
+  iniciar(){ if(!IND.f) IND.f=filtrosIni(); pintarBase(); ETIND.cargar();
+    /* _IND_VIVO_V1 (07-oct-2026): mientras los indicadores estén visibles, se actualizan solos cada 2 min */
+    if(!window._indVivo) window._indVivo=setInterval(()=>{const c=$('ind-cuerpo');if(c&&c.offsetParent!==null&&!document.hidden)ETIND.cargar(true);},120000); },
   aplicar(){
     const v=id=>($(id)?$(id).value:'');
     const nd=v('ind-desde'),nh=v('ind-hasta'); const cf=nd!==IND.f.desde||nh!==IND.f.hasta;
@@ -7650,9 +7682,26 @@ window.adminTab=function(t){
   if(t==='trafico'){inyectar();const q=$('admin-trafico');if(q)q.style.display='block';abrir();}
   return r;
 };
+/* _BARRIDO_AZURE_V1 (07-oct-2026): al entrar el admin, se revisan los últimos 3 días y se reenvía a Azure lo que no tenga confirmación */
+async function barridoAzure(){
+  try{
+    if(!esAdm()||window._barrido) return; const f=db(), AZ=window.etiAzure; if(!f||!AZ) return; window._barrido=true;
+    const t0=Date.now()-3*864e5, lim=Date.now()-120000;
+    const [qs,ms]=await Promise.all([f.collection('respuestas_qr').where('ts','>=',t0).get(),f.collection('evaluaciones_conocimiento').where('ts','>=',t0).get()]);
+    const pend=[...qs.docs.filter(d=>{const x=d.data();return !x.azOk&&(x.ts||0)<lim&&x.resultado!=null;}).map(d=>({d,qr:true})),
+      ...ms.docs.filter(d=>{const x=d.data();return x.modalidad!=='QR'&&!x.azOk&&(x.ts||0)<lim;}).map(d=>({d,qr:false}))];
+    if(!pend.length) return;
+    let ok=0;
+    for(let i=0;i<pend.length;i+=50){const lote=pend.slice(i,i+50);
+      const regs=lote.flatMap(x=>x.qr?[AZ.regQR(x.d.data(),x.d.id)]:AZ.regsManual(x.d.data(),x.d.id));
+      if(regs.length) await AZ.post(regs);
+      const en=new Date().toISOString(); await Promise.all(lote.map(x=>x.d.ref.update({azOk:true,azEn:en}).then(()=>ok++,()=>{})));}
+    console.log('[Barrido Azure] '+ok+' registro(s) confirmados en Azure');
+  }catch(e){console.warn('[Barrido Azure] se reintenta en la próxima entrada:',e.message);window._barrido=false;}
+}
 const _go=window.go;
-window.go=function(id){const r=_go.apply(this,arguments);if(id==='sadmin'){inyectar();setTimeout(avisoRespaldo,1500);}return r;};
-setTimeout(()=>{const a=document.querySelector('.screen.active');if(a&&a.id==='sadmin'){inyectar();setTimeout(avisoRespaldo,1500);}},900);
+window.go=function(id){const r=_go.apply(this,arguments);if(id==='sadmin'){inyectar();setTimeout(avisoRespaldo,1500);setTimeout(barridoAzure,6000);}return r;};
+setTimeout(()=>{const a=document.querySelector('.screen.active');if(a&&a.id==='sadmin'){inyectar();setTimeout(avisoRespaldo,1500);setTimeout(barridoAzure,6000);}},900);
 })();
 </script>
 </body>

@@ -136,6 +136,13 @@ function bienvenida(){
    '<div class="anon">🔒 <span><b>Es anónima:</b> no te pediremos DNI ni nombre. Solo si eres obrero o empleado, tu sector y tu ruta o área.</span></div>'+
    '<ul class="tips"><li>📝 <span><b>'+P.length+' preguntas</b> de opción múltiple.</span></li><li>👆 <span>Toca la respuesta que creas correcta. Algunas permiten marcar varias.</span></li><li>⏱ <span>Toma entre 8 y 12 minutos. Responde tú solo, con calma.</span></li></ul>'+
    '<div style="margin-top:16px"><button class="btn" id="bIr">Comenzar →</button></div></div><div class="foot">Supervisor: '+esc(S.sup)+'</div>';
+  var pr=PREVIA?null:progLeer();
+  if(pr){var c=document.createElement('div');c.className='anon';c.style.cssText='background:#EEF3FB;color:#003DA5;margin-top:12px';
+    c.innerHTML='↩ <span>Tienes una evaluación a medias (<b>'+Object.keys(pr.R).length+' de '+P.length+'</b> respondidas). <button class="btn" id="bCont" style="margin-top:8px;padding:12px">Continuar donde me quedé</button></span>';
+    var card=app.querySelector('.card'); card.insertBefore(c,card.querySelector('.tips'));
+    document.getElementById('bCont').onclick=function(){R=pr.R||{};W=pr.W||W;ORD=pr.ORD||{};SEED=pr.SEED||SEED;idx=Math.min(pr.idx||0,P.length-1);
+      var falt=P.findIndex(function(x){return !(R[x.p.n]&&R[x.p.n].length);}); if(falt>=0)idx=falt;
+      if(!W||!W.tipo){ubicacion();return;} if(falt<0){revisar();return;} pregunta();window.scrollTo(0,0);};}
   document.getElementById('bIr').onclick=PREVIA?function(){W={tipo:'obrero',emp:'',sector:'VISTA PREVIA',ruta:'-',cod:'-'};idx=0;R={};pregunta();window.scrollTo(0,0);}:ubicacion;
 }
 /* 3) Ubicación del trabajador (anónima)
@@ -199,20 +206,25 @@ function ubicacion(){
       if(!st.sector) return falla(st.otro?'Escribe tu sector o fundo.':'Elige tu sector o fundo.');
       if(!ruta) return falla('Escribe tu ruta.');
       if(!cod) return falla('Escribe el código de tu ruta.');
-      W={emp:st.emp,tipo:'obrero',sector:st.sector,ruta:ruta.slice(0,60),cod:cod.slice(0,30)};
+      progBorrar(); W={emp:st.emp,tipo:'obrero',sector:st.sector,ruta:ruta.slice(0,60),cod:cod.slice(0,30)};
     }else{
       var area=up(st.area);
       if(!area) return falla('Escribe tu área.');
       st.sector=String(st.sector||'').trim().replace(/\s+/g,' ').slice(0,60);if(st.otro)st.sector=st.sector.toLowerCase().replace(/(^|\s)\S/g,function(c){return c.toUpperCase();});
       if(!st.sector) return falla(st.otro?'Escribe el sector o zona donde estás trabajando.':'Elige el sector o zona donde estás trabajando.');
-      W={emp:st.emp,tipo:'empleado',sector:st.sector,ruta:area.slice(0,60),cod:''};
+      progBorrar(); W={emp:st.emp,tipo:'empleado',sector:st.sector,ruta:area.slice(0,60),cod:''};
     }
     ls('eti_qr_ult',JSON.stringify(W));
-    idx=0;R={};pregunta();window.scrollTo(0,0);
+    idx=0;R={};progGuardar();pregunta();window.scrollTo(0,0);
   }
   pintar();
 }
 /* 4) Preguntas: una por pantalla */
+/* _CONTINUAR_V1 (07-oct-2026): el avance se guarda en el celular; si se cierra o se va la señal, al volver a escanear continúa donde se quedó */
+var PROG_K=function(){return 'eti_qr_prog_'+SID+'_'+(S&&S.bancoVersion||0);};
+function progGuardar(){if(PREVIA)return;try{localStorage.setItem(PROG_K(),JSON.stringify({R:R,idx:idx,W:W,ORD:ORD,SEED:SEED,t:Date.now()}));}catch(e){}}
+function progLeer(){try{var x=JSON.parse(localStorage.getItem(PROG_K())||'null');if(x&&Date.now()-x.t<12*3600e3&&x.R&&Object.keys(x.R).length)return x;}catch(e){}return null;}
+function progBorrar(){try{localStorage.removeItem(PROG_K());}catch(e){}}
 function pregunta(){
   var it=P[idx], p=it.p, multi=p.tipo==='multiple', sel=R[p.n]||[];
   if(!ORD[p.n]) ORD[p.n]=mezclar(p.ops.length,SEED+p.n*31);
@@ -226,7 +238,7 @@ function pregunta(){
   Array.prototype.forEach.call(app.querySelectorAll('.op'),function(b){b.onclick=function(){
     var i=+b.getAttribute('data-i'), a=(R[p.n]||[]).slice();
     if(multi){var k=a.indexOf(i);if(k>=0)a.splice(k,1);else a.push(i);}else a=[i];
-    R[p.n]=a; pregunta();
+    R[p.n]=a; try{if(navigator.vibrate)navigator.vibrate(12);}catch(e){} progGuardar(); pregunta();
     /* _BOTON_SEGUIR_V1 (06-oct-2026): ya no pasa sola; el trabajador ve su respuesta marcada y toca "Seguir" */
     var bs=document.getElementById('bSeguir'); if(bs) setTimeout(function(){try{bs.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(e){}},60);
   };});
@@ -343,7 +355,7 @@ function enviar(){
 window.addEventListener('online',function(){if(PACK&&!PACK.fs){if(W.enviado)despachar(PACK).then(function(p){if(p.fs)cierre();});else enviar();}else reenviarPendientes();});
 /* 7) Fin: mensaje y salida del sitio */
 function fin(){
-  W.enviado=true;
+  W.enviado=true; progBorrar();
   barra(false);
   if(PACK&&!(PACK.fs&&PACK.az)){   /* esperamos que Firebase Y Azure confirmen antes de cerrar (Azure: máx. ~25 s; luego lo reenvía el panel) */
     app.innerHTML='<div class="card center"><div class="ok-anim"><svg viewBox="0 0 24 24" fill="none" stroke="#007A3D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>'+
