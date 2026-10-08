@@ -13,12 +13,19 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+<!-- _LIBS_LOCALES_V1 (08-oct-2026): si el servidor externo falla, se usa la copia de lib/ -->
+<script>if(!(window.firebase))document.write('<script src="lib/firebase-app-compat.js"><\/script>');</script>
+<script>if(!(window.firebase&&firebase.firestore))document.write('<script src="lib/firebase-firestore-compat.js"><\/script>');</script>
+<script>if(!(window.firebase&&firebase.database))document.write('<script src="lib/firebase-database-compat.js"><\/script>');</script>
 <script src="https://joeltimoteog-bot.github.io/sistema-rl-verfrut/frontend/js/progreso.js?v=6"></script>  <!-- _PROGRESO_ETI_V1 (02-oct): circulo "Guardando…" y ✓ al guardar/actualizar/eliminar -->
 <script>try{ if (window.RLProgreso && RLProgreso.firestoreCompat) RLProgreso.firestoreCompat(firebase); }catch(e){}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>if(!(window.Chart))document.write('<script src="lib/chart.umd.js"><\/script>');</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>if(!(window.XLSX))document.write('<script src="lib/xlsx.full.min.js"><\/script>');</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script>window.qrcode||document.write('<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"><\/script>');</script>
+<script>if(!(window.qrcode))document.write('<script src="lib/qrcode.js"><\/script>');</script>
 <style>
 :root{
   /* _IMAGEN_V1: el logo vivia repetido 9 veces en el HTML. Ahora se define
@@ -6704,7 +6711,8 @@ window.addEventListener('beforeunload',e=>{if(draftSucio){e.preventDefault();e.r
 if(fbdb){
   fbdb.collection(COL_CFG).doc(DOC_BANCO).onSnapshot(d=>{
     const x=d.exists?d.data():null;
-    if(x&&Array.isArray(x.secs)&&x.secs.length&&!validarBanco(x.secs).length){
+    let valido=false; try{valido=!!(x&&Array.isArray(x.secs)&&x.secs.length&&!validarBanco(x.secs).length);}catch(e){console.warn('Banco en la nube con formato inválido; se mantiene el actual',e);}   /* _BANCO_SEGURO_V1 */
+    if(valido){
       BANCO=x.secs; bancoMeta={version:x.version,por:x.por,en:x.en};
       /* _BANCO_DIFERIDO_V1: si hay una evaluación manual en curso, no se le cambian las preguntas a mitad */
       const act=document.querySelector('.screen.active'), enCurso=act&&['sp2','sp3','sres'].includes(act.id);
@@ -6782,7 +6790,8 @@ function regDeRespuesta(d,id){
     secciones:(d.secs||[]).map(s=>({id:s.id,nom:s.nom,peso:s.peso,pct:s.pct}))};
 }
 /* _TRAFICO_V1: helpers de Azure para el panel de tráfico */
-window.etiAzure={post:azPost,regQR:regDeRespuesta,regsManual:regsDeEval};
+window.etiAzure={post:azPost,regQR:regDeRespuesta,regsManual:regsDeEval,
+  ping:async()=>{const t=Date.now(),ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),12000);try{const d=new Date().toISOString().slice(0,10);const r=await fetch(AZ_ETI+'/stats?desde='+d+'&hasta='+d,{signal:ctl.signal,cache:'no-store'});return {ok:r.ok,ms:Date.now()-t};}catch(e){return {ok:false,ms:Date.now()-t,err:e.message};}finally{clearTimeout(to);}}};
 /* Recalificación al cerrar: Azure no actualiza registros existentes, así que (con token de admin) se borra y se vuelve a insertar.
    Se marca azOk:false antes, para que el panel de tráfico lo reenvíe si algo falla a mitad. */
 window.etiAzureRespQR=async function(lista,calif,refs){
@@ -7339,7 +7348,7 @@ body.side-open #gDock,body.side-open #gFab,body.side-open #chat-fab{display:none
 'use strict';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-const TIT={sind:'Indicadores',sm:'Inicio',sp1:'Nueva Evaluación',sp2:'Nueva Evaluación',sp3:'Nueva Evaluación',sres:'Resultados',sdash:'Dashboard',sqr:'Evaluación por QR'};
+const TIT={smis:'Mis evaluaciones',sind:'Indicadores',sm:'Inicio',sp1:'Nueva Evaluación',sp2:'Nueva Evaluación',sp3:'Nueva Evaluación',sres:'Resultados',sdash:'Dashboard',sqr:'Evaluación por QR'};
 const TAB_TIT={stats:'Estadísticas',users:'Usuarios',registros:'Registros',eval:'Nueva Evaluación',dash:'Mi Dashboard',prog:'Programación',conectados:'Conectados',cumplimiento:'Cumplimiento',banco:'Banco de Preguntas',accesos:'Control de Accesos',indicadores:'Indicadores',trafico:'Tráfico en vivo'};
 let tabActual='stats';
 function crear(){
@@ -7370,6 +7379,7 @@ function armarNav(){
     // devolver botones previos por si se rearma
     nav.innerHTML='';
     sec(nav,'Principal');['atab1','atab12','atab13','atab5','atab4','atab3'].forEach(i=>mover(nav,i));
+    it(nav,'🗂','Evaluaciones por supervisor',()=>window.ETIMIS&&ETIMIS.abrir(),'mis');   /* _MIS_EVAL_V1 */
     sec(nav,'Gestión');['atab6','atab8','atab7','atab2'].forEach(i=>mover(nav,i));
     sec(nav,'Evaluación en campo');mover(nav,'atab9');
     if($('atab10')){sec(nav,'Configuración 🔒');['atab10','atab11'].forEach(i=>mover(nav,i));}
@@ -7384,6 +7394,7 @@ function armarNav(){
     if(T('dash')) it(nav,'📊','Dashboard',()=>irDash(),'dash');
     if(T('ult')) it(nav,'🧾','Último Reporte',()=>verUlt(),'ult');
     if(T('ind')) it(nav,'📈','Indicadores',()=>ETIND.abrir(),'ind');
+    it(nav,'🗂','Mis evaluaciones',()=>window.ETIMIS&&ETIMIS.abrir(),'mis');   /* _MIS_EVAL_V1 */
   }
 }
 function heroAdmin(){
@@ -7483,6 +7494,32 @@ function css(){
   .tf-msg{font-size:.75rem;color:#5B6B85;margin-top:.4rem}`;
   document.head.appendChild(s);
 }
+/* _SALUD_V1 (08-oct-2026): semáforo de salud del sistema */
+const SAL={t:0,fb:null,az:null,resp:null,banco:null,qr:null};
+async function chequeo(){
+  if(Date.now()-SAL.t<50000) return; SAL.t=Date.now();
+  const f=db(); const t0=Date.now();
+  try{const d=await Promise.race([f.collection('config_eti').doc('banco').get(),new Promise((_,n)=>setTimeout(()=>n(new Error('sin respuesta')),12000))]);
+    SAL.fb={ok:true,ms:Date.now()-t0}; const x=d.exists?d.data():{}; SAL.banco={v:x.version||0,vb:(x.secs||[]).reduce((a,s)=>a+(s.pregs||[]).filter(p=>p.vb!==false).length,0)};}
+  catch(e){SAL.fb={ok:false,err:e.message};}
+  SAL.az=window.etiAzure&&window.etiAzure.ping?await window.etiAzure.ping():{ok:false,err:'no disponible'};
+  try{const r=await f.collection('config_eti').doc('respaldo').get();SAL.resp=r.exists?r.data():{};}catch(e){}
+  try{const q=await f.collection('sesiones_qr').where('permanente','==',true).get();SAL.qr={tot:q.size,act:q.docs.filter(d=>d.data().estado==='abierta').length};}catch(e){}
+  const el=$('tf-salud'); if(el) el.innerHTML=saludHTML();
+}
+function saludHTML(){
+  const ch=(ok,t,d)=>`<span style="display:inline-flex;align-items:center;gap:6px;background:${ok===null?'#EEF1F6':ok?'#E6F7EE':'#FCE4E7'};color:${ok===null?'#5B6B85':ok?'#0B5E33':'#9B0D22'};border-radius:10px;padding:6px 10px;font-size:.76rem;font-weight:700">${ok===null?'⏳':ok?'🟢':'🔴'} ${t}${d?` <span style="font-weight:500;opacity:.8">${d}</span>`:''}</span>`;
+  const F=filas(), pend=F.filter(r=>!r.az&&r.ts<Date.now()-180000).length, band=window.etiBandeja?window.etiBandeja.pendientes():0;
+  const dias=SAL.resp&&SAL.resp.ultimo?Math.floor((new Date(hoy()+'T00:00:00')-new Date(SAL.resp.ultimo+'T00:00:00'))/864e5):null;
+  return `<div style="display:flex;gap:.45rem;flex-wrap:wrap;align-items:center;margin:.2rem 0 .6rem"><b style="font-size:.78rem;color:#5B6B85">🩺 Salud del sistema:</b>
+    ${ch(SAL.fb?SAL.fb.ok:null,'Firebase',SAL.fb?(SAL.fb.ok?SAL.fb.ms+' ms':SAL.fb.err):'')}
+    ${ch(SAL.az?SAL.az.ok:null,'Azure',SAL.az?(SAL.az.ok?SAL.az.ms+' ms':'no responde'):'')}
+    ${ch(pend===0,'Pendientes Azure',String(pend))}
+    ${ch(band===0,'Manual sin subir (este equipo)',String(band))}
+    ${ch(SAL.banco?SAL.banco.vb>0:null,'Banco',SAL.banco?'v'+SAL.banco.v+' · '+SAL.banco.vb+' preguntas ✅':'')}
+    ${ch(SAL.qr?SAL.qr.act>0:null,'QR permanentes',SAL.qr?SAL.qr.act+' activos de '+SAL.qr.tot:'')}
+    ${ch(SAL.resp?(dias!==null&&dias<35):null,'Respaldo',SAL.resp?(dias===null?'nunca':'hace '+dias+' día(s)'):'')}</div>`;
+}
 function filaQR(d){return {id:d.id,ref:d.ref,raw:d.data,mod:'QR',ts:d.data.ts||0,emp:d.data.emp,sup:d.data.sup,sector:d.data.sector,tipo:d.data.tipo,
   ruta:d.data.ruta,cod:d.data.cod,n:1,res:+d.data.resultado||0,apr:(+d.data.resultado||0)>=0.7?1:0,az:d.data.azOk===true,ses:d.data.sesion,por:'Trabajador (QR)'};}
 function filaMan(d){const x=d.data, rs=x.rutas||[], n=rs.reduce((a,r)=>a+(+r.ne||1),0)||1;
@@ -7531,6 +7568,7 @@ function render(){
     <div class="tf-k ${pend?'bad':'ok'}"><b>${pend}</b><span>⏳ Por confirmar en Azure</span></div>
     <div class="tf-k"><b>${ult10}</b><span>QR últimos 10 min</span></div>
   </div>
+  <div id="tf-salud">${saludHTML()}</div>
   <div class="tf-msg">${T.ultSync?'Último envío a Azure: '+hora(T.ultSync)+' · '+esc(T.ultMsg):'Aún no se reenvió nada en esta sesión.'}</div>
   <div class="tf-grid" style="margin-top:.8rem">
     <section class="m-card"><h3 class="m-tit2">Evaluaciones del día (más recientes primero)</h3>
@@ -7579,7 +7617,8 @@ function abrir(){
   if(!esAdm()) return;
   css();
   if(!T.unsub.length) escuchar(); else render();
-  if(!T.timer) T.timer=setInterval(()=>{if(T.auto&&esAdm())sincronizar(false);render();},60000);
+  SAL.t=0; chequeo();
+  if(!T.timer) T.timer=setInterval(()=>{if(T.auto&&esAdm())sincronizar(false);render();const b=$('admin-trafico');if(b&&b.style.display!=='none')chequeo();},60000);
 }
 /* _EXPORTAR_V1 (03-oct-2026): Excel de evaluaciones por rango de fechas
    Hojas: Evaluaciones (1 fila por trabajador QR / por ruta manual, con % por tema) · Por supervisor · Por pregunta (QR) */
@@ -7710,6 +7749,126 @@ async function barridoAzure(){
 const _go=window.go;
 window.go=function(id){const r=_go.apply(this,arguments);if(id==='sadmin'){inyectar();setTimeout(avisoRespaldo,1500);setTimeout(barridoAzure,6000);}return r;};
 setTimeout(()=>{const a=document.querySelector('.screen.active');if(a&&a.id==='sadmin'){inyectar();setTimeout(avisoRespaldo,1500);setTimeout(barridoAzure,6000);}},900);
+})();
+</script>
+<script>
+/* ══════════════════════════════════════════════════════════════
+   _MIS_EVAL_V1 (08-oct-2026) — 🗂 Mis evaluaciones
+   El supervisor ve, en vivo, TODAS sus evaluaciones: las de su QR (cada
+   trabajador) y las manuales. El admin puede elegir cualquier supervisor.
+   En el Inicio del supervisor aparece el contador de hoy.
+   ══════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const db=()=>(typeof fbdb!=='undefined'?fbdb:null);
+const ses=()=>(typeof SESSION!=='undefined'?SESSION:null);
+const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const hoyI=()=>iso(new Date());
+const pc=v=>(Math.round((v||0)*1000)/10).toFixed(1)+'%';
+const fF=f=>f?String(f).split('-').reverse().join('/'):'—';
+const coincide=(a,b)=>{try{return a===b||(typeof _cumCoincide==='function'&&_cumCoincide(a,b));}catch(e){return a===b;}};
+const M={user:'',nom:'',desde:hoyI(),hasta:hoyI(),qrA:[],qrB:[],man:[],unsub:[],pintT:null,todos:false,cargando:false,f:{emp:'',mod:'',tipo:''}};
+/* _MIS_EVAL_TODOS_V1 (08-oct-2026): vista general del admin — todos los supervisores, QR y manual, por rango de fechas */
+async function cargarTodos(){
+  const f=db(); if(!f) return; M.cargando=true; render();
+  try{
+    const [q,m]=await Promise.all([f.collection('respuestas_qr').where('fecha','>=',M.desde).where('fecha','<=',M.hasta).get(),
+      f.collection('evaluaciones_conocimiento').where('fecha','>=',M.desde).where('fecha','<=',M.hasta).get()]);
+    M.qrA=q.docs.map(d=>({id:d.id,...d.data()})); M.qrB=[]; M.man=m.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.modalidad!=='QR');
+  }catch(e){console.warn('Vista general:',e);if(typeof toast==='function')toast('No se pudo cargar: '+e.message,'e');}
+  M.cargando=false; render();
+}
+
+/* nombre del supervisor tal como figura en los QR (lista de Gestión) */
+function nomSup(nom){try{const s=(typeof SUPERVISORES!=='undefined'?SUPERVISORES:[]).find(x=>coincide(x.nom,nom));return s?s.nom:nom;}catch(e){return nom;}}
+function escuchar(user,nom){
+  M.unsub.forEach(u=>{try{u();}catch(e){}}); M.unsub=[]; M.qrA=[];M.qrB=[];M.man=[]; M.user=user; M.nom=nom; M.todos=false;
+  const f=db(); if(!f) return;
+  const map=s=>s.docs.map(d=>({id:d.id,...d.data()}));
+  const er=e=>console.warn('Mis evaluaciones:',e&&e.message);
+  if(user) M.unsub.push(f.collection('respuestas_qr').where('usuarioSup','==',user).onSnapshot(s=>{M.qrA=map(s);pintar();},er));
+  if(nom)  M.unsub.push(f.collection('respuestas_qr').where('sup','==',nomSup(nom)).onSnapshot(s=>{M.qrB=map(s);pintar();},er));
+  if(user) M.unsub.push(f.collection('evaluaciones_conocimiento').where('usuario','==',user).onSnapshot(s=>{M.man=map(s).filter(x=>x.modalidad!=='QR');pintar();},er));
+}
+function filas(desde,hasta){
+  const en=f=>f&&f>=desde&&f<=hasta, vis=new Map();
+  [...M.qrA,...M.qrB].forEach(r=>{if(en(r.fecha))vis.set(r.id,{mod:'QR',sup:r.sup,ts:r.ts||0,fecha:r.fecha,emp:r.emp,sector:r.sector,tipo:r.tipo,ruta:r.ruta,cod:r.cod,n:1,res:+r.resultado||0,apr:(+r.resultado||0)>=0.7?1:0,az:!!r.azOk});});
+  M.man.forEach(m=>{if(!en(m.fecha))return;(m.rutas||[]).forEach((r,i)=>vis.set(m.id+'_'+i,{mod:'MANUAL',sup:m.sup,ts:m.ts||0,fecha:m.fecha,emp:m.emp,sector:m.sector,tipo:m.tipo,ruta:r.nom,cod:r.cod,n:+r.ne||1,res:+r.resGrupo||0,apr:(+r.resGrupo||0)>=0.7?(+r.ne||1):0,az:!!m.azOk}));});
+  return [...vis.values()].filter(r=>(!M.f.emp||r.emp===M.f.emp)&&(!M.f.mod||r.mod===M.f.mod)&&(!M.f.tipo||(M.f.tipo==='empleado'?r.tipo==='empleado':r.tipo!=='empleado'))).sort((a,b)=>b.ts-a.ts);
+}
+function resumen(F){const q=F.filter(r=>r.mod==='QR'),m=F.filter(r=>r.mod!=='QR');const n=F.reduce((a,r)=>a+r.n,0);
+  return {n,qr:q.length,man:m.reduce((a,r)=>a+r.n,0),prom:n?F.reduce((a,r)=>a+r.res*r.n,0)/n:0,apr:F.reduce((a,r)=>a+r.apr,0),
+    obr:F.filter(r=>r.tipo!=='empleado').reduce((a,r)=>a+r.n,0),emp:F.filter(r=>r.tipo==='empleado').reduce((a,r)=>a+r.n,0)};}
+function pintar(){clearTimeout(M.pintT);M.pintT=setTimeout(()=>{render();banner();},250);}
+function crearPantalla(){
+  if($('smis')) return;
+  const d=document.createElement('div'); d.className='screen'; d.id='smis';
+  d.innerHTML='<div class="dlayout" style="padding:1.2rem;max-width:1200px;margin:0 auto"><div id="mis-box"></div></div>';
+  document.body.appendChild(d);
+}
+function render(){
+  const box=$('mis-box'); if(!box||!$('smis').classList.contains('active')) return;
+  const F=filas(M.desde,M.hasta), R=resumen(F), S=ses(), adm=S&&S.rol==='admin', TD=adm&&M.todos;
+  let sups=[]; if(adm){try{sups=(typeof SUPERVISORES!=='undefined'?SUPERVISORES:[]).filter(x=>x.rol!=='Administrador').map(x=>x.nom);}catch(e){}}
+  const k=(v,t,c)=>`<div style="background:#fff;border:1px solid #D9E0EC;border-radius:14px;padding:.8rem .9rem"><b style="display:block;font-size:1.5rem;line-height:1.1;color:${c||'#14213D'}">${v}</b><span style="font-size:.72rem;color:#5B6B85;font-weight:700;text-transform:uppercase">${t}</span></div>`;
+  const pre=(t,d,h)=>`<button class="btn ${M.desde===d&&M.hasta===h?'bpri':'bout'} bsm" onclick="ETIMIS.rango('${d}','${h}')">${t}</button>`;
+  const h=new Date(), d7=new Date(Date.now()-6*864e5), m1=new Date(h.getFullYear(),h.getMonth(),1);
+  box.innerHTML=`
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.8rem;margin-bottom:1rem">
+    <div><h2 class="m-tit" style="margin:0">🗂 ${TD?'Evaluaciones de todos los supervisores':adm?'Evaluaciones por supervisor':'Mis evaluaciones'} ${TD?'':'<span style="font-size:.72rem;font-weight:800;color:#007A3D;background:#E6F7EE;border-radius:99px;padding:3px 9px;vertical-align:middle">● en vivo</span>'}</h2>
+      <div class="m-mut" style="font-size:.82rem">${TD?'Vista general: QR (cada trabajador) y manuales de todos los supervisores en el rango elegido.'+(M.cargando?' <b>Cargando…</b>':''):esc(M.nom||'—')+' · Evaluaciones por <b>QR</b> (cada trabajador) y <b>manuales</b>, apenas se registran.'}</div></div>
+    <div style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center">
+      ${adm?`<select class="fc" style="width:auto" onchange="ETIMIS.sup(this.value)"><option value="*" ${TD?'selected':''}>👥 Todos los supervisores</option>${sups.map(n=>`<option ${!TD&&coincide(n,M.nom)?'selected':''}>${esc(n)}</option>`).join('')}</select>`:''}
+      ${pre('Hoy',iso(h),iso(h))}${pre('Últimos 7 días',iso(d7),iso(h))}${pre('Este mes',iso(m1),iso(h))}
+      <input type="date" class="fc" style="width:auto" value="${esc(M.desde)}" onchange="ETIMIS.rango(this.value,null)"><input type="date" class="fc" style="width:auto" value="${esc(M.hasta)}" onchange="ETIMIS.rango(null,this.value)">
+    </div></div>
+  ${adm?`<div style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;margin:-.3rem 0 .8rem">
+    <select class="fc" style="width:auto" onchange="ETIMIS.filtro('emp',this.value)"><option value="">Todas las empresas</option>${['VERFRUT S.A.C.','RAPEL S.A.C.'].map(e=>`<option ${M.f.emp===e?'selected':''}>${e}</option>`).join('')}</select>
+    <select class="fc" style="width:auto" onchange="ETIMIS.filtro('mod',this.value)"><option value="">QR y manual</option><option value="QR" ${M.f.mod==='QR'?'selected':''}>Solo QR</option><option value="MANUAL" ${M.f.mod==='MANUAL'?'selected':''}>Solo manual</option></select>
+    <select class="fc" style="width:auto" onchange="ETIMIS.filtro('tipo',this.value)"><option value="">Obreros y empleados</option><option value="obrero" ${M.f.tipo==='obrero'?'selected':''}>Solo obreros</option><option value="empleado" ${M.f.tipo==='empleado'?'selected':''}>Solo empleados</option></select>
+    ${TD?`<button class="btn bout bsm" onclick="ETIMIS.recargar()">🔄 Actualizar</button>`:''}
+    <button class="btn bpri bsm" onclick="window.ETITF&&ETITF.exportar('${esc(M.desde)}','${esc(M.hasta)}')">📥 Excel de este rango</button></div>`:''}
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.7rem;margin-bottom:1rem">
+    ${k(R.n,'Trabajadores evaluados')}${k(R.qr,TD?'📱 Por QR':'📱 Por mi QR','#003DA5')}${k(R.man,'📋 Manual','#6A3FC0')}
+    ${k(R.n?pc(R.prom):'—','Promedio',R.n?(R.prom>=0.7?'#007A3D':'#C8102E'):'')}${k(R.apr,'Aprobados ≥70%','#007A3D')}${k(R.obr+' / '+R.emp,'👷 Obreros / 💼 Empleados')}
+  </div>
+  ${TD&&F.length?(()=>{const g=new Map();F.forEach(r=>{const x=g.get(r.sup||'—')||{sup:r.sup||'—',qr:0,man:0,s:0,n:0,apr:0,ult:0};if(r.mod==='QR')x.qr++;else x.man+=r.n;x.s+=r.res*r.n;x.n+=r.n;x.apr+=r.apr;x.ult=Math.max(x.ult,r.ts);g.set(x.sup,x);});
+    return `<section class="m-card" style="margin-bottom:1rem"><h3 class="m-tit2">Resumen por supervisor</h3><div style="overflow:auto"><table class="m-table"><thead><tr><th>Supervisor</th><th>📱 QR</th><th>📋 Manual</th><th>Total</th><th>Promedio</th><th>Aprobados</th><th>Último registro</th><th></th></tr></thead><tbody>
+    ${[...g.values()].sort((a,b)=>b.n-a.n).map(x=>`<tr><td><b>${esc(x.sup)}</b></td><td>${x.qr}</td><td>${x.man}</td><td><b>${x.n}</b></td><td><b style="color:${x.s/x.n>=0.7?'#007A3D':'#C8102E'}">${pc(x.s/x.n)}</b></td><td>${x.apr}</td>
+      <td>${x.ult?new Date(x.ult).toLocaleString('es-PE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'}</td><td><button class="btn bout bsm" onclick="ETIMIS.sup('${esc(x.sup).replace(/'/g,"\\'")}')">Ver →</button></td></tr>`).join('')}
+    </tbody></table></div></section>`;})():''}
+  <section class="m-card">${TD?'<h3 class="m-tit2">Detalle de registros</h3>':''}${F.length?`<div style="overflow:auto;max-height:560px"><table class="m-table"><thead><tr><th>Fecha</th><th>Hora</th>${TD?'<th>Supervisor</th>':''}<th>Modalidad</th><th>Empresa</th><th>Sector</th><th>Tipo</th><th>Ruta / Área</th><th>Código</th><th>Eval.</th><th>Resultado</th><th>Guardado</th></tr></thead><tbody>
+    ${F.slice(0,800).map(r=>`<tr><td>${fF(r.fecha)}</td><td>${r.ts?new Date(r.ts).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}):'—'}</td>${TD?`<td>${esc(r.sup||'—')}</td>`:''}
+      <td>${r.mod==='QR'?'📱 QR':'📋 Manual'}</td><td>${esc(String(r.emp||'').replace(' S.A.C.',''))}</td><td>${esc(r.sector||'—')}</td>
+      <td>${r.tipo==='empleado'?'💼 Empleado':'👷 Obrero'}</td><td><b>${esc(r.ruta||'—')}</b></td><td>${esc(r.cod||'—')}</td><td>${r.n}</td>
+      <td><b style="color:${r.res>=0.7?'#007A3D':'#C8102E'}">${pc(r.res)}</b></td><td>${r.az?'☁ ✓':'⏳'}</td></tr>`).join('')}
+    </tbody></table></div>${F.length>800?`<div class="m-mut" style="font-size:.78rem;margin-top:.4rem">Mostrando 800 de ${F.length}. Usa 📥 Excel para ver todos.</div>`:''}`:`<div class="m-empty">${M.cargando?'Cargando…':''} No hay evaluaciones entre ${fF(M.desde)} y ${fF(M.hasta)}. Apenas un trabajador responda tu QR o registres una manual, aparecerá aquí.</div>`}</section>`;
+}
+/* contador en el Inicio del supervisor */
+function banner(){
+  const S=ses(); if(!S||S.rol==='admin') return;
+  const sm=$('sm'); if(!sm) return;
+  let b=$('mis-banner');
+  if(!b){const ref=sm.querySelector('.mgrid'); if(!ref) return; b=document.createElement('div'); b.id='mis-banner'; ref.parentNode.insertBefore(b,ref);}
+  const F=filas(hoyI(),hoyI()), R=resumen(F);
+  b.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:.8rem;flex-wrap:wrap;background:#fff;border:1px solid #D9E0EC;border-left:5px solid #003DA5;border-radius:14px;padding:.8rem 1rem;margin:0 0 1rem;cursor:pointer" onclick="ETIMIS.abrir()">
+    <div><b>📊 Hoy llevas ${R.n} evaluado(s)</b><div class="m-mut" style="font-size:.82rem">📱 ${R.qr} por tu QR · 📋 ${R.man} manual${R.n?' · promedio '+pc(R.prom):''}</div></div>
+    <button class="btn bpri bsm">Ver mis evaluaciones →</button></div>`;
+}
+function iniciarSup(){const S=ses(); if(!S||S.rol==='admin'||M.user===S.user) return; escuchar(S.user,S.nom);}
+window.ETIMIS={
+  abrir(){const S=ses(); if(!S) return; crearPantalla(); if(S.rol!=='admin') iniciarSup(); go('smis');
+    if(S.rol==='admin'&&!M.nom&&!M.todos){M.todos=true;const h=new Date();M.desde=iso(new Date(h.getFullYear(),h.getMonth(),1));M.hasta=iso(h);cargarTodos();} render();},
+  rango(d,h){if(d)M.desde=d;if(h)M.hasta=h;if(M.hasta<M.desde){const t=M.desde;M.desde=M.hasta;M.hasta=t;}if(M.todos)cargarTodos();else render();},
+  filtro(k,v){M.f[k]=v;render();},
+  recargar(){if(M.todos)cargarTodos();},
+  sup(n){if(!n)return; if(n==='*'){M.unsub.forEach(u=>{try{u();}catch(e){}});M.unsub=[];M.nom='';M.user='';M.todos=true;cargarTodos();return;} let u='';try{const x=(typeof getUsuarios==='function'?getUsuarios(true):[]).find(y=>y.rol!=='admin'&&coincide(y.nom,n));u=x?x.user:'';}catch(e){} escuchar(u,n); render();}
+};
+const _go=window.go;
+window.go=function(id){const r=_go.apply(this,arguments); if(id==='sm'){iniciarSup();setTimeout(banner,300);} if(id==='smis') setTimeout(render,50); return r;};
+setTimeout(()=>{iniciarSup();banner();},1500);
 })();
 </script>
 </body>

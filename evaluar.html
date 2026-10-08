@@ -10,6 +10,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<!-- _LIBS_LOCALES_V1 (08-oct-2026): si el servidor externo falla, se usa la copia de lib/ -->
+<script>if(!(window.firebase))document.write('<script src="lib/firebase-app-compat.js"><\/script>');</script>
+<script>if(!(window.firebase&&firebase.firestore))document.write('<script src="lib/firebase-firestore-compat.js"><\/script>');</script>
 <!-- _EVAL_TRABAJADOR_V1 (29-set-2026): página que abre el trabajador al escanear el QR.
      Solo permite responder la evaluación de la sesión indicada; no da acceso al sistema. -->
 <style>
