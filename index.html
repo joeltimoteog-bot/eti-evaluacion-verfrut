@@ -7865,6 +7865,8 @@ function render(){
     ${TD?`<button class="btn bout bsm" onclick="ETIMIS.recargar()">🔄 Actualizar</button>`:''}
     <button class="btn bpri bsm" onclick="window.ETITF&&ETITF.exportar('${esc(M.desde)}','${esc(M.hasta)}')">📥 Excel de este rango</button></div>`:''}
   ${!adm?infBarra(R):''}
+  ${(()=>{if(adm)return'';const t0=new Date(hoyI()+'T00:00:00').getTime();const fuera=[...M.qrA,...M.qrB,...M.man].filter(r=>(r.ts||0)>=t0&&r.fecha&&(r.fecha<M.desde||r.fecha>M.hasta));if(!fuera.length)return'';const fs=[...new Set(fuera.map(r=>r.fecha))].sort();const n=fuera.reduce((a,r)=>a+(r.rutas?r.rutas.reduce((b,x)=>b+(+x.ne||1),0):1),0);
+    return `<div style="background:#EAF1FF;border:1px solid #B9CDF5;border-radius:12px;padding:.6rem .9rem;margin:-.3rem 0 .9rem;font-size:.84rem;display:flex;justify-content:space-between;align-items:center;gap:.6rem;flex-wrap:wrap"><span>📌 Hoy registraste <b>${n}</b> evaluado(s) con fecha de evaluación <b>${fs.map(fF).join(', ')}</b>, fuera del rango elegido.</span><button class="btn bout bsm" onclick="ETIMIS.rango('${fs[0]<M.desde?fs[0]:M.desde}','${hoyI()}')">Ver esas evaluaciones →</button></div>`;})()}
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.7rem;margin-bottom:1rem">
     ${k(R.n,'Trabajadores evaluados')}${k(R.qr,TD?'📱 Por QR':'📱 Por mi QR','#003DA5')}${k(R.man,'📋 Manual','#6A3FC0')}
     ${k(R.n?pc(R.prom):'—','Promedio',R.n?(R.prom>=0.7?'#007A3D':'#C8102E'):'')}${k(R.apr,'Aprobados ≥70%','#007A3D')}${k(R.obr+' / '+R.emp,'👷 Obreros / 💼 Empleados')}
@@ -7896,7 +7898,7 @@ function banner(){
   b.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:.8rem;flex-wrap:wrap;background:#fff;border:1px solid #D9E0EC;border-left:5px solid #003DA5;border-radius:14px;padding:.8rem 1rem;margin:0 0 1rem;cursor:pointer" onclick="ETIMIS.abrir()">
     <div><b>📊 Hoy llevas ${R.n} evaluado(s)</b><div class="m-mut" style="font-size:.82rem">📱 ${R.qr} por tu QR · 📋 ${R.man} manual${R.n?' · promedio '+pc(R.prom):''}</div>
       ${R.n&&!infEnviado()?`<div style="margin-top:.35rem;font-size:.82rem;color:#8A5A00;font-weight:700">⚠️ Recuerda enviar por correo tu informe de evaluaciones de hoy (QR + manual) al terminar.</div>`:infEnviado()?`<div style="margin-top:.35rem;font-size:.82rem;color:#007A3D;font-weight:700">✅ Informe de hoy enviado.</div>`:''}</div>
-    <div style="display:flex;gap:.4rem;flex-wrap:wrap">${R.n&&!infEnviado()?`<button class="btn bsec-dark bsm" onclick="event.stopPropagation();ETIMIS.informeHoy()">📧 Enviar informe</button>`:''}<button class="btn bpri bsm">Ver mis evaluaciones →</button></div></div>`;
+    <div style="display:flex;gap:.4rem;flex-wrap:wrap">${R.n&&!infEnviado()?`<button class="btn bout bsm" style="border-color:#0B2A6F;color:#0B2A6F;font-weight:800" onclick="event.stopPropagation();ETIMIS.informeHoy()">📧 Enviar informe</button>`:''}<button class="btn bpri bsm">Ver mis evaluaciones →</button></div></div>`;
 }
 function iniciarSup(){const S=ses(); if(!S||S.rol==='admin'||M.user===S.user) return; escuchar(S.user,S.nom);}
 /* _INFORME_SUP_V1 (15-oct-2026): informe consolidado del supervisor (QR + manual, todas sus evaluaciones)
@@ -8000,7 +8002,7 @@ function infBarra(R){
   const env=infEnviado();
   return `<div style="display:flex;justify-content:space-between;align-items:center;gap:.6rem;flex-wrap:wrap;background:${env?'#E6F7EE':'#FFF6E0'};border:1px solid ${env?'#9BD8B4':'#F3D48A'};border-radius:12px;padding:.7rem .9rem;margin:-.3rem 0 .9rem">
     <div style="font-size:.86rem">${env?`✅ <b>Informe enviado hoy</b> a las ${new Date(env).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})}. Si registras más evaluaciones, puedes reenviarlo actualizado.`:R.n?`⚠️ <b>Aún no has enviado tu informe.</b> Al terminar tus evaluaciones (QR + manual) envíalo por correo <b>una sola vez</b>: se arma solo con todas las del período.`:`ℹ️ Cuando termines tus evaluaciones, envía desde aquí tu informe consolidado por correo.`}</div>
-    <div style="display:flex;gap:.4rem;flex-wrap:wrap"><button class="btn bsec-dark bsm" onclick="ETIMIS.reporte()" ${R.n?'':'disabled'}>📄 Ver reporte</button><button class="btn bout bsm" onclick="ETIMIS.excel()" ${R.n?'':'disabled'}>📥 Excel</button><button class="btn bpri bsm" onclick="ETIMIS.enviarInforme()" ${R.n?'':'disabled'}>📧 Enviar informe (${R.n})</button></div></div>`;}
+    <div style="display:flex;gap:.4rem;flex-wrap:wrap"><button class="btn bout bsm" style="border-color:#0B2A6F;color:#0B2A6F;font-weight:800" onclick="ETIMIS.reporte()" ${R.n?'':'disabled'}>📄 Ver reporte</button><button class="btn bout bsm" onclick="ETIMIS.excel()" ${R.n?'':'disabled'}>📥 Excel</button><button class="btn bpri bsm" onclick="ETIMIS.enviarInforme()" ${R.n?'':'disabled'}>📧 Enviar informe (${R.n})</button></div></div>`;}
 window.ETIMIS={
   excel(){const F=filas(M.desde,M.hasta);excelMio(F,resumen(F));},
   enviarInforme(){enviarInforme();},
@@ -8024,7 +8026,7 @@ window.ETIMIS={
   rptExcel(){const o=M.rpt||{};const F=o.nomO?filas(M.desde,M.hasta).filter(r=>coincide(r.sup,o.nomO)):filas(M.desde,M.hasta);const nI=M.nom;if(o.nomO)M.nom=o.nomO;excelMio(F,resumen(F));M.nom=nI;},
   rptCorreo(){const o=M.rpt||{};const m=$('mis-rpt');if(m)m.style.display='none';enviarInforme(o.nomO,o.userO);},
   informeDe(n){let u='';try{const x=(typeof getUsuarios==='function'?getUsuarios(true):[]).find(y=>y.rol!=='admin'&&coincide(y.nom,n));u=x?x.user:'';}catch(e){} enviarInforme(n,u);},
-  abrir(){const S=ses(); if(!S) return; crearPantalla(); if(S.rol!=='admin') iniciarSup(); go('smis');
+  abrir(){const S=ses(); if(!S) return; crearPantalla(); if(S.rol!=='admin'){iniciarSup(); if(!M.ini){M.ini=true;M.desde=iso(new Date(Date.now()-6*864e5));M.hasta=hoyI();}} go('smis');   /* _RANGO_SUP_V1: el supervisor abre con sus últimos 7 días */
     if(S.rol==='admin'&&!M.nom&&!M.todos){M.todos=true;const h=new Date();M.desde=iso(new Date(h.getFullYear(),h.getMonth(),1));M.hasta=iso(h);cargarTodos();} render();},
   rango(d,h){if(d)M.desde=d;if(h)M.hasta=h;if(M.hasta<M.desde){const t=M.desde;M.desde=M.hasta;M.hasta=t;}if(M.todos)cargarTodos();else render();},
   filtro(k,v){M.f[k]=v;render();},
