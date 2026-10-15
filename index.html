@@ -7828,8 +7828,8 @@ function escuchar(user,nom){
 }
 function filas(desde,hasta){
   const en=f=>f&&f>=desde&&f<=hasta, vis=new Map();
-  [...M.qrA,...M.qrB].forEach(r=>{if(en(r.fecha))vis.set(r.id,{mod:'QR',sup:r.sup,ts:r.ts||0,fecha:r.fecha,emp:r.emp,sector:r.sector,tipo:r.tipo,ruta:r.ruta,cod:r.cod,n:1,res:+r.resultado||0,apr:(+r.resultado||0)>=0.7?1:0,az:!!r.azOk,apl:r.supQR||''});});
-  M.man.forEach(m=>{if(!en(m.fecha))return;(m.rutas||[]).forEach((r,i)=>vis.set(m.id+'_'+i,{mod:'MANUAL',sup:m.sup,ts:m.ts||0,fecha:m.fecha,emp:m.emp,sector:m.sector,tipo:m.tipo,ruta:r.nom,cod:r.cod,n:+r.ne||1,res:+r.resGrupo||0,apr:(+r.resGrupo||0)>=0.7?(+r.ne||1):0,az:!!m.azOk}));});
+  [...M.qrA,...M.qrB].forEach(r=>{if(en(r.fecha))vis.set(r.id,{mod:'QR',sup:r.sup,ts:r.ts||0,fecha:r.fecha,emp:r.emp,sector:r.sector,tipo:r.tipo,ruta:r.ruta,cod:r.cod,n:1,res:+r.resultado||0,apr:(+r.resultado||0)>=0.7?1:0,az:!!r.azOk,apl:r.supQR||'',key:r.id,ses:r.sesion||'',secs:(r.secs||[]).map(x=>({nom:x.nom,peso:+x.peso||0,pct:+x.pct||0}))});});
+  M.man.forEach(m=>{if(!en(m.fecha))return;(m.rutas||[]).forEach((r,i)=>vis.set(m.id+'_'+i,{mod:'MANUAL',sup:m.sup,ts:m.ts||0,fecha:m.fecha,emp:m.emp,sector:m.sector,tipo:m.tipo,ruta:r.nom,cod:r.cod,n:+r.ne||1,res:+r.resGrupo||0,apr:(+r.resGrupo||0)>=0.7?(+r.ne||1):0,az:!!m.azOk,key:m.id+'_'+i,secs:(r.secs||[]).map(x=>({nom:x.nom,peso:+x.peso||0,pct:x.pct!=null?+x.pct:(+x.cum||0)}))}));});
   return [...vis.values()].filter(r=>(!M.f.emp||r.emp===M.f.emp)&&(!M.f.mod||r.mod===M.f.mod)&&(!M.f.tipo||(M.f.tipo==='empleado'?r.tipo==='empleado':r.tipo!=='empleado'))).sort((a,b)=>b.ts-a.ts);
 }
 function resumen(F){const q=F.filter(r=>r.mod==='QR'),m=F.filter(r=>r.mod!=='QR');const n=F.reduce((a,r)=>a+r.n,0);
@@ -7877,13 +7877,13 @@ function render(){
     ${L.sort((a,b)=>b.n-a.n).map(x=>{const i=infDe(x.sup);const nq=esc(x.sup).replace(/'/g,"\\'");return `<tr><td><b>${esc(x.sup)}</b></td><td>${x.qr}</td><td>${x.man}</td><td><b>${x.n}</b></td><td><b style="color:${x.s/x.n>=0.7?'#007A3D':'#C8102E'}">${pc(x.s/x.n)}</b></td><td>${x.apr}</td>
       <td>${x.ult?new Date(x.ult).toLocaleString('es-PE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'}</td>
       <td>${i?`<span style="color:#007A3D;font-weight:700" title="${esc(i.por&&i.por!==i.usuario?'Emitido por '+i.por:'')}">✅ ${new Date(i.en).toLocaleString('es-PE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span>`:`<span style="color:#8A5A00;font-weight:700">⚠️ pendiente</span>`}</td>
-      <td style="white-space:nowrap"><button class="btn bout bsm" onclick="ETIMIS.sup('${nq}')">Ver →</button> <button class="btn bpri bsm" title="Emitir el informe consolidado de este supervisor (correo + Excel)" onclick="ETIMIS.informeDe('${nq}')">📧 Informe</button></td></tr>`;}).join('')}
+      <td style="white-space:nowrap"><button class="btn bout bsm" onclick="ETIMIS.sup('${nq}')">Ver →</button> <button class="btn bpri bsm" title="Ver / enviar el reporte consolidado de este supervisor" onclick="ETIMIS.reporteDe('${nq}')">📄 Reporte</button></td></tr>`;}).join('')}
     </tbody></table></div></section>`;})():''}
-  <section class="m-card">${TD?'<h3 class="m-tit2">Detalle de registros</h3>':''}${F.length?`<div style="overflow:auto;max-height:560px"><table class="m-table"><thead><tr><th>Fecha</th><th>Hora</th>${TD?'<th>Supervisor</th>':''}<th>Modalidad</th><th>Empresa</th><th>Sector</th><th>Tipo</th><th>Ruta / Área</th><th>Código</th><th>Eval.</th><th>Resultado</th><th>Guardado</th></tr></thead><tbody>
+  <section class="m-card">${TD?'<h3 class="m-tit2">Detalle de registros</h3>':''}${F.length?`<div style="overflow:auto;max-height:560px"><table class="m-table"><thead><tr><th>Fecha</th><th>Hora</th>${TD?'<th>Supervisor</th>':''}<th>Modalidad</th><th>Empresa</th><th>Sector</th><th>Tipo</th><th>Ruta / Área</th><th>Código</th><th>Eval.</th><th>Resultado</th><th>Guardado</th>${adm?'<th></th>':''}</tr></thead><tbody>
     ${F.slice(0,800).map(r=>`<tr><td>${fF(r.fecha)}</td><td>${r.ts?new Date(r.ts).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}):'—'}</td>${TD?`<td>${esc(r.sup||'—')}</td>`:''}
       <td>${r.mod==='QR'?'📱 QR':'📋 Manual'}</td><td>${esc(String(r.emp||'').replace(' S.A.C.',''))}</td><td>${esc(r.sector||'—')}</td>
       <td>${r.tipo==='empleado'?'💼 Empleado':'👷 Obrero'}</td><td><b>${esc(r.ruta||'—')}</b>${r.apl?` <span title="Aplicada con el QR de ${esc(r.apl)} (atribuida por programación)" style="font-size:.72rem;color:#5B6B85">🤝 ${esc(r.apl.split(' ')[0])}</span>`:''}</td><td>${esc(r.cod||'—')}</td><td>${r.n}</td>
-      <td><b style="color:${r.res>=0.7?'#007A3D':'#C8102E'}">${pc(r.res)}</b></td><td>${r.az?'☁ ✓':'⏳'}</td></tr>`).join('')}
+      <td><b style="color:${r.res>=0.7?'#007A3D':'#C8102E'}">${pc(r.res)}</b></td><td>${r.az?'☁ ✓':'⏳'}</td>${adm?`<td><button class="m-ico" title="Eliminar (Azure y Firebase)" onclick="ETIMIS.eliminar('${esc(r.key)}')">🗑</button></td>`:''}</tr>`).join('')}
     </tbody></table></div>${F.length>800?`<div class="m-mut" style="font-size:.78rem;margin-top:.4rem">Mostrando 800 de ${F.length}. Usa 📥 Excel para ver todos.</div>`:''}`:`<div class="m-empty">${M.cargando?'Cargando…':''} No hay evaluaciones entre ${fF(M.desde)} y ${fF(M.hasta)}. Apenas un trabajador responda tu QR o registres una manual, aparecerá aquí.</div>`}</section>`;
 }
 /* contador en el Inicio del supervisor */
@@ -7930,28 +7930,69 @@ function enviarInforme(nomO,userO){
   const F=(nomO?filas(M.desde,M.hasta).filter(r=>coincide(r.sup,nomO)):filas(M.desde,M.hasta)), R=resumen(F);
   if(!R.n){M.nom=nomI;toast(nomO?'Ese supervisor no tiene evaluaciones en este período':'No tienes evaluaciones en este período','i');return;}
   const hora=new Date().getHours(), saludo=hora<12?'Buenos días':hora<18?'Buenas tardes':'Buenas noches', G=grupos(F);
-  let c=`${saludo},\n\nAdjunto el informe consolidado de mis evaluaciones de conocimiento ETI (QR y manuales).\n\n`;
-  c+=`Supervisor : ${M.nom}\nPeríodo    : ${rangoTxt()}\n\n`;
-  c+=`RESUMEN\n─────────────────────────────\nTrabajadores evaluados : ${R.n}\n  · Por QR     : ${R.qr}\n  · Manual     : ${R.man}\nObreros / Empleados    : ${R.obr} / ${R.emp}\nPromedio general       : ${pc(R.prom)}  (${R.prom>=0.7?'APROBADO':'REFUERZO'})\nAprobados (≥70%)       : ${R.apr} de ${R.n}\n\n`;
-  c+=`RESULTADO POR SECTOR / RUTA\n─────────────────────────────\n`;
-  G.slice(0,60).forEach(g=>{c+=`${g.sector} · ${g.ruta}${g.cod?' ['+g.cod+']':''} (${g.tipo==='empleado'?'Emp.':'Obr.'}): ${g.n} eval. · ${pc(g.s/g.n)} · ${g.s/g.n>=0.7?'APROBADO':'REFUERZO'}\n`;});
-  if(G.length>60)c+=`… y ${G.length-60} grupo(s) más (ver Excel adjunto)\n`;
-  c+=`\nEmitido: ${new Date().toLocaleString('es-PE')}\nNota: se adjunta el Excel con el detalle de cada evaluación.\n\nAtentamente,\n${M.nom}\nGestión Humana – Relaciones Laborales\nVERFRUT S.A.C. / RAPEL S.A.C. – UNIFRUTTI GROUP\n\nSistema ETI – Evaluación de Conocimiento`;
+  let c=`${saludo},\n\nAdjunto el informe consolidado de mis evaluaciones de conocimiento ETI (QR y manuales) del período ${rangoTxt()}.\n\n`;
+  c+=reporteTxt(F,R,M.nom);
+  c+=`\n\nNota: se adjunta el Excel con el detalle de cada evaluación.\n\nAtentamente,\n${M.nom}\nGestión Humana – Relaciones Laborales\nVERFRUT S.A.C. / RAPEL S.A.C. – UNIFRUTTI GROUP`;
   excelMio(F,R);
   const asunto=encodeURIComponent(`Informe de Evaluaciones ETI – ${M.nom} – ${rangoTxt()}`);
   setTimeout(()=>{window.location.href=`mailto:?subject=${asunto}&body=${encodeURIComponent(c)}`;},600);
   infMarcar(R,nomO,userO); M.nom=nomI; if(nomO){const x=(M.inf||[]).find(y=>coincide(y.sup,nomO));if(!x)(M.inf=M.inf||[]).push({sup:nomO,usuario:userO||'',dia:hoyI(),en:new Date().toISOString(),n:R.n});}
   toast('✅ Abriendo Outlook con el informe consolidado','s'); setTimeout(()=>toast('💡 Adjunta el Excel que se acaba de descargar antes de enviar','i'),2500); setTimeout(()=>{render();banner();},800);
 }
+/* _REPORTE_MIS_V1 (15-oct-2026): informe consolidado con el MISMO formato del Reporte Gerencial de Nueva Evaluación */
+const pesoF=p=>p>1?p/100:p;
+function temas(F){const m=new Map();F.forEach(r=>(r.secs||[]).forEach(s=>{const x=m.get(s.nom)||{nom:s.nom,peso:pesoF(s.peso),sp:0,n:0};x.sp+=s.pct*r.n;x.n+=r.n;x.peso=x.peso||pesoF(s.peso);m.set(s.nom,x);}));return [...m.values()].map(x=>({nom:x.nom,peso:x.peso,prom:x.n?x.sp/x.n:0}));}
+function reporteTxt(F,R,nom){
+  const G=grupos(F), T=temas(F), L='━'.repeat(48), l='─'.repeat(48);
+  const secsU=[...new Set(F.map(r=>r.sector).filter(Boolean))], empU=[...new Set(F.map(r=>String(r.emp||'').replace(' S.A.C.','')).filter(Boolean))];
+  const pg=(R.prom*100).toFixed(1), ok=R.prom>=0.7, nR=G.length, aprR=G.filter(g=>g.s/g.n>=0.7).length;
+  let t=`${L}\nSistema ETI – Evaluación de Conocimiento\nde Buenas Prácticas Sociales y Laborales\nInforme Consolidado de Evaluaciones ETI\n${L}\nPeríodo           : ${rangoTxt()}\nEmpresa           : ${empU.join(' / ')||'VERFRUT / RAPEL'}\nSupervisor        : ${nom}\nSector(es)        : ${secsU.join(', ')||'—'}\nModalidad         : 📱 QR ${R.qr}  ·  📋 Manual ${R.man}\nRutas / áreas     : ${nR}\nTotal evaluaciones: ${R.n} personas (👷 ${R.obr} obreros · 💼 ${R.emp} empleados)\n\n${l}\nPROMEDIO POR TEMA (todos los grupos)\n${l}`;
+  T.forEach(s=>{const sp=(s.prom*100).toFixed(1),o=s.prom>=0.7;t+=`\n  ${o?'✓':'✗'} ${s.nom.padEnd(36)} ${sp.padStart(5)}%   ${o?'APROBADO':'REFUERZO'}`;});
+  t+=`\n\n${l}\nDETALLE POR SECTOR / RUTA\n${l}`;
+  G.forEach(g=>{const rows=F.filter(r=>(r.tipo==='empleado'?'E':'O')===(g.tipo==='empleado'?'E':'O')&&(r.sector||'—')===g.sector&&String(r.ruta||'—').toUpperCase()===g.ruta&&String(r.cod||'').toUpperCase()===g.cod);
+    const Ts=temas(rows), rp=(g.s/g.n*100).toFixed(1), est=g.s/g.n>=0.7?'✅ APROBADO':'⚠️ REFUERZO';
+    t+=`\n\n[${g.cod||'—'}] ${g.ruta}  ·  ${g.sector}  (${g.n} evaluado${g.n>1?'s':''}${g.qr&&g.man?` · QR ${g.qr} / manual ${g.man}`:g.qr?' · QR':' · manual'})\n${'─'.repeat(52)}`;
+    Ts.forEach(s=>{const pts=s.prom*s.peso*100,sp=(s.prom*100).toFixed(1);t+=`\n  ${s.prom>=0.7?'✓':'✗'} ${s.nom.padEnd(34)} ${pts.toFixed(2).padStart(5)} pts  ${sp.padStart(5)}%  Pond:${(s.peso*100).toFixed(2)}%`;});
+    t+=`\n  ${'─'.repeat(48)}\n  RESULTADO : ${rp.padStart(6)}%   ${est}`;});
+  t+=`\n\n${L}\nRESULTADO GENERAL\n${L}\nPromedio general   : ${pg}%\nEstado             : ${ok?'✅ APROBADO – Cumple estándar ETI':'⚠️ REQUIERE REFUERZO – Planificar capacitación'}\nAprobados (≥70%)   : ${R.apr} / ${R.n} personas\nRutas aprobadas    : ${aprR} / ${nR}\nRutas en refuerzo  : ${nR-aprR} / ${nR}\n\nSEMAFORO: ROJO (0-69%)  |  VERDE (70-100%)\n\nGenerado por Sistema ETI · Evaluaciones\nSistema – Departamento de Gestión Humana – Área de Relaciones Laborales\n${new Date().toLocaleString('es-PE')}\n${L}`;
+  return t;}
+function verReporte(nomO,userO){
+  const nom=nomO||M.nom, F=nomO?filas(M.desde,M.hasta).filter(r=>coincide(r.sup,nomO)):filas(M.desde,M.hasta), R=resumen(F);
+  if(!R.n){toast('No hay evaluaciones en este período','i');return;}
+  const txt=reporteTxt(F,R,nom); M.rpt={txt,nomO,userO};
+  let m=$('mis-rpt'); if(!m){m=document.createElement('div');m.id='mis-rpt';m.style.cssText='position:fixed;inset:0;background:rgba(10,20,40,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem';document.body.appendChild(m);}
+  m.innerHTML=`<div style="background:#fff;border-radius:16px;max-width:900px;width:100%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:.6rem;flex-wrap:wrap;padding:.9rem 1.1rem;border-bottom:1px solid #D9E0EC"><div><b style="font-size:1.05rem">📄 Reporte consolidado · ${esc(nom)}</b><div class="m-mut" style="font-size:.8rem">${esc(rangoTxt())} · ${R.n} evaluados (QR ${R.qr} · manual ${R.man})</div></div>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap"><button class="btn bout bsm" onclick="ETIMIS.rptCopiar()">📋 Copiar</button><button class="btn bout bsm" onclick="ETIMIS.rptImprimir()">🖨 Imprimir</button><button class="btn bout bsm" onclick="ETIMIS.rptExcel()">📥 Excel</button><button class="btn bpri bsm" onclick="ETIMIS.rptCorreo()">📧 Enviar por correo</button><button class="btn bout bsm" onclick="document.getElementById('mis-rpt').style.display='none'">✕</button></div></div>
+    <pre id="mis-rpt-txt" style="margin:0;padding:1rem 1.2rem;overflow:auto;background:#0B2A6F;color:#fff;font:13px/1.5 'Consolas','Courier New',monospace;white-space:pre-wrap;flex:1">${esc(txt)}</pre></div>`;
+  m.style.display='flex';
+}
 function infBarra(R){
   const env=infEnviado();
   return `<div style="display:flex;justify-content:space-between;align-items:center;gap:.6rem;flex-wrap:wrap;background:${env?'#E6F7EE':'#FFF6E0'};border:1px solid ${env?'#9BD8B4':'#F3D48A'};border-radius:12px;padding:.7rem .9rem;margin:-.3rem 0 .9rem">
     <div style="font-size:.86rem">${env?`✅ <b>Informe enviado hoy</b> a las ${new Date(env).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})}. Si registras más evaluaciones, puedes reenviarlo actualizado.`:R.n?`⚠️ <b>Aún no has enviado tu informe.</b> Al terminar tus evaluaciones (QR + manual) envíalo por correo <b>una sola vez</b>: se arma solo con todas las del período.`:`ℹ️ Cuando termines tus evaluaciones, envía desde aquí tu informe consolidado por correo.`}</div>
-    <div style="display:flex;gap:.4rem;flex-wrap:wrap"><button class="btn bout bsm" onclick="ETIMIS.excel()" ${R.n?'':'disabled'}>📥 Excel</button><button class="btn bpri bsm" onclick="ETIMIS.enviarInforme()" ${R.n?'':'disabled'}>📧 Enviar informe (${R.n})</button></div></div>`;}
+    <div style="display:flex;gap:.4rem;flex-wrap:wrap"><button class="btn bsec-dark bsm" onclick="ETIMIS.reporte()" ${R.n?'':'disabled'}>📄 Ver reporte</button><button class="btn bout bsm" onclick="ETIMIS.excel()" ${R.n?'':'disabled'}>📥 Excel</button><button class="btn bpri bsm" onclick="ETIMIS.enviarInforme()" ${R.n?'':'disabled'}>📧 Enviar informe (${R.n})</button></div></div>`;}
 window.ETIMIS={
   excel(){const F=filas(M.desde,M.hasta);excelMio(F,resumen(F));},
   enviarInforme(){enviarInforme();},
   informeHoy(){M.desde=M.hasta=hoyI();enviarInforme();},
+  /* _ELIMINAR_MIS_V1 (15-oct-2026): eliminar desde Evaluaciones por supervisor, por la misma ruta probada (etiAdminCambio = Azure + Firebase) */
+  eliminar(key){
+    const S=ses(); if(!S||S.rol!=='admin'||!window.etiAdminCambio){toast('Solo el administrador puede eliminar','e');return;}
+    const r=filas(M.desde,M.hasta).find(x=>x.key===key); if(!r){toast('Registro no encontrado','e');return;}
+    let filtro,txt;
+    if(r.mod==='QR'){ if(!r.ses){toast('Esta respuesta no tiene sesión QR; elimínala desde Indicadores','e');return;}
+      filtro={sesion_id:r.ses,ids:[r.key]}; txt=`la respuesta QR de ${fF(r.fecha)} · ${r.sector||'—'} · ${r.ruta||'—'} ${r.cod||''} (${pc(r.res)})`; }
+    else { filtro={desde:r.fecha,hasta:r.fecha,sector:r.sector||'',ruta:r.ruta||'',codigo:r.cod||''};
+      txt=`la evaluación manual de ${fF(r.fecha)} · ${r.sector||'—'} · ${r.ruta||'—'} ${r.cod||''} (${r.n} evaluados). Nota: se eliminan todos los registros de esa ruta/código en ese sector y fecha`; }
+    if(typeof confMod==='function') confMod('¿Eliminar '+(r.mod==='QR'?'esta respuesta QR?':'esta evaluación manual?'),'Se elimina en Azure y Firebase '+txt+'. No se puede deshacer.',async()=>{await window.etiAdminCambio(filtro,null,'Eliminando');if(M.todos)cargarTodos();else render();});
+  },
+  reporte(){verReporte();},
+  reporteDe(n){let u='';try{const x=(typeof getUsuarios==='function'?getUsuarios(true):[]).find(y=>y.rol!=='admin'&&coincide(y.nom,n));u=x?x.user:'';}catch(e){} verReporte(n,u);},
+  rptCopiar(){const t=(M.rpt||{}).txt||'';(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('📋 Reporte copiado','s'),()=>{const p=$('mis-rpt-txt');if(p){const r=document.createRange();r.selectNodeContents(p);const sel=getSelection();sel.removeAllRanges();sel.addRange(r);document.execCommand('copy');toast('📋 Reporte copiado','s');}});},
+  rptImprimir(){const t=(M.rpt||{}).txt||'';const w=window.open('','_blank');if(!w){toast('Permite ventanas emergentes para imprimir','e');return;}w.document.write('<html><head><title>Reporte ETI</title><style>body{font:12px/1.45 Consolas,"Courier New",monospace;white-space:pre-wrap;margin:18mm}</style></head><body>'+esc(t)+'</body></html>');w.document.close();setTimeout(()=>w.print(),300);},
+  rptExcel(){const o=M.rpt||{};const F=o.nomO?filas(M.desde,M.hasta).filter(r=>coincide(r.sup,o.nomO)):filas(M.desde,M.hasta);const nI=M.nom;if(o.nomO)M.nom=o.nomO;excelMio(F,resumen(F));M.nom=nI;},
+  rptCorreo(){const o=M.rpt||{};const m=$('mis-rpt');if(m)m.style.display='none';enviarInforme(o.nomO,o.userO);},
   informeDe(n){let u='';try{const x=(typeof getUsuarios==='function'?getUsuarios(true):[]).find(y=>y.rol!=='admin'&&coincide(y.nom,n));u=x?x.user:'';}catch(e){} enviarInforme(n,u);},
   abrir(){const S=ses(); if(!S) return; crearPantalla(); if(S.rol!=='admin') iniciarSup(); go('smis');
     if(S.rol==='admin'&&!M.nom&&!M.todos){M.todos=true;const h=new Date();M.desde=iso(new Date(h.getFullYear(),h.getMonth(),1));M.hasta=iso(h);cargarTodos();} render();},
