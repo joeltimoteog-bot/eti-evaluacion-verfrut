@@ -124,6 +124,7 @@ function iniciar(){
       else mensaje('⏹','Evaluación cerrada','Esta sesión de evaluación ya fue cerrada por el supervisor.');
       return;}
     FECHA=S.permanente?hoyLocal():S.fecha;
+    cargarAtribucion();   /* _ATRIBUCION_V1 */
     P=[];(S.banco||[]).forEach(function(sec){(sec.pregs||[]).forEach(function(p){P.push({sec:sec,p:p});});});
     if(!P.length){mensaje('⚠️','Evaluación sin preguntas','Comunícate con tu supervisor.');return;}
     bienvenida();
@@ -284,6 +285,23 @@ function calificar(){
     return {ptsN:ptsN,secs:secs,resultado:Math.round(resultado*10000)/10000};
   });
 }
+/* _ATRIBUCION_V1 (15-oct-2026): la evaluación se registra a nombre del supervisor PROGRAMADO para ese sector y fecha
+   (programaciones_eval con sector + fechas). Si no hay programación o no se pudo leer, queda a nombre del dueño del QR.
+   Siempre se guarda quién la aplicó (supQR / aplicadoPor). No bloquea el envío. */
+var ATR={sups:[],progs:[]};
+function normTxt(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');}
+function cargarAtribucion(){
+  if(PREVIA||!db) return;
+  db.collection('config_eti').doc('atribucion').get().then(function(d){ATR.sups=d.exists?(d.data().sups||[]):[];}).catch(function(e){console.warn('atribucion sups',e&&e.message);});
+  db.collection('programaciones_eval').where('fechas','array-contains',FECHA).get().then(function(q){ATR.progs=q.docs.map(function(d){return d.data();});}).catch(function(e){console.warn('atribucion progs',e&&e.message);});
+}
+function atribuir(){
+  var sec=normTxt(W.sector); if(!sec||!ATR.progs.length) return null;
+  var p=ATR.progs.filter(function(x){return x.sector&&normTxt(x.sector)===sec&&x.estado!=='ejecutada';});
+  if(!p.length) return null;
+  var nom=p[0].sup||'', u=null; for(var i=0;i<ATR.sups.length;i++){if(normTxt(ATR.sups[i].nom)===normTxt(nom)){u=ATR.sups[i];break;}}
+  return u&&u.user?{user:u.user,nom:u.nom}:null;
+}
 /* _ENVIO_SEGURO_V1 (03-oct-2026)
    - La respuesta se guarda primero en el celular (localStorage) y recién luego se envía.
    - Firebase es la fuente principal (de ahí se consolida al cerrar la sesión); Azure es la copia.
@@ -336,10 +354,13 @@ function enviar(){
   var er=document.getElementById('err');if(er)er.style.display='none';
   var prep=PACK?Promise.resolve(PACK):calificar().then(function(c){
     if(!W.docId) W.docId=db.collection(COL_RESP).doc().id;   /* mismo id en reintentos: no duplica */
-    var doc={sesion:SID,anonima:true,emp:W.emp||S.emp,sup:S.sup,sector:W.sector,tipo:W.tipo||S.tipo,ruta:W.ruta,cod:W.cod,fecha:FECHA,
-      usuarioSup:S.asignado||S.usuario||'',resp:R,pts:c.ptsN,secs:c.secs,resultado:c.resultado,estado:c.resultado>=0.7?'APROBADO':'REFUERZO',
+    var userQR=S.asignado||S.usuario||'', at=atribuir(), supF=S.sup, userF=userQR, extra={};
+    if(at&&at.user&&at.user!==userQR){supF=at.nom;userF=at.user;extra={supQR:S.sup,aplicadoPor:userQR,atribucion:'programacion'};}
+    var doc={sesion:SID,anonima:true,emp:W.emp||S.emp,sup:supF,sector:W.sector,tipo:W.tipo||S.tipo,ruta:W.ruta,cod:W.cod,fecha:FECHA,
+      usuarioSup:userF,resp:R,pts:c.ptsN,secs:c.secs,resultado:c.resultado,estado:c.resultado>=0.7?'APROBADO':'REFUERZO',
       bancoVersion:S.bancoVersion||0,creadoEn:new Date().toISOString(),ts:Date.now()};
-    var reg={id:W.docId,modalidad:'QR',sesion_id:SID,fecha:FECHA,empresa:W.emp||S.emp,supervisor:S.sup,usuario:S.asignado||S.usuario||'',sector:W.sector,tipo:W.tipo||S.tipo,
+    for(var ek in extra) doc[ek]=extra[ek];
+    var reg={id:W.docId,modalidad:'QR',sesion_id:SID,fecha:FECHA,empresa:W.emp||S.emp,supervisor:supF,usuario:userF,sector:W.sector,tipo:W.tipo||S.tipo,
       ruta:W.ruta,codigo:W.cod,evaluados:1,resultado:c.resultado,banco_version:S.bancoVersion||0,
       secciones:c.secs.map(function(x){return {id:x.id,nom:x.nom,peso:x.peso,pct:x.pct};})};
     PACK={id:W.docId,doc:doc,reg:reg,fs:false,az:false,t:Date.now()};

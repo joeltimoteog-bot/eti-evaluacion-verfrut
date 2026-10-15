@@ -533,10 +533,14 @@ input.psel{-moz-appearance:textfield;appearance:textfield;cursor:text;}
       <div class="kstrip" id="pg-kpis" style="margin-bottom:1rem;"></div>
       <div style="background:#fff;border-radius:12px;padding:1.2rem;border:1px solid var(--bdr);margin-bottom:1rem;">
         <div style="font-size:.85rem;font-weight:700;color:#003DA5;margin-bottom:.8rem;">➕ Programar Evaluación por Supervisor</div>
-        <div style="display:grid;grid-template-columns:2fr 1fr auto;gap:.6rem;align-items:end;">
+        <div style="display:grid;grid-template-columns:2fr 1.3fr 1fr auto;gap:.6rem;align-items:end;">
           <div class="fg" style="margin:0;">
             <label class="fl">Supervisor</label>
             <select class="fc" id="pg-sup"></select>
+          </div>
+          <div class="fg" style="margin:0;">
+            <label class="fl">Sector programado</label>
+            <select class="fc" id="pg-sector"><option value="">— Sin sector —</option></select>
           </div>
           <div class="fg" style="margin:0;">
             <label class="fl">Fecha programada</label>
@@ -1388,6 +1392,7 @@ function escucharNube(){
   escucharEvalsNube();          // _HIST_ROL_V1: evaluaciones segun rol (se re-suscribe si cambia el usuario)
   if(_nubeEscuchando) return;   // evitar listeners duplicados
   _nubeEscuchando=true;
+  try{if(SESSION&&SESSION.rol==='admin')setTimeout(guardarAtribucion,4000);}catch(e){}   /* _ATRIBUCION_V1 */
   try{
     fbdb.collection(COL_PROG_EV).onSnapshot(snap=>{
       _progsNube=snap.docs.map(d=>({id:d.id,...d.data()}));
@@ -4106,7 +4111,19 @@ let _pgFechas=[];
 function renderProgEval(){
   const sel=document.getElementById('pg-sup');
   if(sel && sel.options.length<2) sel.innerHTML=renderSupSelect();
+  const ss=document.getElementById('pg-sector'); if(ss && ss.options.length<2) ss.innerHTML='<option value="">— Sin sector —</option>'+SECTORES_TODOS.map(x=>`<option>${x}</option>`).join('');   /* _ATRIBUCION_V1 */
   renderPgFechas(); renderPgLista();
+}
+/* _ATRIBUCION_V1 (15-oct-2026): publica en config_eti/atribucion la lista supervisor→usuario→sector(es)
+   para que evaluar.html atribuya cada evaluación QR al supervisor PROGRAMADO en ese sector/fecha. */
+async function guardarAtribucion(){
+  if(!fbdb||!SESSION||SESSION.rol!=='admin') return;
+  try{
+    const us=(typeof getUsuarios==='function'?getUsuarios(true):[]);
+    const sups=SUPERVISORES.filter(s=>s.rol!=='Administrador').map(s=>{const u=us.find(x=>x.rol!=='admin'&&_cumCoincide(x.nom,s.nom));
+      return {nom:s.nom,user:u?u.user:'',sector:s.sector||'',sectores:s.sectores||[],reemplazante:!!s.reemplazante};});
+    await fbdb.collection('config_eti').doc('atribucion').set({sups,regla:'programacion',por:SESSION.user,en:new Date().toISOString()});
+  }catch(e){console.warn('atribucion:',e&&e.message);}
 }
 function pgAddFecha(){
   const f=document.getElementById('pg-fecha').value;
@@ -4128,11 +4145,12 @@ function pgGuardar(){
   const obs=document.getElementById('pg-obs').value.trim();
   if(!sup){toast('Selecciona el supervisor','e');return;}
   if(!_pgFechas.length){toast('Agrega al menos una fecha programada','e');return;}
-  const prog={sup, fechas:[..._pgFechas], obs, estado:'pendiente',
+  const sector=(document.getElementById('pg-sector')||{}).value||'';   /* _ATRIBUCION_V1: las evaluaciones QR de ese sector/fecha se atribuyen a este supervisor */
+  const prog={sup, sector, fechas:[..._pgFechas], obs, estado:'pendiente',
               creadoPor:SESSION?.nom||'—', creadoEn:new Date().toISOString()};
   if(fbdb){
     fbdb.collection(COL_PROG_EV).add(prog)
-      .then(()=>{ toast('📅 Programación guardada en la nube','s'); renderPgLista(); })
+      .then(()=>{ toast('📅 Programación guardada en la nube','s'); renderPgLista(); guardarAtribucion(); })
       .catch(e=>{ console.error(e); toast('Error al guardar en la nube','e'); });
   } else {
     const l=getProgs().slice();
@@ -4272,7 +4290,7 @@ function renderPgLista(){
       const _sp=window.etiSolicitudPendiente?window.etiSolicitudPendiente(p):null;   /* _SOLREPROG_V1 */
       const solHtml=_sp?` <span title="${String((_sp.nombre||'')+': '+(_sp.motivo||'')+' — '+(_sp.detalle||'')).replace(/"/g,'&quot;')}" style="background:#fee2e2;color:#991b1b;padding:.1rem .45rem;border-radius:8px;font-size:.68rem;font-weight:800;">📝 Pide reprogramar: ${String(_sp.motivo||'').replace(/</g,'&lt;')}</span>`:'';
       return `<tr style="border-top:1px solid var(--bdr);">
-      <td style="padding:.5rem .8rem;font-weight:700;">${p.sup}</td>
+      <td style="padding:.5rem .8rem;font-weight:700;">${p.sup}${p.sector?`<br><span style="font-size:.72rem;color:#003DA5;font-weight:700">📍 ${p.sector}</span>`:''}</td>
       <td style="padding:.5rem .8rem;">${fechasHtml}${reprHtml}${solHtml}</td>
       <td style="padding:.5rem .8rem;text-align:center;"><span style="background:${e.bg};color:${e.c};padding:.2rem .6rem;border-radius:10px;font-weight:700;font-size:.72rem;white-space:nowrap;">${e.t}</span></td>
       <td style="padding:.5rem .8rem;font-size:.75rem;color:var(--text2);">${p.obs||'—'}</td>
@@ -6392,6 +6410,7 @@ function renderActiva(){
     <div class="m-link"><input class="fc" readonly value="${esc(url)}" onclick="this.select()"><button class="btn bout bsm" onclick="ETIM.qrCopiar()">📋 Copiar</button></div>`:''}
     ${pm?`<div class="m-link" style="align-items:center"><span class="m-mut" style="white-space:nowrap">📅 Respuestas del día</span><input class="fc" type="date" value="${esc(diaPerm)}" onchange="ETIM.qrDia(this.value)"></div>`:''}
     <div class="m-kpis3"><div><b>${n}</b><span>Evaluados${pm?' ('+esc(fmtF(diaPerm))+')':''}</span></div><div><b>${n?pct(prom):'—'}</b><span>Promedio</span></div><div><b>${gr.length}</b><span>Rutas / códigos</span></div></div>
+    ${pm&&ab?`<div style="background:#FFF6E0;border:1px solid #F3D48A;border-radius:12px;padding:.6rem .9rem;margin:.2rem 0 .6rem;font-size:.82rem;color:#5B4300"><b>🤝 Si varios supervisores evalúan en un mismo sector:</b> la evaluación se registra a nombre del supervisor <b>programado</b> para ese sector y fecha (📅 Programación). Si no hay programación, queda a nombre del dueño del QR. Si apoyas en otro sector, usa el QR del supervisor programado.</div>`:''}
     <div class="m-acts" style="justify-content:center;margin:.8rem 0">
       ${pm?`${ab?`<button class="btn bout bsm" onclick="ETIM.qrFull(true)">⛶ Pantalla completa</button>`:''}
       <button class="btn bout bsm" onclick="ETIM.qrAfiche('${s.id}')">🖨 Imprimir afiche</button>
@@ -7791,6 +7810,7 @@ async function cargarTodos(){
     const [q,m]=await Promise.all([f.collection('respuestas_qr').where('fecha','>=',M.desde).where('fecha','<=',M.hasta).get(),
       f.collection('evaluaciones_conocimiento').where('fecha','>=',M.desde).where('fecha','<=',M.hasta).get()]);
     M.qrA=q.docs.map(d=>({id:d.id,...d.data()})); M.qrB=[]; M.man=m.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.modalidad!=='QR');
+    await cargarInformes();
   }catch(e){console.warn('Vista general:',e);if(typeof toast==='function')toast('No se pudo cargar: '+e.message,'e');}
   M.cargando=false; render();
 }
@@ -7808,7 +7828,7 @@ function escuchar(user,nom){
 }
 function filas(desde,hasta){
   const en=f=>f&&f>=desde&&f<=hasta, vis=new Map();
-  [...M.qrA,...M.qrB].forEach(r=>{if(en(r.fecha))vis.set(r.id,{mod:'QR',sup:r.sup,ts:r.ts||0,fecha:r.fecha,emp:r.emp,sector:r.sector,tipo:r.tipo,ruta:r.ruta,cod:r.cod,n:1,res:+r.resultado||0,apr:(+r.resultado||0)>=0.7?1:0,az:!!r.azOk});});
+  [...M.qrA,...M.qrB].forEach(r=>{if(en(r.fecha))vis.set(r.id,{mod:'QR',sup:r.sup,ts:r.ts||0,fecha:r.fecha,emp:r.emp,sector:r.sector,tipo:r.tipo,ruta:r.ruta,cod:r.cod,n:1,res:+r.resultado||0,apr:(+r.resultado||0)>=0.7?1:0,az:!!r.azOk,apl:r.supQR||''});});
   M.man.forEach(m=>{if(!en(m.fecha))return;(m.rutas||[]).forEach((r,i)=>vis.set(m.id+'_'+i,{mod:'MANUAL',sup:m.sup,ts:m.ts||0,fecha:m.fecha,emp:m.emp,sector:m.sector,tipo:m.tipo,ruta:r.nom,cod:r.cod,n:+r.ne||1,res:+r.resGrupo||0,apr:(+r.resGrupo||0)>=0.7?(+r.ne||1):0,az:!!m.azOk}));});
   return [...vis.values()].filter(r=>(!M.f.emp||r.emp===M.f.emp)&&(!M.f.mod||r.mod===M.f.mod)&&(!M.f.tipo||(M.f.tipo==='empleado'?r.tipo==='empleado':r.tipo!=='empleado'))).sort((a,b)=>b.ts-a.ts);
 }
@@ -7850,14 +7870,19 @@ function render(){
     ${k(R.n?pc(R.prom):'—','Promedio',R.n?(R.prom>=0.7?'#007A3D':'#C8102E'):'')}${k(R.apr,'Aprobados ≥70%','#007A3D')}${k(R.obr+' / '+R.emp,'👷 Obreros / 💼 Empleados')}
   </div>
   ${TD&&F.length?(()=>{const g=new Map();F.forEach(r=>{const x=g.get(r.sup||'—')||{sup:r.sup||'—',qr:0,man:0,s:0,n:0,apr:0,ult:0};if(r.mod==='QR')x.qr++;else x.man+=r.n;x.s+=r.res*r.n;x.n+=r.n;x.apr+=r.apr;x.ult=Math.max(x.ult,r.ts);g.set(x.sup,x);});
-    return `<section class="m-card" style="margin-bottom:1rem"><h3 class="m-tit2">Resumen por supervisor</h3><div style="overflow:auto"><table class="m-table"><thead><tr><th>Supervisor</th><th>📱 QR</th><th>📋 Manual</th><th>Total</th><th>Promedio</th><th>Aprobados</th><th>Último registro</th><th></th></tr></thead><tbody>
-    ${[...g.values()].sort((a,b)=>b.n-a.n).map(x=>`<tr><td><b>${esc(x.sup)}</b></td><td>${x.qr}</td><td>${x.man}</td><td><b>${x.n}</b></td><td><b style="color:${x.s/x.n>=0.7?'#007A3D':'#C8102E'}">${pc(x.s/x.n)}</b></td><td>${x.apr}</td>
-      <td>${x.ult?new Date(x.ult).toLocaleString('es-PE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'}</td><td><button class="btn bout bsm" onclick="ETIMIS.sup('${esc(x.sup).replace(/'/g,"\\'")}')">Ver →</button></td></tr>`).join('')}
+    const L=[...g.values()], env=L.filter(x=>infDe(x.sup)).length;
+    return `<section class="m-card" style="margin-bottom:1rem"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem"><h3 class="m-tit2" style="margin:0">Resumen por supervisor</h3>
+      <span style="font-size:.8rem;font-weight:800;padding:.3rem .7rem;border-radius:99px;background:${env===L.length?'#E6F7EE':'#FFF6E0'};color:${env===L.length?'#0B5E33':'#8A5A00'}">📧 Informes enviados: ${env} de ${L.length} supervisores con evaluaciones</span></div>
+    <div style="overflow:auto;margin-top:.6rem"><table class="m-table"><thead><tr><th>Supervisor</th><th>📱 QR</th><th>📋 Manual</th><th>Total</th><th>Promedio</th><th>Aprobados</th><th>Último registro</th><th>Informe</th><th></th></tr></thead><tbody>
+    ${L.sort((a,b)=>b.n-a.n).map(x=>{const i=infDe(x.sup);const nq=esc(x.sup).replace(/'/g,"\\'");return `<tr><td><b>${esc(x.sup)}</b></td><td>${x.qr}</td><td>${x.man}</td><td><b>${x.n}</b></td><td><b style="color:${x.s/x.n>=0.7?'#007A3D':'#C8102E'}">${pc(x.s/x.n)}</b></td><td>${x.apr}</td>
+      <td>${x.ult?new Date(x.ult).toLocaleString('es-PE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'}</td>
+      <td>${i?`<span style="color:#007A3D;font-weight:700" title="${esc(i.por&&i.por!==i.usuario?'Emitido por '+i.por:'')}">✅ ${new Date(i.en).toLocaleString('es-PE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span>`:`<span style="color:#8A5A00;font-weight:700">⚠️ pendiente</span>`}</td>
+      <td style="white-space:nowrap"><button class="btn bout bsm" onclick="ETIMIS.sup('${nq}')">Ver →</button> <button class="btn bpri bsm" title="Emitir el informe consolidado de este supervisor (correo + Excel)" onclick="ETIMIS.informeDe('${nq}')">📧 Informe</button></td></tr>`;}).join('')}
     </tbody></table></div></section>`;})():''}
   <section class="m-card">${TD?'<h3 class="m-tit2">Detalle de registros</h3>':''}${F.length?`<div style="overflow:auto;max-height:560px"><table class="m-table"><thead><tr><th>Fecha</th><th>Hora</th>${TD?'<th>Supervisor</th>':''}<th>Modalidad</th><th>Empresa</th><th>Sector</th><th>Tipo</th><th>Ruta / Área</th><th>Código</th><th>Eval.</th><th>Resultado</th><th>Guardado</th></tr></thead><tbody>
     ${F.slice(0,800).map(r=>`<tr><td>${fF(r.fecha)}</td><td>${r.ts?new Date(r.ts).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}):'—'}</td>${TD?`<td>${esc(r.sup||'—')}</td>`:''}
       <td>${r.mod==='QR'?'📱 QR':'📋 Manual'}</td><td>${esc(String(r.emp||'').replace(' S.A.C.',''))}</td><td>${esc(r.sector||'—')}</td>
-      <td>${r.tipo==='empleado'?'💼 Empleado':'👷 Obrero'}</td><td><b>${esc(r.ruta||'—')}</b></td><td>${esc(r.cod||'—')}</td><td>${r.n}</td>
+      <td>${r.tipo==='empleado'?'💼 Empleado':'👷 Obrero'}</td><td><b>${esc(r.ruta||'—')}</b>${r.apl?` <span title="Aplicada con el QR de ${esc(r.apl)} (atribuida por programación)" style="font-size:.72rem;color:#5B6B85">🤝 ${esc(r.apl.split(' ')[0])}</span>`:''}</td><td>${esc(r.cod||'—')}</td><td>${r.n}</td>
       <td><b style="color:${r.res>=0.7?'#007A3D':'#C8102E'}">${pc(r.res)}</b></td><td>${r.az?'☁ ✓':'⏳'}</td></tr>`).join('')}
     </tbody></table></div>${F.length>800?`<div class="m-mut" style="font-size:.78rem;margin-top:.4rem">Mostrando 800 de ${F.length}. Usa 📥 Excel para ver todos.</div>`:''}`:`<div class="m-empty">${M.cargando?'Cargando…':''} No hay evaluaciones entre ${fF(M.desde)} y ${fF(M.hasta)}. Apenas un trabajador responda tu QR o registres una manual, aparecerá aquí.</div>`}</section>`;
 }
@@ -7878,8 +7903,11 @@ function iniciarSup(){const S=ses(); if(!S||S.rol==='admin'||M.user===S.user) re
    — se arma solo con lo que ya está en vivo; 📧 correo + 📥 Excel; marca "enviado hoy" y recordatorio en el Inicio. */
 const infKey=()=>'eti_informe_env_'+(M.user||'')+'_'+hoyI();
 function infEnviado(){try{return localStorage.getItem(infKey())||'';}catch(e){return '';}}
-function infMarcar(R){const en=new Date().toISOString();try{localStorage.setItem(infKey(),en);}catch(e){}
-  try{const f=db();if(f)f.collection('informes_enviados').doc((M.user||'x')+'_'+hoyI()).set({usuario:M.user,sup:M.nom,desde:M.desde,hasta:M.hasta,n:R.n,qr:R.qr,man:R.man,prom:R.prom,apr:R.apr,en:en},{merge:true}).catch(()=>{});}catch(e){}}
+function infMarcar(R,nom,user){const S=ses();nom=nom||M.nom;user=user||M.user;const en=new Date().toISOString();if(!nom||coincide(nom,M.nom)){try{localStorage.setItem(infKey(),en);}catch(e){}}
+  try{const f=db();if(f)f.collection('informes_enviados').doc((user||nom||'x').replace(/[^\w.-]+/g,'_')+'_'+hoyI()).set({usuario:user||'',sup:nom,desde:M.desde,hasta:M.hasta,dia:hoyI(),n:R.n,qr:R.qr,man:R.man,prom:R.prom,apr:R.apr,en:en,por:S?S.user:''},{merge:true}).catch(()=>{});}catch(e){}}
+/* _INFORMES_ADMIN_V1 (15-oct-2026): el admin ve quién envió su informe y puede emitir el de cualquier supervisor */
+async function cargarInformes(){const f=db();if(!f)return;try{const q=await f.collection('informes_enviados').where('dia','>=',M.desde).where('dia','<=',M.hasta).get();M.inf=q.docs.map(d=>d.data());}catch(e){M.inf=[];}}
+function infDe(nom){return (M.inf||[]).filter(x=>coincide(x.sup,nom)).sort((a,b)=>String(b.en).localeCompare(String(a.en)))[0]||null;}
 function grupos(F){const g=new Map();F.forEach(r=>{const k=[r.tipo==='empleado'?'E':'O',r.sector||'—',String(r.ruta||'—').toUpperCase(),String(r.cod||'').toUpperCase()].join('|');
   const x=g.get(k)||{tipo:r.tipo,sector:r.sector||'—',ruta:String(r.ruta||'—').toUpperCase(),cod:String(r.cod||'').toUpperCase(),n:0,s:0,apr:0,qr:0,man:0};
   x.n+=r.n;x.s+=r.res*r.n;x.apr+=r.apr;if(r.mod==='QR')x.qr+=r.n;else x.man+=r.n;g.set(k,x);});
@@ -7896,10 +7924,11 @@ function excelMio(F,R){
     ...F.map(r=>[fF(r.fecha),r.ts?new Date(r.ts).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}):'',r.mod==='QR'?'QR':'Manual',r.emp||'',r.sector||'',r.tipo==='empleado'?'Empleado':'Obrero',r.ruta||'',r.cod||'',r.n,Math.round(r.res*1000)/10,r.res>=0.7?'APROBADO':'REFUERZO'])]),'Detalle');
   XLSX.writeFile(wb,`Informe-ETI-${(M.nom||M.user||'').replace(/[^\w]+/g,'_')}-${M.desde}${M.hasta!==M.desde?'_a_'+M.hasta:''}.xlsx`);
   return true;}
-function enviarInforme(){
+function enviarInforme(nomO,userO){
   const S=ses(); if(!S) return;
-  const F=filas(M.desde,M.hasta), R=resumen(F);
-  if(!R.n){toast('No tienes evaluaciones en este período','i');return;}
+  const nomI=M.nom; if(nomO) M.nom=nomO;   /* admin: informe de otro supervisor con los datos ya cargados */
+  const F=(nomO?filas(M.desde,M.hasta).filter(r=>coincide(r.sup,nomO)):filas(M.desde,M.hasta)), R=resumen(F);
+  if(!R.n){M.nom=nomI;toast(nomO?'Ese supervisor no tiene evaluaciones en este período':'No tienes evaluaciones en este período','i');return;}
   const hora=new Date().getHours(), saludo=hora<12?'Buenos días':hora<18?'Buenas tardes':'Buenas noches', G=grupos(F);
   let c=`${saludo},\n\nAdjunto el informe consolidado de mis evaluaciones de conocimiento ETI (QR y manuales).\n\n`;
   c+=`Supervisor : ${M.nom}\nPeríodo    : ${rangoTxt()}\n\n`;
@@ -7911,7 +7940,8 @@ function enviarInforme(){
   excelMio(F,R);
   const asunto=encodeURIComponent(`Informe de Evaluaciones ETI – ${M.nom} – ${rangoTxt()}`);
   setTimeout(()=>{window.location.href=`mailto:?subject=${asunto}&body=${encodeURIComponent(c)}`;},600);
-  infMarcar(R); toast('✅ Abriendo Outlook con tu informe consolidado','s'); setTimeout(()=>toast('💡 Adjunta el Excel que se acaba de descargar antes de enviar','i'),2500); setTimeout(()=>{render();banner();},800);
+  infMarcar(R,nomO,userO); M.nom=nomI; if(nomO){const x=(M.inf||[]).find(y=>coincide(y.sup,nomO));if(!x)(M.inf=M.inf||[]).push({sup:nomO,usuario:userO||'',dia:hoyI(),en:new Date().toISOString(),n:R.n});}
+  toast('✅ Abriendo Outlook con el informe consolidado','s'); setTimeout(()=>toast('💡 Adjunta el Excel que se acaba de descargar antes de enviar','i'),2500); setTimeout(()=>{render();banner();},800);
 }
 function infBarra(R){
   const env=infEnviado();
@@ -7922,6 +7952,7 @@ window.ETIMIS={
   excel(){const F=filas(M.desde,M.hasta);excelMio(F,resumen(F));},
   enviarInforme(){enviarInforme();},
   informeHoy(){M.desde=M.hasta=hoyI();enviarInforme();},
+  informeDe(n){let u='';try{const x=(typeof getUsuarios==='function'?getUsuarios(true):[]).find(y=>y.rol!=='admin'&&coincide(y.nom,n));u=x?x.user:'';}catch(e){} enviarInforme(n,u);},
   abrir(){const S=ses(); if(!S) return; crearPantalla(); if(S.rol!=='admin') iniciarSup(); go('smis');
     if(S.rol==='admin'&&!M.nom&&!M.todos){M.todos=true;const h=new Date();M.desde=iso(new Date(h.getFullYear(),h.getMonth(),1));M.hasta=iso(h);cargarTodos();} render();},
   rango(d,h){if(d)M.desde=d;if(h)M.hasta=h;if(M.hasta<M.desde){const t=M.desde;M.desde=M.hasta;M.hasta=t;}if(M.todos)cargarTodos();else render();},
