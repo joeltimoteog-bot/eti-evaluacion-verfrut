@@ -1847,7 +1847,7 @@ async function _ssoEntrar(){
       const d=(firma===m[2])?JSON.parse(decodeURIComponent(escape(atob(m[1])))):null;
       if(d&&d.u&&d.exp&&Date.now()<=Number(d.exp)){
         const _u0=String(d.u).toLowerCase().trim();
-        const usr=fichaDe(_u0) || (d.n ? altaSso(_u0, d.n) : null);   /* _SSO_ALTA_V1 */
+        const usr=fichaDe(_u0) || altaSso(_u0, d.n);   /* _SSO_ALTA_V1 */
         if(usr && usr.rol!=='admin'){
           sessionStorage.removeItem('eti_token');
           iniciarSesionCon(usr);
@@ -1888,7 +1888,7 @@ async function _ssoEntrar(){
       const d=JSON.parse(decodeURIComponent(escape(atob(m[1]))));
       if(!d||!d.u||!d.exp||Date.now()>Number(d.exp)) return false;       // pase caducado
       const _u2=String(d.u).toLowerCase().trim();
-      const usr=fichaDe(_u2) || (d.n ? altaSso(_u2, d.n) : null);   /* _SSO_ALTA_V1 */
+      const usr=fichaDe(_u2) || altaSso(_u2, d.n);   /* _SSO_ALTA_V1 */
       if(!usr) return false;                                             // usuario no existe aqui
       if(usr.rol==='admin'){
         const li=document.getElementById('linput'); if(li) li.value=usr.user;
