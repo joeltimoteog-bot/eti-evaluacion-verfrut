@@ -141,8 +141,8 @@ function bienvenida(){
    '<ul class="tips"><li>📝 <span><b>'+P.length+' preguntas</b> de opción múltiple.</span></li><li>👆 <span>Toca la respuesta que creas correcta. Algunas permiten marcar varias.</span></li><li>⏱ <span>Toma entre 8 y 12 minutos. Responde tú solo, con calma.</span></li></ul>'+
    '<div style="margin-top:16px"><button class="btn" id="bIr">Comenzar →</button></div></div><div class="foot">Supervisor: '+esc(S.sup)+'</div>';
   var pr=PREVIA?null:progLeer();
-  if(pr){var c=document.createElement('div');c.className='anon';c.style.cssText='background:#EEF3FB;color:#003DA5;margin-top:12px';
-    c.innerHTML='↩ <span>Tienes una evaluación a medias (<b>'+Object.keys(pr.R).length+' de '+P.length+'</b> respondidas). <button class="btn" id="bCont" style="margin-top:8px;padding:12px">Continuar donde me quedé</button></span>';
+  if(pr){var c=document.createElement('div');c.className='anon';c.style.cssText='background:#FDECEE;color:#9B0D22;margin-top:12px';   /* _MENSAJES_V1: aviso claro de NO enviada */
+    c.innerHTML='⚠️ <span><b>Tu evaluación anterior NO se envió.</b> Quedó a medias (<b>'+Object.keys(pr.R).length+' de '+P.length+'</b> respondidas). Para que cuente, debes completarla y tocar «Enviar evaluación». <button class="btn" id="bCont" style="margin-top:8px;padding:12px">Continuar y enviar</button></span>';
     var card=app.querySelector('.card'); card.insertBefore(c,card.querySelector('.tips'));
     document.getElementById('bCont').onclick=function(){R=pr.R||{};W=pr.W||W;ORD=pr.ORD||{};SEED=pr.SEED||SEED;idx=Math.min(pr.idx||0,P.length-1);
       var falt=P.findIndex(function(x){return !(R[x.p.n]&&R[x.p.n].length);}); if(falt>=0)idx=falt;
@@ -257,7 +257,7 @@ function pregunta(){
 /* 5) Revisión */
 function revisar(){
   var falt=P.filter(function(x){return !(R[x.p.n]&&R[x.p.n].length);});
-  app.innerHTML='<div class="card"><h2>Revisa antes de enviar</h2><p>'+(falt.length?'Te faltan <b>'+falt.length+'</b> pregunta(s). Tócalas para responderlas.':'¡Respondiste todas las preguntas! 🎉 Ya puedes enviar tu evaluación.')+'</p>'+
+  app.innerHTML='<div class="card"><h2>Revisa antes de enviar</h2>'+(falt.length?'<div class="anon" style="background:#FDECEE;color:#9B0D22;margin:0 0 10px">⚠️ <span><b>Tu evaluación aún NO se ha enviado.</b> Te faltan <b>'+falt.length+'</b> pregunta(s); si cierras ahora no quedará registrada.</span></div>':'')+'<p>'+(falt.length?'Toca los números en rojo para responder las que faltan.':'¡Respondiste todas las preguntas! 🎉 Ya puedes enviar tu evaluación.')+'</p>'+
    '<div class="resumen">'+P.map(function(x,i){var ok=R[x.p.n]&&R[x.p.n].length;return '<i class="'+(ok?'':'no')+'" data-i="'+i+'">'+(i+1)+'</i>';}).join('')+'</div>'+
    '<p style="font-size:13px">Una vez enviada no podrás modificarla.</p><div class="err" id="err"></div></div>';
   Array.prototype.forEach.call(app.querySelectorAll('.resumen i'),function(e){e.onclick=function(){idx=+e.getAttribute('data-i');pregunta();window.scrollTo(0,0);};});
@@ -383,7 +383,7 @@ function fin(){
   barra(false);
   if(PACK&&!(PACK.fs&&PACK.az)){   /* esperamos que Firebase Y Azure confirmen antes de cerrar (Azure: máx. ~25 s; luego lo reenvía el panel) */
     app.innerHTML='<div class="card center"><div class="ok-anim"><svg viewBox="0 0 24 24" fill="none" stroke="#007A3D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>'+
-     '<h1>Evaluación recibida</h1><p style="font-size:17px;color:var(--text)"><b>¡Gracias por participar!</b></p><p id="cuenta">Terminando de guardar… espera unos segundos antes de cerrar.</p></div>';
+     '<h1>Evaluación recibida</h1><p style="font-size:17px;color:var(--text)"><b>¡Gracias por participar!</b></p>'+resultadoHTML()+'<p id="cuenta">Terminando de guardar… espera unos segundos antes de cerrar.</p></div>';
     var t0=Date.now();
     var listo=function(){return PACK.fs&&(PACK.az||Date.now()-t0>25000);};
     var loop=function(){if(listo()){cierre();return;}despachar(PACK,2,2).then(function(){setTimeout(loop,listo()?0:6000);});};
@@ -392,12 +392,18 @@ function fin(){
   }
   cierre();
 }
+/* _MENSAJES_V1 (15-oct-2026): al terminar, el trabajador ve su estado (sin porcentaje): aprobado o necesita reforzamiento */
+function resultadoHTML(){
+  var ok=PACK&&PACK.doc&&PACK.doc.estado==='APROBADO';
+  return ok?'<div class="anon" style="background:#E6F7EE;color:#0B5E33;margin-top:12px;font-size:16px">🏆 <span><b>¡Excelente! APROBADO.</b> Demuestras que conoces las buenas prácticas sociales y laborales. ¡Sigue así!</span></div>'
+           :'<div class="anon" style="background:#FFF6E0;color:#7A4B00;margin-top:12px;font-size:16px">📘 <span><b>Lo siento, estamos en un nivel bajo: necesitas reforzamiento.</b> Tu supervisor coordinará una capacitación para reforzar estos temas. ¡Tú puedes!</span></div>';
+}
 var _cerrando=false;
 function cierre(){
   if(_cerrando) return; _cerrando=true;
-  var t=6;
+  var t=12;   /* _MENSAJES_V1: más tiempo para leer el resultado */
   app.innerHTML='<div class="card center"><div class="ok-anim"><svg viewBox="0 0 24 24" fill="none" stroke="#007A3D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>'+
-   '<h1>Evaluación enviada</h1><p style="font-size:17px;color:var(--text)"><b>¡Gracias por participar!</b></p><p>Tus respuestas fueron registradas correctamente.</p>'+
+   '<h1>Evaluación enviada</h1><p style="font-size:17px;color:var(--text)"><b>¡Gracias por participar!</b></p><p>Tus respuestas fueron registradas correctamente.</p>'+resultadoHTML()+
    '<p style="font-size:13px" id="cuenta">Esta página se cerrará en '+t+' segundos…</p></div>';
   try{history.replaceState(null,'','evaluar.html');}catch(e){}
   var iv=setInterval(function(){t--;var c=document.getElementById('cuenta');if(c)c.textContent='Esta página se cerrará en '+t+' segundos…';
