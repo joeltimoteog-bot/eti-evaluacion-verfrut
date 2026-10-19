@@ -7524,6 +7524,7 @@ console.log('[_SHELL_RL_V1] listo');
 <script>/* _SOLREPROG_V1 (30-set-2026): supervisor para "Actividad no realizada / pedir reprogramación" */
 window._etiUsuarioReprog=function(){try{if(!SESSION||!SESSION.user)return null;var r=String(SESSION.rol||'').toLowerCase();if(r==='admin'||r==='administrador'||String(SESSION.user).toLowerCase()==='jtimoteo')return null;return {usuario:SESSION.user,nombre:SESSION.nom||SESSION.user};}catch(e){return null;}};</script>
 <script src="solreprog.js?v=1"></script>
+<script src="respuestas-auditoria.js?v=1"></script>  <!-- _RESPUESTAS_AUDITORIA_V1 (18-oct): evidencia de respuestas por evaluacion (Excel + hojas PDF), solo admin, solo lectura -->
 <script>
 /* ══════════════════════════════════════════════════════════════
    _TRAFICO_V1 (03-oct-2026) — 📡 Tráfico en vivo (solo administrador)
