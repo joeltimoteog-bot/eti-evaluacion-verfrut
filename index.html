@@ -1559,7 +1559,7 @@ function guardarEvalNube(res){
     destiempo:res.destiempo||null,
     prog:(function(){try{const p=progPendienteDe(res.sup);if(!p)return {programada:false};const fs=(p.fechas||[]).slice().sort();const i=fs.indexOf(res.fecha);return {programada:i>=0,id:p.id||null,sector:p.sector||'',sesion:i>=0?(i+1):null,total:fs.length,fechas:fs};}catch(e){return null;}})(),   /* _SESION_PROG_V1: sesión programada (N de M) o no programada */
     modalidad:res.modalidad||'Manual', sesionQR:res.sesionQR||null,   // _MODULOS_V1
-    rutas:res.rutas.map(r=>{const o={nom:r.nom, cod:r.cod, ne:r.ne, resGrupo:r.resGrupo,
+    rutas:res.rutas.map(r=>{const o={nom:r.nom, cod:r.cod, ne:r.ne, resGrupo:r.resGrupo, hom:r.hom!=null?+r.hom:null, muj:r.muj!=null?+r.muj:null,   /* _SEXO_V1 */
       secs:r.secs.map(s=>({id:s.id, nom:s.nom, peso:s.peso, pct:s.cum, pond:s.pond, promSec:s.promSec}))};
       const d=_detManual(r); if(d) o.det=d; return o;}),   /* _DETALLE_MANUAL_V1: puntaje de cada evaluado por pregunta */
     creadoEn:new Date().toISOString(), ts:Date.now()
@@ -2705,12 +2705,29 @@ function mkAc(i){
               </select>`
           }
         </div>
+        <div class="fg" style="margin:0">
+          <label class="fl" style="font-size:.7rem">👨 Hombres <span class="req">*</span></label>
+          <input class="fc" type="number" min="0" max="250" style="padding:.45rem .78rem;font-size:.82rem" id="rh${i}" placeholder="0" value="${r.hom!=null?r.hom:''}" oninput="rfchSexo(${i})">
+        </div>
+        <div class="fg" style="margin:0">
+          <label class="fl" style="font-size:.7rem">👩 Mujeres <span class="req">*</span></label>
+          <input class="fc" type="number" min="0" max="250" style="padding:.45rem .78rem;font-size:.82rem" id="rm${i}" placeholder="0" value="${r.muj!=null?r.muj:''}" oninput="rfchSexo(${i})">
+          <span class="fh" id="rsx${i}" style="font-size:.68rem"></span>
+        </div>
       </div>
       <div class="cqwrap" id="cq${i}">${mkCuest(i)}</div>
     </div>
   </div>`;
 }
 
+/* _SEXO_V1 (19-oct-2026): hombres y mujeres evaluados por ruta/área (deben sumar el N° de evaluados) */
+function rfchSexo(i){
+  const r=S.rutas[i]; if(!r) return;
+  const vh=document.getElementById(`rh${i}`)?.value, vm=document.getElementById(`rm${i}`)?.value;
+  r.hom=vh===''?null:Math.max(0,parseInt(vh)||0); r.muj=vm===''?null:Math.max(0,parseInt(vm)||0);
+  const ne=r.nev||maxEv(r.tot||50), h=document.getElementById(`rsx${i}`);
+  if(h){ if(r.hom==null||r.muj==null){h.textContent='';} else { const t=r.hom+r.muj; h.textContent=t===ne?'✅ suman '+ne:'⚠️ suman '+t+' (evaluados: '+ne+')'; h.style.color=t===ne?'#007A3D':'#C8102E'; } }
+}
 function rfchEvEmp(i){
   const inp=document.getElementById(`rev${i}`);
   if(!inp) return;
@@ -3033,6 +3050,9 @@ function calcular(){
   const inc=S.rutas.filter((_,i)=>calcPct(i)<100).length;
   if(inc>0){if(!confirm(`${inc} ruta(s) sin completar. ¿Calcular con datos disponibles?`))return;}
   if(S.rutas.findIndex(r=>!r.nom.trim())>=0){toast('Hay rutas sin nombre','e');return;}
+  /* _SEXO_V1: aviso si falta o no cuadra hombres/mujeres (no bloquea) */
+  {const mal=S.rutas.filter(r=>{const ne=r.nev||maxEv(r.tot||50);return r.hom==null||r.muj==null||(r.hom+r.muj)!==ne;}).map(r=>r.nom||'(sin nombre)');
+   if(mal.length&&!confirm('Falta o no cuadra el número de HOMBRES y MUJERES en: '+mal.join(', ')+'.\n\n¿Calcular de todas formas? (Puedes cancelar y completarlo)'))return;}
 
   const rRes=S.rutas.map((ruta,ri)=>{
     const ne=ruta.nev||maxEv(ruta.tot||50);
@@ -7820,12 +7840,12 @@ async function exportar(desde,hasta){
     const progTxt=p=>!p?'':p.programada?('Programada '+(p.sesion||'')+' de '+(p.total||'')):'No programada';
     qr.forEach(r=>{const o={'Fecha evaluación':r.fecha||'','Fecha registro':fReg(r.ts),'Fecha original':r.fechaOriginal||'','Modalidad':'QR','Usuario':r.usuarioSup||'','Aplicado con QR de':r.supQR||'',
       'Empresa':r.emp||'','Supervisor':r.sup||'','Sector / zona':r.sector||'','Tipo':r.tipo==='empleado'?'Empleado':'Obrero','Ruta / Área':r.ruta||'','Código':r.cod||'',
-      'Evaluados':1,'Resultado %':P(r.resultado),'Estado':(+r.resultado||0)>=0.7?'APROBADO':'REFUERZO','En Azure':r.azOk?'Sí':'Pendiente','Código QR':r.sesion||'','Banco v':r.bancoVersion||'','Id registro':r.id};
+      'Evaluados':1,'Resultado %':P(r.resultado),'Estado':(+r.resultado||0)>=0.7?'APROBADO':'REFUERZO','En Azure':r.azOk?'Sí':'Pendiente','Código QR':r.sesion||'','Banco v':r.bancoVersion||'','Id registro':r.id,'Sexo':r.sexo==='H'?'Hombre':r.sexo==='M'?'Mujer':'','Hombres':r.sexo==='H'?1:0,'Mujeres':r.sexo==='M'?1:0};
       temas.forEach(t=>{const x=(r.secs||[]).find(y=>y.nom===t);o[t+' %']=x?P(x.pct):'';}); filas.push(o);});
     man.forEach(m=>(m.rutas||[]).forEach((r,ri)=>{const o={'Fecha evaluación':m.fecha||'','Fecha registro':fReg(m.ts),'Fecha original':m.fechaOriginal||'','Modalidad':'Manual','Usuario':m.usuario||'','Aplicado con QR de':'',
       'Empresa':m.emp||'','Supervisor':m.sup||'','Sector / zona':m.sector||'','Tipo':m.tipo==='empleado'?'Empleado':'Obrero','Ruta / Área':r.nom||'','Código':r.cod||'',
       'Evaluados':+r.ne||1,'Resultado %':P(r.resGrupo),'Estado':(+r.resGrupo||0)>=0.7?'APROBADO':'REFUERZO','En Azure':m.azOk?'Sí':'Pendiente','Código QR':'','Banco v':'','Id registro':m.id+'_'+ri,'Registrado por':m.nomUsuario||m.usuario||'',
-      'Programación':progTxt(m.prog),'Destiempo':m.destiempo?m.destiempo.tipo||'':'','Motivo destiempo':m.destiempo?m.destiempo.motivo||'':'','Reportó a coordinador':m.destiempo?m.destiempo.reportado||'':''};
+      'Programación':progTxt(m.prog),'Destiempo':m.destiempo?m.destiempo.tipo||'':'','Motivo destiempo':m.destiempo?m.destiempo.motivo||'':'','Reportó a coordinador':m.destiempo?m.destiempo.reportado||'':'','Sexo':'','Hombres':r.hom!=null?+r.hom:'','Mujeres':r.muj!=null?+r.muj:''};
       temas.forEach(t=>{const x=(r.secs||[]).find(y=>y.nom===t);o[t+' %']=x?P(x.pct!=null?x.pct:x.cum):'';}); filas.push(o);}));
     /* por supervisor */
     const sm=new Map(); filas.forEach(o=>{const g=sm.get(o.Supervisor)||{Supervisor:o.Supervisor,'Evaluados QR':0,'Evaluados manual':0,s:0,n:0,apr:0};
@@ -7977,13 +7997,14 @@ function escuchar(user,nom){
 }
 function filas(desde,hasta){
   const en=f=>f&&f>=desde&&f<=hasta, vis=new Map();
-  [...M.qrA,...M.qrB].forEach(r=>{if(en(r.fecha))vis.set(r.id,{mod:'QR',sup:r.sup,ts:r.ts||0,fecha:r.fecha,emp:r.emp,sector:r.sector,tipo:r.tipo,ruta:r.ruta,cod:r.cod,n:1,res:+r.resultado||0,apr:(+r.resultado||0)>=0.7?1:0,az:!!r.azOk,apl:r.supQR||'',key:r.id,ses:r.sesion||'',fo:r.fechaOriginal||'',secs:(r.secs||[]).map(x=>({nom:x.nom,peso:+x.peso||0,pct:+x.pct||0}))});});
-  M.man.forEach(m=>{if(!en(m.fecha))return;(m.rutas||[]).forEach((r,i)=>vis.set(m.id+'_'+i,{mod:'MANUAL',sup:m.sup,ts:m.ts||0,fecha:m.fecha,emp:m.emp,sector:m.sector,tipo:m.tipo,ruta:r.nom,cod:r.cod,n:+r.ne||1,res:+r.resGrupo||0,apr:(+r.resGrupo||0)>=0.7?(+r.ne||1):0,az:!!m.azOk,key:m.id+'_'+i,doc:m.id,fo:m.fechaOriginal||'',secs:(r.secs||[]).map(x=>({nom:x.nom,peso:+x.peso||0,pct:x.pct!=null?+x.pct:(+x.cum||0)}))}));});
+  [...M.qrA,...M.qrB].forEach(r=>{if(en(r.fecha))vis.set(r.id,{mod:'QR',sup:r.sup,ts:r.ts||0,fecha:r.fecha,emp:r.emp,sector:r.sector,tipo:r.tipo,ruta:r.ruta,cod:r.cod,n:1,res:+r.resultado||0,apr:(+r.resultado||0)>=0.7?1:0,az:!!r.azOk,apl:r.supQR||'',key:r.id,ses:r.sesion||'',fo:r.fechaOriginal||'',hom:r.sexo==='H'?1:0,muj:r.sexo==='M'?1:0,ssx:r.sexo?0:1,secs:(r.secs||[]).map(x=>({nom:x.nom,peso:+x.peso||0,pct:+x.pct||0}))});});
+  M.man.forEach(m=>{if(!en(m.fecha))return;(m.rutas||[]).forEach((r,i)=>vis.set(m.id+'_'+i,{mod:'MANUAL',sup:m.sup,ts:m.ts||0,fecha:m.fecha,emp:m.emp,sector:m.sector,tipo:m.tipo,ruta:r.nom,cod:r.cod,n:+r.ne||1,res:+r.resGrupo||0,apr:(+r.resGrupo||0)>=0.7?(+r.ne||1):0,az:!!m.azOk,key:m.id+'_'+i,doc:m.id,fo:m.fechaOriginal||'',hom:+r.hom||0,muj:+r.muj||0,ssx:(r.hom==null&&r.muj==null)?(+r.ne||1):Math.max(0,(+r.ne||1)-(+r.hom||0)-(+r.muj||0)),secs:(r.secs||[]).map(x=>({nom:x.nom,peso:+x.peso||0,pct:x.pct!=null?+x.pct:(+x.cum||0)}))}));});
   return [...vis.values()].filter(r=>(!M.f.emp||r.emp===M.f.emp)&&(!M.f.mod||r.mod===M.f.mod)&&(!M.f.tipo||(M.f.tipo==='empleado'?r.tipo==='empleado':r.tipo!=='empleado'))).sort((a,b)=>b.ts-a.ts);
 }
 function resumen(F){const q=F.filter(r=>r.mod==='QR'),m=F.filter(r=>r.mod!=='QR');const n=F.reduce((a,r)=>a+r.n,0);
   return {n,qr:q.length,man:m.reduce((a,r)=>a+r.n,0),prom:n?F.reduce((a,r)=>a+r.res*r.n,0)/n:0,apr:F.reduce((a,r)=>a+r.apr,0),
-    obr:F.filter(r=>r.tipo!=='empleado').reduce((a,r)=>a+r.n,0),emp:F.filter(r=>r.tipo==='empleado').reduce((a,r)=>a+r.n,0)};}
+    obr:F.filter(r=>r.tipo!=='empleado').reduce((a,r)=>a+r.n,0),emp:F.filter(r=>r.tipo==='empleado').reduce((a,r)=>a+r.n,0),
+    hom:F.reduce((a,r)=>a+(r.hom||0),0),muj:F.reduce((a,r)=>a+(r.muj||0),0),ssx:F.reduce((a,r)=>a+(r.ssx||0),0)};}   /* _SEXO_V1 */
 function pintar(){clearTimeout(M.pintT);M.pintT=setTimeout(()=>{render();banner();},250);}
 function crearPantalla(){
   if($('smis')) return;
@@ -8024,7 +8045,7 @@ function render(){
     return `<div style="background:#EAF1FF;border:1px solid #B9CDF5;border-radius:12px;padding:.6rem .9rem;margin:-.3rem 0 .9rem;font-size:.84rem;display:flex;justify-content:space-between;align-items:center;gap:.6rem;flex-wrap:wrap"><span>📌 Hoy registraste <b>${n}</b> evaluado(s) con fecha de evaluación <b>${fs.map(fF).join(', ')}</b>, fuera del rango elegido.</span><button class="btn bout bsm" onclick="ETIMIS.rango('${fs[0]<M.desde?fs[0]:M.desde}','${hoyI()}')">Ver esas evaluaciones →</button></div>`;})()}
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.7rem;margin-bottom:1rem">
     ${k(R.n,'Trabajadores evaluados')}${k(R.qr,TD?'📱 Por QR':'📱 Por mi QR','#003DA5')}${k(R.man,'📋 Manual','#6A3FC0')}
-    ${k(R.n?pc(R.prom):'—','Promedio',R.n?(R.prom>=0.7?'#007A3D':'#C8102E'):'')}${k(R.apr,'Aprobados ≥70%','#007A3D')}${k(R.obr+' / '+R.emp,'👷 Obreros / 💼 Empleados')}
+    ${k(R.n?pc(R.prom):'—','Promedio',R.n?(R.prom>=0.7?'#007A3D':'#C8102E'):'')}${k(R.apr,'Aprobados ≥70%','#007A3D')}${k(R.obr+' / '+R.emp,'👷 Obreros / 💼 Empleados')}${k(R.hom+' / '+R.muj,'👨 Hombres / 👩 Mujeres'+(R.ssx?' · '+R.ssx+' sin dato':''))}
   </div>
   ${TD&&F.length?(()=>{const g=new Map();F.forEach(r=>{const x=g.get(r.sup||'—')||{sup:r.sup||'—',qr:0,man:0,s:0,n:0,apr:0,ult:0};if(r.mod==='QR')x.qr++;else x.man+=r.n;x.s+=r.res*r.n;x.n+=r.n;x.apr+=r.apr;x.ult=Math.max(x.ult,r.ts);g.set(x.sup,x);});
     const L=[...g.values()], env=L.filter(x=>infDe(x.sup)).length;
@@ -8197,8 +8218,9 @@ window.ETIMIS={
     const sects=[...new Set(F.map(r=>r.sector||'—'))];
     if(sects.length>1){toast('El informe se emite por sector: elige un sector en el selector 📍','e');return;}
     const fechas=[...new Set(F.map(r=>r.fecha))].sort();
-    const campos=[{k:'dur',lbl:'Duración de la capacitación',v:'45 minutos'},{k:'lugar',lbl:'Lugar',v:'Campo – Sector '+sects[0]},{k:'prog',lbl:'Participantes programados (N°)',v:String(R.n)},{k:'h',lbl:'Hombres (N°)',v:''},{k:'m',lbl:'Mujeres (N°)',v:''},{k:'ini',lbl:'Promedio evaluación inicial verbal (%) — vacío si no se midió',v:''},{k:'firma',lbl:'Firma (nombre)',v:o.nomO||M.nom},{k:'cargo',lbl:'Cargo',v:'Supervisor de Gestión Humana'}];
+    const campos=[{k:'dur',lbl:'Duración de la capacitación',v:'45 minutos'},{k:'lugar',lbl:'Lugar',v:'Campo – Sector '+sects[0]},{k:'prog',lbl:'Participantes programados (N°)',v:String(R.n)},{k:'h',lbl:'Hombres (N°) — vacío = automático',v:''},{k:'m',lbl:'Mujeres (N°) — vacío = automático',v:''},{k:'ini',lbl:'Promedio evaluación inicial verbal (%) — vacío si no se midió',v:''},{k:'firma',lbl:'Firma (nombre)',v:o.nomO||M.nom},{k:'cargo',lbl:'Cargo',v:'Supervisor de Gestión Humana'}];
     const go=async v=>{
+      if(v.h==='') v.h=String(R.hom||''); if(v.m==='') v.m=String(R.muj||'');   /* _SEXO_V1 */
       toast('⏳ Generando el informe en Word…','i');
       try{ await libsInforme(); }catch(e){toast('No se pudo cargar el generador de Word: '+e.message,'e');return;}
       const G=grupos(F).map(g=>{const rows=F.filter(r=>(r.tipo==='empleado'?'E':'O')===(g.tipo==='empleado'?'E':'O')&&(r.sector||'—')===g.sector&&String(r.ruta||'—').toUpperCase()===g.ruta&&String(r.cod||'').toUpperCase()===g.cod);return {tipo:g.tipo,ruta:g.ruta,cod:g.cod,n:g.n,prom:g.n?g.s/g.n:0,temas:temas(rows)};});
@@ -8221,10 +8243,12 @@ window.ETIMIS={
     if(sects.length>1){toast('El informe se emite por sector: elige un sector en el selector 📍','e');return;}
     const fechas=[...new Set(Fall.map(r=>r.fecha))].sort().reverse();
     const nom=o.nomO||M.nom;
-    const campos=[{k:'fecha',lbl:'Fecha de la evaluación (una por informe)',v:fechas[0],lista:fechas},{k:'dur',lbl:'Duración',v:'2 horas'},{k:'h',lbl:'Hombres (N°)',v:''},{k:'m',lbl:'Mujeres (N°)',v:''},
+    const campos=[{k:'fecha',lbl:'Fecha de la evaluación (una por informe)',v:fechas[0],lista:fechas},{k:'dur',lbl:'Duración',v:'2 horas'},{k:'h',lbl:'Hombres (N°) — vacío = automático desde las evaluaciones',v:''},{k:'m',lbl:'Mujeres (N°) — vacío = automático',v:''},
       {k:'resp',lbl:'Responsable (como figura en el informe)',v:nom+'.'},{k:'firma',lbl:'Firma (nombre)',v:nom},{k:'reportado',lbl:'Reportado a',v:'Luis Eduardo Coveñas Chero – Subgerente de personas'},{k:'sem',lbl:'Semana (vacío = automática)',v:''}];
     const go=async v=>{
       const fe=v.fecha||fechas[0], F=Fall.filter(r=>r.fecha===fe), R=resumen(F); if(!R.n){toast('No hay evaluaciones en esa fecha','e');return;}
+      if(v.h==='') v.h=String(R.hom); if(v.m==='') v.m=String(R.muj);   /* _SEXO_V1 */
+      if(R.ssx) toast('ℹ️ '+R.ssx+' evaluado(s) sin dato de hombre/mujer (registros anteriores)','i');
       toast('⏳ Generando el Informe Check List en Word…','i');
       try{ if(typeof window.JSZip==='undefined') await cargarScript('lib/jszip.min.js?v=3101'); if(typeof window.etiInformeChecklist!=='function') await cargarScript('lib/eti-informe-checklist.js?v=1'); }
       catch(e){toast('No se pudo cargar el generador: '+e.message,'e');return;}

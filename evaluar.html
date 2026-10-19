@@ -160,7 +160,7 @@ function ubicacion(){
   var last={}; try{last=JSON.parse(ls('eti_qr_ult')||'{}')||{};}catch(e){}
   var fijo=(S.tipo==='obrero'||S.tipo==='empleado')?S.tipo:'';
   var empFija=S.emp||'';
-  var st={emp:empFija||W.emp||last.emp||'',tipo:fijo||W.tipo||last.tipo||'',sector:W.sector||S.sector||last.sector||'',ruta:W.ruta||'',cod:W.cod||'',area:''};
+  var st={emp:empFija||W.emp||last.emp||'',tipo:fijo||W.tipo||last.tipo||'',sector:W.sector||S.sector||last.sector||'',ruta:W.ruta||'',cod:W.cod||'',area:'',sexo:W.sexo||''};   /* _SEXO_V1: no se recuerda entre trabajadores */
   if(st.tipo==='empleado'){st.area=st.ruta||(last.tipo==='empleado'?last.ruta:'')||'';st.ruta='';}
   else if(!st.ruta&&last.tipo!=='empleado'){st.ruta=last.ruta||'';st.cod=st.cod||last.cod||'';}
   function leer(){var g=function(id){var e=document.getElementById(id);return e?e.value:null;};
@@ -182,6 +182,9 @@ function ubicacion(){
       '<button type="button" class="tipo'+(st.tipo==='obrero'?' sel':'')+'" data-t="obrero"><span>👷</span>Obrero<small>Trabajo por ruta</small></button>'+
       '<button type="button" class="tipo'+(st.tipo==='empleado'?' sel':'')+'" data-t="empleado"><span>💼</span>Empleado<small>Trabajo en un área</small></button></div>';
     else h+='<label>Tipo de trabajador</label><div class="fijo">'+(fijo==='obrero'?'👷 Obrero':'💼 Empleado')+'</div>';
+    h+='<label>Eres…</label><div class="tipos">'+
+      '<button type="button" class="tipo'+(st.sexo==='H'?' sel':'')+'" data-s="H"><span>👨</span>Hombre</button>'+
+      '<button type="button" class="tipo'+(st.sexo==='M'?' sel':'')+'" data-s="M"><span>👩</span>Mujer</button></div>';   /* _SEXO_V1 */
     if(st.tipo==='obrero'){
       h+=selSector('Sector o fundo')+
         '<label for="ruta">Ruta</label><input id="ruta" autocomplete="off" placeholder="Ej. Ruta 5" value="'+esc(st.ruta)+'">'+
@@ -195,7 +198,7 @@ function ubicacion(){
     h+='<div class="err" id="err"></div><div style="margin-top:18px"><button class="btn" id="bOk"'+(st.tipo?'':' disabled')+'>Continuar →</button></div></div>';
     app.innerHTML=h;
     var se=document.getElementById('sec'); if(se) se.onchange=function(){var era=st.otro;leer();if(st.otro!==era){if(st.otro)st.sector='';pintar();var i=document.getElementById('secOtro');if(i)i.focus();}};
-    Array.prototype.forEach.call(app.querySelectorAll('.tipo'),function(b){b.onclick=function(){leer();if(b.getAttribute('data-e'))st.emp=b.getAttribute('data-e');else st.tipo=b.getAttribute('data-t');pintar();};});
+    Array.prototype.forEach.call(app.querySelectorAll('.tipo'),function(b){b.onclick=function(){leer();if(b.getAttribute('data-e'))st.emp=b.getAttribute('data-e');else if(b.getAttribute('data-s'))st.sexo=b.getAttribute('data-s');else st.tipo=b.getAttribute('data-t');pintar();};});
     document.getElementById('bOk').onclick=continuar;
   }
   function continuar(){
@@ -205,19 +208,20 @@ function ubicacion(){
     err.style.display='none';
     if(!st.emp) return falla('Elige tu empresa.');
     if(!st.tipo) return falla('Elige si eres obrero o empleado.');
+    if(!st.sexo) return falla('Indica si eres hombre o mujer.');
     if(st.tipo==='obrero'){
       var ruta=up(st.ruta), cod=up(st.cod).replace(/\s+/g,'');
       st.sector=String(st.sector||'').trim().replace(/\s+/g,' ').slice(0,60);if(st.otro)st.sector=st.sector.toLowerCase().replace(/(^|\s)\S/g,function(c){return c.toUpperCase();});
       if(!st.sector) return falla(st.otro?'Escribe tu sector o fundo.':'Elige tu sector o fundo.');
       if(!ruta) return falla('Escribe tu ruta.');
       if(!cod) return falla('Escribe el código de tu ruta.');
-      progBorrar(); W={emp:st.emp,tipo:'obrero',sector:st.sector,ruta:ruta.slice(0,60),cod:cod.slice(0,30)};
+      progBorrar(); W={emp:st.emp,tipo:'obrero',sector:st.sector,ruta:ruta.slice(0,60),cod:cod.slice(0,30),sexo:st.sexo};
     }else{
       var area=up(st.area);
       if(!area) return falla('Escribe tu área.');
       st.sector=String(st.sector||'').trim().replace(/\s+/g,' ').slice(0,60);if(st.otro)st.sector=st.sector.toLowerCase().replace(/(^|\s)\S/g,function(c){return c.toUpperCase();});
       if(!st.sector) return falla(st.otro?'Escribe el sector o zona donde estás trabajando.':'Elige el sector o zona donde estás trabajando.');
-      progBorrar(); W={emp:st.emp,tipo:'empleado',sector:st.sector,ruta:area.slice(0,60),cod:''};
+      progBorrar(); W={emp:st.emp,tipo:'empleado',sector:st.sector,ruta:area.slice(0,60),cod:'',sexo:st.sexo};
     }
     ls('eti_qr_ult',JSON.stringify(W));
     idx=0;R={};progGuardar();pregunta();window.scrollTo(0,0);
@@ -364,7 +368,7 @@ function enviar(){
     /* _COBERTURAS_ETI_V1: deja constancia de a quién reemplaza (por programación o porque el dueño del QR está cubriendo) */
     try{var cob=(at&&at.cob)||(window.ETICob&&(ETICob.deReemplazo(userF,FECHA)||ETICob.deReemplazo(supF,FECHA)));
       if(cob) extra.cobertura={titular:cob.titular,titular_nombre:cob.titular_nombre,tipo:cob.tipo,desde:cob.desde,hasta:cob.hasta||'',id:cob.id||''};}catch(e){}
-    var doc={sesion:SID,anonima:true,emp:W.emp||S.emp,sup:supF,sector:W.sector,tipo:W.tipo||S.tipo,ruta:W.ruta,cod:W.cod,fecha:FECHA,
+    var doc={sesion:SID,anonima:true,emp:W.emp||S.emp,sup:supF,sector:W.sector,tipo:W.tipo||S.tipo,ruta:W.ruta,cod:W.cod,sexo:W.sexo||'',fecha:FECHA,
       usuarioSup:userF,resp:R,pts:c.ptsN,secs:c.secs,resultado:c.resultado,estado:c.resultado>=0.7?'APROBADO':'REFUERZO',
       bancoVersion:S.bancoVersion||0,creadoEn:new Date().toISOString(),ts:Date.now()};
     for(var ek in extra) doc[ek]=extra[ek];
