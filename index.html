@@ -8243,23 +8243,27 @@ window.ETIMIS={
     if(sects.length>1){toast('El informe se emite por sector: elige un sector en el selector 📍','e');return;}
     const fechas=[...new Set(Fall.map(r=>r.fecha))].sort().reverse();
     const nom=o.nomO||M.nom;
-    const campos=[{k:'fecha',lbl:'Fecha de la evaluación (una por informe)',v:fechas[0],lista:fechas},{k:'dur',lbl:'Duración',v:'2 horas'},{k:'h',lbl:'Hombres (N°) — vacío = automático desde las evaluaciones',v:''},{k:'m',lbl:'Mujeres (N°) — vacío = automático',v:''},
-      {k:'resp',lbl:'Responsable (como figura en el informe)',v:nom+'.'},{k:'firma',lbl:'Firma (nombre)',v:nom},{k:'reportado',lbl:'Reportado a',v:'Luis Eduardo Coveñas Chero – Subgerente de personas'},{k:'sem',lbl:'Semana (vacío = automática)',v:''}];
+    /* _INFORME_CHECKLIST_V2 (19-oct): formato actualizado CAP-SC-10 — una fecha o todas las del período (rango "03 al 06 de enero") */
+    const TODAS=fechas.length>1?'Todas las fechas ('+fF(fechas[fechas.length-1])+' al '+fF(fechas[0])+')':null;
+    const campos=[{k:'fecha',lbl:'Fecha(s) de la evaluación',v:fechas[0],lista:TODAS?[TODAS,...fechas]:fechas},{k:'dur',lbl:'Duración',v:'2 horas'},{k:'h',lbl:'Hombres (N°) — vacío = automático desde las evaluaciones',v:''},{k:'m',lbl:'Mujeres (N°) — vacío = automático',v:''},
+      {k:'resp',lbl:'Responsable (como figura en el informe)',v:nom+'.'},{k:'firma',lbl:'Firma (nombre)',v:nom},{k:'reportado',lbl:'Reportado a',v:'Luis Eduardo Coveñas Chero – Subgerente de personas'},{k:'sem',lbl:'Semana (vacío = automática)',v:''},
+      {k:'conc',lbl:'V. Conclusiones del supervisor según observación del grupo (vacío = texto automático con los resultados; puedes editarlo luego en Word)',v:''}];
     const go=async v=>{
-      const fe=v.fecha||fechas[0], F=Fall.filter(r=>r.fecha===fe), R=resumen(F); if(!R.n){toast('No hay evaluaciones en esa fecha','e');return;}
+      const todas=!!(TODAS&&v.fecha===TODAS), fe=todas?fechas[0]:(v.fecha||fechas[0]), F=todas?Fall:Fall.filter(r=>r.fecha===fe), R=resumen(F); if(!R.n){toast('No hay evaluaciones en esa fecha','e');return;}
+      const fechasSel=[...new Set(F.map(r=>r.fecha))].sort();
       if(v.h==='') v.h=String(R.hom); if(v.m==='') v.m=String(R.muj);   /* _SEXO_V1 */
       if(R.ssx) toast('ℹ️ '+R.ssx+' evaluado(s) sin dato de hombre/mujer (registros anteriores)','i');
       toast('⏳ Generando el Informe Check List en Word…','i');
-      try{ if(typeof window.JSZip==='undefined') await cargarScript('lib/jszip.min.js?v=3101'); if(typeof window.etiInformeChecklist!=='function') await cargarScript('lib/eti-informe-checklist.js?v=1'); }
+      try{ if(typeof window.JSZip==='undefined') await cargarScript('lib/jszip.min.js?v=3101'); if(typeof window.etiInformeChecklist!=='function') await cargarScript('lib/eti-informe-checklist.js?v=2'); }
       catch(e){toast('No se pudo cargar el generador: '+e.message,'e');return;}
-      let plantilla; try{const r=await fetch('lib/plantilla-informe-checklist-eti.docx?v=1',{cache:'no-store'}); if(!r.ok) throw new Error('HTTP '+r.status); plantilla=await r.arrayBuffer();}
+      let plantilla; try{const r=await fetch('lib/plantilla-informe-checklist-eti.docx?v=2',{cache:'no-store'}); if(!r.ok) throw new Error('HTTP '+r.status); plantilla=await r.arrayBuffer();}
       catch(e){toast('No se pudo leer la plantilla del informe: '+e.message,'e');return;}
       const cnt={}; F.forEach(r=>{const e=r.emp||'';cnt[e]=(cnt[e]||0)+r.n;}); const emp=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0]||'';
-      const datos={plantilla,emp,sector:sects[0],nom,fechaEval:fe,fechaInforme:hoyI(),tipos:[...new Set(F.map(r=>r.tipo==='empleado'?'empleado':'obrero'))],temas:temas(F),R,v};
-      const nombre='Informe_CheckList_ETI_GH-03_'+String(sects[0]).replace(/[^\w]+/g,'_')+'_'+fe.replace(/-/g,'')+'.docx';
+      const datos={plantilla,emp,sector:sects[0],nom,fechaEval:fe,fechasEval:fechasSel,fechaInforme:hoyI(),tipos:[...new Set(F.map(r=>r.tipo==='empleado'?'empleado':'obrero'))],temas:temas(F),R,v};
+      const nombre='Informe_CheckList_ETI_GH-03_'+String(sects[0]).replace(/[^\w]+/g,'_')+'_'+fechasSel[0].replace(/-/g,'')+(fechasSel.length>1?'_al_'+fechasSel[fechasSel.length-1].replace(/-/g,''):'')+'.docx';
       try{const blob=await window.etiInformeChecklist(datos);const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=nombre;a.style.display='none';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},800);}
       catch(e){console.error(e);toast('No se pudo generar el Word: '+e.message,'e');return;}
-      const msg='✅ Se emitió tu Informe Check List ETI (INF-SC-GH-03) · '+sects[0]+' · '+fF(fe)+' en Word ('+nombre+'). Este es el informe que debes utilizar para tus evaluaciones ETI. RECUERDA: inserta la EVIDENCIA FOTOGRÁFICA en la sección IV (4 fotos), firma y adjunta el registro de asistencia antes de enviarlo. El sistema no guarda el informe ni las fotos; puedes volver a emitirlo desde este reporte.';
+      const msg='✅ Se emitió tu Informe Check List ETI (INF-SC-GH-03) · '+sects[0]+' · '+fechasSel.map(fF).join(', ')+' en Word ('+nombre+'). Este es el informe que debes utilizar para tus evaluaciones ETI. RECUERDA: inserta la EVIDENCIA FOTOGRÁFICA en la sección IV (Foto 1 a Foto 4), revisa tus CONCLUSIONES (sección V), coloca tu FIRMA DIGITAL y adjunta el registro de asistencia antes de enviarlo. El sistema no guarda el informe ni las fotos; puedes volver a emitirlo desde este reporte.';
       toast('📝 Informe Check List descargado · inserta las fotos antes de enviarlo','s'); try{if(typeof confMod==='function')confMod('📝 Informe Check List emitido',msg,()=>{});}catch(e){}};
     if(window.etiMiniForm) window.etiMiniForm('📝 Informe Check List ETI (INF-SC-GH-03)','<b>Este es el informe que debes utilizar para las evaluaciones ETI.</b> Completa los datos que el sistema no tiene; lo demás (empresa, sector, total evaluados, semáforo por temas y conclusiones) se llena solo con la evaluación de <b>'+esc(sects[0])+'</b>.',campos,go);
     else go(Object.fromEntries(campos.map(c=>[c.k,c.v])));
