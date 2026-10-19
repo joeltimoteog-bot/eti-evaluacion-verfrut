@@ -97,15 +97,44 @@
       evals.push({ r: r, filas: filas, ok: ok, tot: tot, nota: nota, sup: supTxt(r.sup), sector: secTxt(r.sector) });
     }
     man.forEach(function (m) { m._sup = supTxt(m.sup); m._sector = secTxt(m.sector); });
+    /* _DETALLE_MANUAL_V1: evaluaciones manuales que ya guardan el puntaje de cada evaluado → una hoja por evaluado */
+    var restoMan = [];
+    man.forEach(function (m) {
+      var B = m.detBanco, sinDet = [];
+      (m.rutas || []).forEach(function (rt, ri) {
+        if (!B || !rt.det || !(rt.det.ev || []).length) { sinDet.push(rt); return; }
+        var secMap = {}; (B.secs || []).forEach(function (s) { secMap[s.id] = s; });
+        rt.det.ev.forEach(function (ev) {
+          var vals = String(ev.p || '').split(','), filas = [], ok = 0, tot = 0, sums = {};
+          (B.pregs || []).forEach(function (p, k) {
+            var raw = vals[k], blanco = raw === undefined || raw === '', v = blanco ? 0 : (+raw || 0), mx = +p.max || 0;
+            sums[p.s] = (sums[p.s] || 0) + v * (+p.f || 1);
+            var est = blanco ? 'Incorrecta' : (mx && v >= mx - 1e-6 ? 'Correcta' : (v > 0 ? 'Parcial' : 'Incorrecta')); if (est === 'Correcta') ok++; tot++;
+            filas.push({ tema: (secMap[p.s] || {}).nom || '', n: p.n, t: p.t, multi: false, manual: true,
+              marcada: [blanco ? 'En blanco (no respondió)' : 'Puntaje anotado: ' + v + ' de ' + mx], correcta: ['Puntaje máximo: ' + mx], est: est, pts: v, max: mx });
+          });
+          var secs = (B.secs || []).map(function (s) { var pct = s.maxSec ? (sums[s.id] || 0) / s.maxSec : 0; return { nom: s.nom, pct: pct, peso: s.peso }; });
+          var res = secs.reduce(function (a, s) { return a + s.pct * (+s.peso || 0); }, 0);
+          evals.push({ manualDet: true, r: { id: (m.id || '') + '·' + (ri + 1) + '·' + ev.i, sup: m.sup, sector: m.sector, fecha: m.fecha, ts: m.ts, ruta: rt.nom, cod: rt.cod, tipo: m.tipo, emp: m.emp,
+              resultado: Math.round(res * 10000) / 10000, estado: res >= 0.7 ? 'APROBADO' : 'REFUERZO', secs: secs, sesion: '', evaluado: ev.i, registradoPor: m.nomUsuario || m.usuario || '' },
+            filas: filas, ok: ok, tot: tot, nota: '', sup: m._sup, sector: m._sector });
+        });
+      });
+      if (sinDet.length) { if (sinDet.length === (m.rutas || []).length) restoMan.push(m); else { var c = Object.assign({}, m); c.rutas = sinDet; restoMan.push(c); } }
+    });
+    man = restoMan;
+    evals.sort(function (a, b) { return cmp(a.sup, b.sup) || cmp(a.sector, b.sector) || (a.r.fecha || '').localeCompare(b.r.fecha || '') || (a.r.ts || 0) - (b.r.ts || 0) || cmp(a.r.ruta || '', b.r.ruta || '') || (a.r.evaluado || 0) - (b.r.evaluado || 0); });
     return { evals: evals, man: man };
   }
+  function modTxt(e) { return e.manualDet ? 'Manual · evaluado N° ' + e.r.evaluado : 'QR'; }
 
   /* ── separar por supervisor y sector ── */
   function grupos(D) {
     var G = new Map();
-    function g(sup) { var k = norm(sup); if (!G.has(k)) G.set(k, { sup: sup, qr: 0, man: 0, prom: 0, n: 0, sectores: new Map() }); return G.get(k); }
-    function gs(x, sector) { var k = norm(sector) || 'sinsector'; if (!x.sectores.has(k)) x.sectores.set(k, { sector: sector, qr: 0, man: 0 }); return x.sectores.get(k); }
-    D.evals.forEach(function (e) { var x = g(e.sup); x.qr++; x.prom += (+e.r.resultado || 0); x.n++; gs(x, e.sector).qr++; });
+    function g(sup) { var k = norm(sup); if (!G.has(k)) G.set(k, { sup: sup, qr: 0, md: 0, man: 0, prom: 0, n: 0, sectores: new Map() }); return G.get(k); }
+    function gs(x, sector) { var k = norm(sector) || 'sinsector'; if (!x.sectores.has(k)) x.sectores.set(k, { sector: sector, qr: 0, md: 0, man: 0 }); return x.sectores.get(k); }
+    /* qr = evaluaciones CON DETALLE (QR + manual con detalle); md = de ellas, las manuales */
+    D.evals.forEach(function (e) { var x = g(e.sup), s = gs(x, e.sector); x.qr++; s.qr++; if (e.manualDet) { x.md++; s.md++; } x.prom += (+e.r.resultado || 0); x.n++; });
     D.man.forEach(function (m) { var x = g(m._sup), ne = (m.rutas || []).reduce(function (a, r) { return a + (+r.ne || 1); }, 0); x.man += ne; (m.rutas || []).forEach(function (r) { x.prom += (+r.resGrupo || 0) * (+r.ne || 1); x.n += (+r.ne || 1); }); gs(x, m._sector).man += ne; });
     return [...G.values()].map(function (x) { x.sectores = [...x.sectores.values()].sort(function (a, b) { return cmp(a.sector, b.sector); }); x.prom = x.n ? x.prom / x.n : 0; return x; }).sort(function (a, b) { return cmp(a.sup, b.sup); });
   }
@@ -146,7 +175,7 @@
     /* 1) Resumen por supervisor y sector */
     var G = grupos(D), wsR = wb.addWorksheet('Resumen', { views: [{ state: 'frozen', ySplit: 4 }] });
     wsR.columns = [{ width: 34 }, { width: 24 }, { width: 14 }, { width: 16 }, { width: 13 }, { width: 13 }, { width: 13 }];
-    cabecera(wsR, 7); encabezados(wsR, 4, ['Supervisor', 'Sector / zona', 'Evaluaciones QR (con respuestas)', 'Evaluados manual (por grupo)', 'Promedio QR', 'Aprobados QR', 'Refuerzo QR']);
+    cabecera(wsR, 7); encabezados(wsR, 4, ['Supervisor', 'Sector / zona', 'Evaluaciones con detalle (QR + manual)', 'Manual sin detalle (evaluados por grupo)', 'Promedio', 'Aprobados', 'Refuerzo']);
     var fr = 5;
     G.forEach(function (g) {
       var r0 = wsR.getRow(fr++); r0.getCell(1).value = tituloSup(g.sup); r0.getCell(3).value = g.qr; r0.getCell(4).value = g.man;
@@ -166,14 +195,14 @@
     /* 2) Respuestas: supervisor → sector → evaluación → preguntas */
     var ws = wb.addWorksheet('Respuestas', { views: [{ state: 'frozen', ySplit: 4 }], pageSetup: { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
     ws.columns = [{ width: 7 }, { width: 22 }, { width: 58 }, { width: 42 }, { width: 42 }, { width: 14 }, { width: 10 }];
-    cabecera(ws, 7); encabezados(ws, 4, ['N°', 'Tema', 'Pregunta', 'Respuesta marcada por el trabajador', 'Respuesta correcta', 'Resultado', 'Puntaje']);
+    cabecera(ws, 7); encabezados(ws, 4, ['N°', 'Tema', 'Pregunta', 'Respuesta marcada (QR) / puntaje anotado (manual)', 'Respuesta correcta / puntaje máximo', 'Resultado', 'Puntaje']);
     var fl = 5, supAnt = null, secAnt = null;
     D.evals.forEach(function (e) {
       var r = e.r;
       if (norm(e.sup) !== supAnt) {
         supAnt = norm(e.sup); secAnt = null; ws.mergeCells(fl, 1, fl, 7);
         var cs = ws.getCell(fl, 1); var ng = D.evals.filter(function (x) { return norm(x.sup) === supAnt; }).length;
-        cs.value = '👤 SUPERVISOR: ' + tituloSup(e.sup).toUpperCase() + '   ·   ' + ng + ' evaluación(es) por QR'; cs.font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } }; cs.fill = fill(C.navy); ws.getRow(fl).height = 22; fl++;
+        cs.value = '👤 SUPERVISOR: ' + tituloSup(e.sup).toUpperCase() + '   ·   ' + ng + ' evaluación(es) con detalle'; cs.font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } }; cs.fill = fill(C.navy); ws.getRow(fl).height = 22; fl++;
       }
       if (norm(e.sector) !== secAnt) {
         secAnt = norm(e.sector); ws.mergeCells(fl, 1, fl, 7);
@@ -182,7 +211,7 @@
       }
       ws.mergeCells(fl, 1, fl, 5);
       var ce = ws.getCell(fl, 1), aprob = (+r.resultado || 0) >= 0.7;
-      ce.value = 'Evaluación N° ' + e.num + '  ·  ' + fF(r.fecha) + ' ' + hora(r.ts) + '  ·  Ruta / área: ' + (r.ruta || '—') + '  ·  Código: ' + (r.cod || '—') + '  ·  ' + (r.tipo === 'empleado' ? 'Empleado' : 'Obrero') + '  ·  Correctas: ' + e.ok + ' de ' + e.tot + '  ·  ID: ' + r.id;
+      ce.value = 'Evaluación N° ' + e.num + '  ·  ' + modTxt(e) + '  ·  ' + fF(r.fecha) + ' ' + hora(r.ts) + '  ·  Ruta / área: ' + (r.ruta || '—') + '  ·  Código: ' + (r.cod || '—') + '  ·  ' + (r.tipo === 'empleado' ? 'Empleado' : 'Obrero') + '  ·  Correctas: ' + e.ok + ' de ' + e.tot + '  ·  ID: ' + r.id;
       ce.font = { bold: true, size: 10 }; ce.fill = fill(C.cab);
       var cr = ws.getCell(fl, 6); pctCelda(cr, pc(r.resultado)); var cst = ws.getCell(fl, 7); cst.value = aprob ? 'APROBADO' : 'REFUERZO'; cst.font = { bold: true, color: { argb: aprob ? C.okT : C.noT } }; cst.fill = fill(aprob ? C.okF : C.noF); cst.alignment = { horizontal: 'center' };
       fl++;
@@ -239,7 +268,8 @@
     var wsT = wb.addWorksheet('Nota'); wsT.columns = [{ width: 34 }, { width: 110 }];
     cabecera(wsT, 2);
     [['Filtro', (sup ? tituloSup(sup) : 'Todos los supervisores') + (sector ? ' · sector ' + sector : '') + ' · ' + fF(F.desde) + ' al ' + fF(F.hasta)],
-     ['Evaluaciones por QR (con respuestas)', D.evals.length], ['Registros manuales', D.man.length + ' (por grupo, sin detalle individual)'],
+     ['Evaluaciones con detalle', D.evals.filter(function (e) { return !e.manualDet; }).length + ' por QR · ' + D.evals.filter(function (e) { return e.manualDet; }).length + ' manuales (evaluado por evaluado)'], ['Registros manuales sin detalle', D.man.length + ' (registrados antes del 18/10/2026: solo resultado del grupo)'],
+     ['Evaluación manual', 'Desde el 18/10/2026 la evaluación manual guarda el puntaje que el supervisor anotó para cada evaluado en cada pregunta (transcrito del formato físico). El resultado de cada evaluado se calcula con la misma fórmula del sistema.'],
      ['Anonimato', 'La evaluación por QR es anónima: se identifica por fecha, hora, sector, ruta/área, código e ID del registro, no por el nombre del trabajador.'],
      ['Calificación', 'Automática. Pregunta de una respuesta: correcta = puntaje completo. Varias respuestas: (aciertos − errores) / correctas, mínimo 0 (Parcial). Aprobado ≥ 70 %.'],
      ['Banco de preguntas', 'Cada respuesta se muestra con la versión del banco con la que fue respondida.'],
@@ -273,13 +303,13 @@
       '.sep{display:flex;flex-direction:column;justify-content:center;min-height:120mm}.sep .grande{font-size:22px;font-weight:800;color:#0B2A6F}.temas span{display:inline-block;margin:2px 8px 0 0}' +
       '@media print{body{background:#fff}.bar{display:none}.hoja{box-shadow:none;margin:0;max-width:none;padding:0}}';
     function tablaGrupos() {
-      return '<table><thead><tr><th>Supervisor</th><th>Sector / zona</th><th>QR (con respuestas)</th><th>Manual (evaluados)</th></tr></thead><tbody>' +
+      return '<table><thead><tr><th>Supervisor</th><th>Sector / zona</th><th>Con detalle (QR + manual)</th><th>Manual sin detalle</th></tr></thead><tbody>' +
         G.map(function (g) { return g.sectores.map(function (s, i) { return '<tr><td>' + (i ? '' : '<b>' + esc(tituloSup(g.sup)) + '</b>') + '</td><td>' + esc(s.sector) + '</td><td class="c">' + s.qr + '</td><td class="c">' + s.man + '</td></tr>'; }).join(''); }).join('') +
         '<tr><td><b>TOTAL</b></td><td></td><td class="c"><b>' + D.evals.length + '</b></td><td class="c"><b>' + G.reduce(function (a, g) { return a + g.man; }, 0) + '</b></td></tr></tbody></table>';
     }
     var portada = '<section class="hoja"><h1>Evidencia de respuestas por evaluación</h1><div class="mut">Sistema ETI · Evaluación de Conocimiento de Buenas Prácticas Sociales y Laborales</div>' +
       '<div class="cab"><div><span>Rango</span><b>' + esc(fF(F.desde) + ' al ' + fF(F.hasta)) + '</b></div><div><span>Supervisor</span><b>' + esc(sup ? tituloSup(sup) : 'Todos') + '</b></div><div><span>Sector</span><b>' + esc(sector || 'Todos') + '</b></div><div><span>Generado</span><b>' + esc(gen) + '</b></div>' +
-      '<div><span>Evaluaciones QR</span><b>' + D.evals.length + '</b></div><div><span>Aprobados ≥70%</span><b>' + D.evals.filter(function (e) { return (+e.r.resultado || 0) >= 0.7; }).length + '</b></div><div><span>Refuerzo</span><b>' + D.evals.filter(function (e) { return (+e.r.resultado || 0) < 0.7; }).length + '</b></div><div><span>Registros manuales</span><b>' + D.man.length + '</b></div></div>' +
+      '<div><span>Evaluaciones con detalle</span><b>' + D.evals.length + '</b></div><div><span>Aprobados ≥70%</span><b>' + D.evals.filter(function (e) { return (+e.r.resultado || 0) >= 0.7; }).length + '</b></div><div><span>Refuerzo</span><b>' + D.evals.filter(function (e) { return (+e.r.resultado || 0) < 0.7; }).length + '</b></div><div><span>Registros manuales</span><b>' + D.man.length + '</b></div></div>' +
       '<h2 style="margin-top:8px">Contenido por supervisor y sector</h2>' + tablaGrupos() +
       '<div class="pie">La evaluación por QR es anónima: cada hoja se identifica por fecha, hora, sector, ruta/área, código e ID del registro. Calificación automática; aprobado ≥ 70 %. Las preguntas de varias respuestas se califican de forma proporcional (½ Parcial). Generado por ' + esc(S.nom || S.user || '') + '.</div></section>';
     var html = '', supAnt = null, secAnt = null;
@@ -295,16 +325,16 @@
           ev.map(function (x) { var ap = (+x.r.resultado || 0) >= 0.7; return '<tr><td class="c">' + x.num + '</td><td>' + esc(fF(x.r.fecha)) + '</td><td>' + esc(hora(x.r.ts)) + '</td><td>' + esc(x.r.ruta || '') + '</td><td>' + esc(x.r.cod || '') + '</td><td class="c">' + x.ok + '/' + x.tot + '</td><td class="c ' + (ap ? 'ok' : 'no') + '">' + pc(x.r.resultado) + '%</td></tr>'; }).join('') +
           '</tbody></table></div></section>';
       }
-      html += '<section class="hoja"><div class="franja"><b>' + esc(tituloSup(e.sup)) + ' · ' + esc(e.sector) + '</b><span>Hoja de respuestas N° ' + e.num + ' de ' + D.evals.length + '</span></div>' +
+      html += '<section class="hoja"><div class="franja"><b>' + esc(tituloSup(e.sup)) + ' · ' + esc(e.sector) + '</b><span>' + esc(modTxt(e)) + ' · Hoja N° ' + e.num + ' de ' + D.evals.length + '</span></div>' +
         '<div class="res"><h2>Ruta / área: ' + esc(r.ruta || '—') + '</h2><span class="badge" style="background:' + (a ? '#E6F7EE;color:#0B6B36' : '#FDE4E7;color:#B00020') + '">' + pc(r.resultado) + '% · ' + (a ? 'APROBADO' : 'REFUERZO') + '</span></div>' +
         '<div class="cab"><div><span>Fecha / hora</span><b>' + esc(fF(r.fecha) + ' ' + hora(r.ts)) + '</b></div><div><span>Empresa</span><b>' + esc(r.emp || '') + '</b></div><div><span>Tipo</span><b>' + (r.tipo === 'empleado' ? 'Empleado' : 'Obrero') + '</b></div><div><span>Código</span><b>' + esc(r.cod || '—') + '</b></div>' +
         '<div><span>Correctas</span><b>' + e.ok + ' de ' + e.tot + '</b></div><div style="grid-column:span 3"><span>Resultado por tema</span><b class="temas">' + (r.secs || []).map(function (s) { return '<span>' + esc(s.nom) + ': ' + pc(s.pct) + '%</span>'; }).join('') + '</b></div></div>' +
         (e.nota ? '<div class="mut" style="margin:4px 0">⚠ ' + esc(e.nota) + '</div>' : '') +
-        '<table><thead><tr><th style="width:4%">N°</th><th style="width:35%">Pregunta</th><th style="width:25%">Respuesta marcada</th><th style="width:25%">Respuesta correcta</th><th style="width:11%">Resultado</th></tr></thead><tbody>' +
+        '<table><thead><tr><th style="width:4%">N°</th><th style="width:35%">Pregunta</th><th style="width:25%">' + (e.manualDet ? 'Puntaje anotado' : 'Respuesta marcada') + '</th><th style="width:25%">' + (e.manualDet ? 'Puntaje máximo' : 'Respuesta correcta') + '</th><th style="width:11%">Resultado</th></tr></thead><tbody>' +
         e.filas.map(function (f) { var cl = f.est === 'Correcta' ? 'ok' : f.est === 'Parcial' ? 'pa' : 'no';
           return '<tr><td class="c">' + f.n + '</td><td>' + esc(f.t) + (f.multi ? ' <span class="mut">(varias)</span>' : '') + '</td><td' + (f.est !== 'Correcta' ? ' class="mal"' : '') + '>' + esc(f.marcada.join(' · ') || '—') + '</td><td>' + esc(f.correcta.join(' · ') || '—') + '</td><td class="c ' + cl + '">' + (f.est === 'Correcta' ? '✓ ' : f.est === 'Parcial' ? '½ ' : '✗ ') + esc(f.est) + '<br><span style="font-weight:400">' + f.pts + (f.max !== '' ? ' / ' + f.max : '') + ' pts</span></td></tr>'; }).join('') +
         '</tbody></table>' +
-        '<div class="pie">ID del registro: ' + esc(r.id) + ' · Código QR: ' + esc(r.sesion || '') + ' · Evaluación anónima respondida por el trabajador desde su celular · Generado el ' + esc(gen) + '</div></section>';
+        '<div class="pie">ID del registro: ' + esc(r.id) + ' · Código QR: ' + esc(r.sesion || '') + ' · ' + (e.manualDet ? 'Evaluación manual registrada por ' + esc(r.registradoPor || 'el supervisor') + ' (puntajes transcritos del formato físico)' : 'Evaluación anónima respondida por el trabajador desde su celular') + ' · Generado el ' + esc(gen) + '</div></section>';
     });
     var temasM = []; D.man.forEach(function (m) { (m.rutas || []).forEach(function (r) { (r.secs || []).forEach(function (s) { if (s.nom && temasM.indexOf(s.nom) < 0) temasM.push(s.nom); }); }); });
     var manual = !D.man.length ? '' : '<section class="hoja"><div class="franja"><b>Evaluaciones manuales — resumen por grupo</b><span>' + D.man.length + ' registro(s)</span></div><div class="mut" style="margin:4px 0 6px">Registradas por el supervisor por ruta / área. El sistema guarda el resultado del grupo y el % por tema; la respuesta de cada trabajador consta en el formato físico firmado.</div>' +
@@ -334,19 +364,19 @@
       '<div class="ra-box"><div class="ra-h"><div style="font-size:17px;font-weight:800;color:#0B2A6F">🧾 Respuestas para auditoría</div>' +
       '<div style="font-size:13px;color:#475569;margin-top:4px">Del <b>' + esc(fF(F.desde)) + '</b> al <b>' + esc(fF(F.hasta)) + '</b>' + (F.sup ? ' · supervisor <b>' + esc(F.sup) + '</b>' : '') + (F.emp ? ' · ' + esc(F.emp) : '') + (F.tipo ? ' · ' + esc(F.tipo === 'empleado' ? 'empleados' : 'obreros') : '') + '. Elige de qué supervisor y sector descargar el Excel o las hojas de respuesta.</div></div>' +
       '<div class="ra-b" id="ra-lista"><div style="color:#5B6B85;padding:18px 0;text-align:center">⏳ Buscando evaluaciones del rango…</div></div>' +
-      '<div class="ra-f"><span style="font-size:11.5px;color:#5B6B85;max-width:430px"><span class="ra-chip ra-q">QR</span> con la respuesta de cada trabajador · <span class="ra-chip ra-m">Manual</span> registrado por grupo (evidencia: formato físico)</span><div class="ra-btns" id="ra-todo"></div><button class="btn bout" id="ra-no">Cerrar</button></div></div>';
+      '<div class="ra-f"><span style="font-size:11.5px;color:#5B6B85;max-width:430px"><span class="ra-chip ra-q">QR</span> y <span class="ra-chip ra-q" style="background:#E6F7EE;color:#0B6B36">manual con detalle</span>: hoja por trabajador · <span class="ra-chip ra-m">manual por grupo</span>: registros antiguos, solo resultado del grupo</span><div class="ra-btns" id="ra-todo"></div><button class="btn bout" id="ra-no">Cerrar</button></div></div>';
     $('ra-no').onclick = function () { m.remove(); };
     m.onclick = function (e) { if (e.target === m) m.remove(); };
     cargar(F).then(function (D) {
       var L = $('ra-lista'); if (!L) return;
       var G = grupos(D);
       if (!G.length) { L.innerHTML = '<div style="color:#8A5A00;padding:18px 0;text-align:center">No hay evaluaciones con este filtro. Prueba con otro rango de fechas.</div>'; return; }
-      var chips = function (q, mn) { return (q ? '<span class="ra-chip ra-q">' + q + ' QR</span>' : '') + (mn ? '<span class="ra-chip ra-m">' + mn + ' manual</span>' : ''); };
+      var chips = function (q, md, mn) { return (q - md ? '<span class="ra-chip ra-q">' + (q - md) + ' QR</span>' : '') + (md ? '<span class="ra-chip ra-q" style="background:#E6F7EE;color:#0B6B36">' + md + ' manual con detalle</span>' : '') + (mn ? '<span class="ra-chip ra-m">' + mn + ' manual por grupo</span>' : ''); };
       var btns = function (i, j) { return '<div class="ra-btns"><button class="x" data-a="x" data-g="' + i + '" data-s="' + j + '">📥 Excel</button><button class="p" data-a="p" data-g="' + i + '" data-s="' + j + '">🖨 Hojas PDF</button></div>'; };
       L.innerHTML = '<div style="font-size:12.5px;color:#475569;margin-bottom:8px">En estas fechas tienen evaluaciones <b>' + G.length + '</b> supervisor(es):</div>' +
         G.map(function (g, i) {
-          return '<div class="ra-sup"><div class="ra-sh"><div><b>👤 ' + esc(tituloSup(g.sup)) + '</b> ' + chips(g.qr, g.man) + (g.n ? ' <span style="font-size:12px;color:#5B6B85">· promedio ' + pc(g.prom) + '%</span>' : '') + '</div>' + btns(i, -1) + '</div>' +
-            g.sectores.map(function (s, j) { return '<div class="ra-row"><div>📍 ' + esc(s.sector) + ' ' + chips(s.qr, s.man) + '</div>' + btns(i, j) + '</div>'; }).join('') + '</div>';
+          return '<div class="ra-sup"><div class="ra-sh"><div><b>👤 ' + esc(tituloSup(g.sup)) + '</b> ' + chips(g.qr, g.md, g.man) + (g.n ? ' <span style="font-size:12px;color:#5B6B85">· promedio ' + pc(g.prom) + '%</span>' : '') + '</div>' + btns(i, -1) + '</div>' +
+            g.sectores.map(function (s, j) { return '<div class="ra-row"><div>📍 ' + esc(s.sector) + ' ' + chips(s.qr, s.md, s.man) + '</div>' + btns(i, j) + '</div>'; }).join('') + '</div>';
         }).join('');
       if (G.length > 1) $('ra-todo').innerHTML = '<button class="x" data-a="x" data-g="-1" data-s="-1" title="Todos los supervisores en un solo archivo, ordenado por supervisor y sector">📥 Excel de todos</button><button class="p" data-a="p" data-g="-1" data-s="-1">🖨 PDF de todos</button>';
       m.querySelectorAll('.ra-btns button[data-a]').forEach(function (b) {

@@ -1527,6 +1527,27 @@ function sincronizarHistorialNube(){
   if(ad && ad.style.display!=='none') renderAdminDash();
 }
 
+/* _DETALLE_MANUAL_V1 (18-oct-2026): para auditoría, la evaluación manual guarda además el puntaje que el
+   supervisor anotó para CADA evaluado en CADA pregunta (lo mismo que ya escribe en pantalla; antes solo se
+   guardaba el promedio del grupo). Solo agrega campos: det (por ruta) y detBanco (preguntas y pesos usados).
+   Cálculo, Azure y Google Sheets no cambian. Si algo falla aquí, la evaluación se guarda igual que antes. */
+function _detBanco(){
+  return {v:1,
+    secs:SECS.map(s=>({id:s.id, nom:s.nom, peso:s.peso, maxSec:s.maxSec})),
+    pregs:[].concat(...SECS.map(s=>s.pregs.map(p=>({s:s.id, n:p.n, t:String(p.t||'').replace(/<[^>]*>/g,''), max:+p.max||0, f:+p.f||1}))))};
+}
+function _detManual(r){
+  try{
+    const ne=r.ne||0, ev=[];
+    for(let ei=0;ei<ne;ei++){
+      if(!evPresente(r,ei)) continue;
+      const p=[]; SECS.forEach(sec=>sec.pregs.forEach(preg=>{const v=parseFloat(r.sc?.[sec.id]?.[preg.n]?.[ei]); p.push(isNaN(v)?'':String(v));}));
+      ev.push({i:ei+1, p:p.join(',')});
+    }
+    return ev.length?{v:1, ev}:null;
+  }catch(e){ console.warn('[_DETALLE_MANUAL_V1]',e); return null; }
+}
+
 // Guardar evaluación calculada en Firestore + Google Sheets
 function guardarEvalNube(res){
   const payload={
@@ -1536,10 +1557,12 @@ function guardarEvalNube(res){
     destiempo:res.destiempo||null,
     prog:(function(){try{const p=progPendienteDe(res.sup);if(!p)return {programada:false};const fs=(p.fechas||[]).slice().sort();const i=fs.indexOf(res.fecha);return {programada:i>=0,id:p.id||null,sector:p.sector||'',sesion:i>=0?(i+1):null,total:fs.length,fechas:fs};}catch(e){return null;}})(),   /* _SESION_PROG_V1: sesión programada (N de M) o no programada */
     modalidad:res.modalidad||'Manual', sesionQR:res.sesionQR||null,   // _MODULOS_V1
-    rutas:res.rutas.map(r=>({nom:r.nom, cod:r.cod, ne:r.ne, resGrupo:r.resGrupo,
-      secs:r.secs.map(s=>({id:s.id, nom:s.nom, peso:s.peso, pct:s.cum, pond:s.pond, promSec:s.promSec}))})),
+    rutas:res.rutas.map(r=>{const o={nom:r.nom, cod:r.cod, ne:r.ne, resGrupo:r.resGrupo,
+      secs:r.secs.map(s=>({id:s.id, nom:s.nom, peso:s.peso, pct:s.cum, pond:s.pond, promSec:s.promSec}))};
+      const d=_detManual(r); if(d) o.det=d; return o;}),   /* _DETALLE_MANUAL_V1: puntaje de cada evaluado por pregunta */
     creadoEn:new Date().toISOString(), ts:Date.now()
   };
+  try{ const b=_detBanco(); if(b) payload.detBanco=b; }catch(e){}   /* _DETALLE_MANUAL_V1 */
   /* _BANDEJA_MANUAL_V1 (07-oct-2026): se guarda primero en el equipo (bandeja) con un id fijo y luego en la nube.
      Si no hay señal o se cierra la página, se reintenta sola al volver la conexión o al abrir el sistema. Nunca se duplica. */
   const id=(fbdb?fbdb.collection(COL_EVAL).doc().id:('L'+Date.now().toString(36)+Math.random().toString(36).slice(2,8)));
@@ -7524,7 +7547,7 @@ console.log('[_SHELL_RL_V1] listo');
 <script>/* _SOLREPROG_V1 (30-set-2026): supervisor para "Actividad no realizada / pedir reprogramación" */
 window._etiUsuarioReprog=function(){try{if(!SESSION||!SESSION.user)return null;var r=String(SESSION.rol||'').toLowerCase();if(r==='admin'||r==='administrador'||String(SESSION.user).toLowerCase()==='jtimoteo')return null;return {usuario:SESSION.user,nombre:SESSION.nom||SESSION.user};}catch(e){return null;}};</script>
 <script src="solreprog.js?v=1"></script>
-<script src="respuestas-auditoria.js?v=3"></script>  <!-- _RESPUESTAS_AUDITORIA_V1 (18-oct): evidencia de respuestas por evaluacion (Excel + hojas PDF), solo admin, solo lectura -->
+<script src="respuestas-auditoria.js?v=4"></script>  <!-- _RESPUESTAS_AUDITORIA_V1 (18-oct): evidencia de respuestas por evaluacion (Excel + hojas PDF), solo admin, solo lectura -->
 <script>
 /* ══════════════════════════════════════════════════════════════
    _TRAFICO_V1 (03-oct-2026) — 📡 Tráfico en vivo (solo administrador)
