@@ -156,8 +156,16 @@
         '<div class="res" style="margin-top:6px">' + (r.secs || []).map(function (s) { return '<span class="mut">' + esc(s.nom) + ': <b>' + pc(s.pct) + '%</b></span>'; }).join(' ') + '</div>' +
         '<div class="pie">ID del registro: ' + esc(r.id) + ' · Código QR: ' + esc(r.sesion || '') + ' · Evaluación anónima respondida por el trabajador desde su celular · Generado el ' + esc(gen) + '</div></section>';
     }).join('');
+    /* registros manuales: resumen por grupo (no hay respuesta individual guardada) */
+    var temasM = []; D.man.forEach(function (m) { (m.rutas || []).forEach(function (r) { (r.secs || []).forEach(function (s) { if (s.nom && temasM.indexOf(s.nom) < 0) temasM.push(s.nom); }); }); });
+    var manual = !D.man.length ? '' : '<section class="hoja"><h2>Evaluaciones manuales — resumen por grupo</h2><div class="mut" style="margin:4px 0 6px">Registradas por el supervisor por ruta / área. El sistema guarda el resultado del grupo y el % por tema; la respuesta de cada trabajador consta en el formato físico firmado.</div>' +
+      '<table><thead><tr><th>Fecha</th><th>Supervisor</th><th>Sector</th><th>Ruta / Área</th><th>Código</th><th>Evaluados</th>' + temasM.map(function (t) { return '<th>' + esc(t) + '</th>'; }).join('') + '<th>Resultado</th></tr></thead><tbody>' +
+      D.man.map(function (m) { return (m.rutas || []).map(function (r) { var a = (+r.resGrupo || 0) >= 0.7; return '<tr><td>' + esc(fF(m.fecha)) + '</td><td>' + esc(m.sup || '') + '</td><td>' + esc(m.sector || '') + '</td><td>' + esc(r.nom || '') + '</td><td>' + esc(r.cod || '') + '</td><td class="c">' + (+r.ne || 1) + '</td>' +
+        temasM.map(function (t) { var s = (r.secs || []).find(function (y) { return y.nom === t; }); return '<td class="c">' + (s ? pc(s.pct != null ? s.pct : s.cum) + '%' : '—') + '</td>'; }).join('') + '<td class="c ' + (a ? 'ok' : 'no') + '">' + pc(r.resGrupo) + '%</td></tr>'; }).join(''); }).join('') +
+      '</tbody></table><div class="pie">Registrado por: ' + esc([].concat.apply([], D.man.map(function (m) { return [m.nomUsuario || m.usuario || '']; })).filter(function (v, i, a) { return v && a.indexOf(v) === i; }).join(', ')) + ' · Generado el ' + esc(gen) + '</div></section>';
+    if (!D.evals.length) portada = portada.replace(/<table>[\s\S]*?<\/table>/, '<div class="mut" style="margin:8px 0">No hay evaluaciones por QR en este filtro.</div>');
     var html = '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Respuestas ETI ' + esc(F.desde) + (F.hasta !== F.desde ? ' a ' + esc(F.hasta) : '') + '</title><style>' + css + '</style></head><body>' +
-      '<div class="bar"><b>🧾 ' + D.evals.length + ' hojas de respuesta · ' + esc(fF(F.desde) + ' al ' + fF(F.hasta)) + '</b><button onclick="window.print()">🖨 Imprimir / Guardar como PDF</button></div>' + portada + paginas + '</body></html>';
+      '<div class="bar"><b>🧾 ' + D.evals.length + ' hojas de respuesta' + (D.man.length ? ' · ' + D.man.length + ' registros manuales' : '') + ' · ' + esc(fF(F.desde) + ' al ' + fF(F.hasta)) + '</b><button onclick="window.print()">🖨 Imprimir / Guardar como PDF</button></div>' + portada + paginas + manual + '</body></html>';
     w.document.open(); w.document.write(html); w.document.close();
   }
 
@@ -179,8 +187,10 @@
     var datos = null;
     cargar(F).then(function (D) {
       datos = D; var c = $('ra-cuenta'); if (!c) return;
-      c.innerHTML = '<b style="color:#0B2A6F">' + D.evals.length + '</b> evaluaciones por QR con sus respuestas' + (D.man.length ? ' · ' + D.man.length + ' registros manuales' : '');
-      $('ra-xls').disabled = !(D.evals.length || D.man.length); $('ra-pdf').disabled = !D.evals.length;
+      c.innerHTML = '<b style="color:#0B2A6F">' + D.evals.length + '</b> evaluaciones por QR con sus respuestas' + (D.man.length ? ' · <b style="color:#6A3FC0">' + D.man.length + '</b> registros manuales' : '') +
+        (!D.evals.length && D.man.length ? '<div style="margin-top:6px;color:#8A5A00;line-height:1.45">⚠️ En este rango solo hay evaluaciones <b>manuales</b>: se registraron por grupo, sin la respuesta de cada trabajador. El PDF sale como <b>resumen por grupo</b> (ruta, evaluados y % por tema); la respuesta individual es el formato físico.</div>' : '') +
+        (!D.evals.length && !D.man.length ? '<div style="margin-top:6px;color:#8A5A00">No hay evaluaciones con este filtro.</div>' : '');
+      $('ra-xls').disabled = !(D.evals.length || D.man.length); $('ra-pdf').disabled = !(D.evals.length || D.man.length);
     }).catch(function (e) { var c = $('ra-cuenta'); if (c) c.innerHTML = '<b style="color:#C8102E">No se pudo leer: ' + esc(e.message) + '</b>'; });
     $('ra-xls').onclick = function () { if (datos) excel(F, datos); };
     $('ra-pdf').onclick = function () {
