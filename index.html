@@ -2069,7 +2069,8 @@ function getAllHist(){
                     usuario:ev.usuario, nomUsuario:ev.nomUsuario,
                     destiempo:ev.destiempo?ev.destiempo.tipo:'',
                     motivoDestiempo:ev.destiempo?ev.destiempo.motivo:'',
-                    repCoordinador:ev.destiempo?ev.destiempo.reportado:''});
+                    repCoordinador:ev.destiempo?ev.destiempo.reportado:'',
+                    modalidad:ev.modalidad||'Manual', ne:+r.ne||1, sesionQR:ev.sesionQR||null});   /* _REG_QR_V1: solo campos extra */
       });
     });
     return todos;
@@ -2264,8 +2265,33 @@ function etiUsrRestaurar(userKey){
 
 let _regPag=0;                                   // _HIST_ROL_V1
 function _regIr(p){ _regPag=p; renderAdminRegistros(); }
+/* _REG_QR_V1 (19-oct-2026): Registros también muestra las evaluaciones QR que aún no se consolidaron
+   (agrupadas por sesión, fecha, sector, tipo, ruta y código). Rango: el año/mes elegido o los últimos 90 días. */
+let _regQR={rango:'',filas:[],cargando:false};
+function _regRango(){
+  const a=document.getElementById('filtro-anio')?.value||'', m=document.getElementById('filtro-mes')?.value||'';
+  if(a&&m){const ult=new Date(+a,+m,0).getDate();return [a+'-'+m+'-01',a+'-'+m+'-'+String(ult).padStart(2,'0')];}
+  if(a) return [a+'-01-01',a+'-12-31'];
+  const d=new Date(Date.now()-89*864e5); return [d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'),hoy()];
+}
+async function _regCargarQR(){
+  if(!fbdb||_regQR.cargando) return; const [d,h]=_regRango(), k=d+'|'+h; if(_regQR.rango===k) return;
+  _regQR.cargando=true;
+  try{
+    const q=await fbdb.collection('respuestas_qr').where('fecha','>=',d).where('fecha','<=',h).get();
+    const cons=new Set((_evalsNube||[]).map(e=>e.sesionQR).filter(Boolean)), g=new Map();
+    q.docs.forEach(doc=>{const x=doc.data(); if(cons.has((x.sesion||'')+'_'+x.fecha)) return;
+      const key=[x.sesion,x.fecha,x.sector,x.tipo,String(x.ruta||'').toUpperCase(),String(x.cod||'').toUpperCase(),x.sup].join('|');
+      const o=g.get(key)||{nom:String(x.ruta||'').toUpperCase(),cod:String(x.cod||'').toUpperCase(),emp:x.emp||'',sup:x.sup||'',sector:x.sector||'',tipo:x.tipo||'obrero',fecha:x.fecha,
+        usuario:x.usuarioSup||'',nomUsuario:x.sup||'',modalidad:'QR',ne:0,s:0,ts:0,destiempo:'',motivoDestiempo:'',repCoordinador:''};
+      o.ne++; o.s+=(+x.resultado||0); o.ts=Math.max(o.ts,x.ts||0); g.set(key,o);});
+    _regQR.filas=[...g.values()].map(o=>({...o,resGrupo:o.ne?o.s/o.ne:0})); _regQR.rango=k;
+  }catch(e){console.warn('Registros QR:',e&&e.message);}
+  _regQR.cargando=false; renderAdminRegistros();
+}
 function renderAdminRegistros(){
-  const todos=getAllHist();
+  _regCargarQR();
+  const todos=getAllHist().concat(_regQR.filas);
   const filtro=document.getElementById('filtro-sup')?.value||'';
 
   // Poblar filtro
@@ -2306,12 +2332,12 @@ function renderAdminRegistros(){
     </div>`:'';
 
   document.getElementById('admin-registros-tabla').innerHTML=ordenados.length?`
-    <div style="font-size:.75rem;color:var(--text2);margin-bottom:.5rem;font-weight:700;">Mostrando ${desde+1}–${desde+pagina.length} de ${ordenados.length} filtrados (${todos.length} en total) ${_evalsNube!==null?'· ☁️ sincronizado con la nube':'· 💾 datos locales'}</div>
+    <div style="font-size:.75rem;color:var(--text2);margin-bottom:.5rem;font-weight:700;">${_regQR.cargando?'⏳ Cargando evaluaciones QR… · ':''}📱 QR sin consolidar incluidas (${(()=>{const [a,b]=_regRango();return fmtF(a)+' – '+fmtF(b);})()}) · Mostrando ${desde+1}–${desde+pagina.length} de ${ordenados.length} filtrados (${todos.length} en total) ${_evalsNube!==null?'· ☁️ sincronizado con la nube':'· 💾 datos locales'}</div>
     <div style="overflow-x:auto;">
     <table class="rtbl">
       <thead><tr>
-        <th>#</th><th>Supervisor</th><th>Empresa</th><th>Sector</th><th>Tipo</th>
-        <th>Ruta/Área</th><th>Código</th><th>Fecha</th><th>Resultado</th><th>Estado</th>
+        <th>#</th><th>Supervisor</th><th>Modalidad</th><th>Empresa</th><th>Sector</th><th>Tipo</th>
+        <th>Ruta/Área</th><th>Código</th><th>Eval.</th><th>Fecha eval.</th><th>Registrado</th><th>Resultado</th><th>Estado</th>
         <th>⏰ Destiempo</th><th>Reportó</th>
       </tr></thead>
       <tbody>
@@ -2320,12 +2346,15 @@ function renderAdminRegistros(){
           return `<tr>
             <td>${desde+i+1}</td>
             <td style="font-weight:700;">${r.nomUsuario||r.usuario||'—'}</td>
+            <td style="font-size:.72rem;">${r.modalidad==='QR'?'📱 QR':'📋 Manual'}</td>
             <td>${r.emp||'—'}</td>
             <td>${r.sector||'—'}</td>
             <td style="font-size:.75rem;">${r.tipo==='obrero'?'Obrero':'Empleado'}</td>
             <td style="font-weight:600;">${r.nom||'—'}</td>
             <td><span class="cpill">${r.cod||'—'}</span></td>
+            <td style="text-align:center;">${r.ne||1}</td>
             <td style="font-size:.78rem;">${fmtF(r.fecha)}</td>
+            <td style="font-size:.72rem;${r.ts&&new Date(r.ts).toLocaleDateString('en-CA')!==r.fecha?'color:#B26A00;font-weight:700;':''}">${r.ts?new Date(r.ts).toLocaleDateString('es-PE'):'—'}</td>
             <td style="font-weight:800;color:${rok?'var(--gdim)':'var(--red)'};">${rp}%</td>
             <td><span class="bdg ${rok?'bg':'br'}">${rok?'APROBADO':'REFUERZO'}</span></td>
             <td style="font-size:.72rem;">${r.destiempo?`<span class="bdg br" title="${(r.motivoDestiempo||'').replace(/"/g,'&quot;')}">⏰ ${r.destiempo}</span>`:'<span style="color:var(--text2);">—</span>'}</td>
@@ -2337,6 +2366,9 @@ function renderAdminRegistros(){
 }
 
 function exportAdminExcel(){
+  /* _EXCEL_TOTAL_V1 (19-oct-2026): Excel Global = exportador completo (QR + manual, todas las columnas) del año/mes elegido o de toda la base */
+  if(window.ETITF&&ETITF.exportar){const a=document.getElementById('filtro-anio')?.value||'', m=document.getElementById('filtro-mes')?.value||'';
+    if(a){const [d,h]=_regRango();ETITF.exportar(d,h);} else ETITF.exportar('2000-01-01',hoy()); return;}
   if(typeof XLSX==='undefined'){toast('Librería Excel cargando...','e');return;}
   const todos=getAllHist();
   if(!todos.length){toast('Sin registros para exportar','e');return;}
@@ -6914,6 +6946,29 @@ window.etiAzure={post:azPost,regQR:regDeRespuesta,regsManual:regsDeEval,
   ping:async()=>{const t=Date.now(),ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),12000);try{const d=new Date().toISOString().slice(0,10);const r=await fetch(AZ_ETI+'/stats?desde='+d+'&hasta='+d,{signal:ctl.signal,cache:'no-store'});return {ok:r.ok,ms:Date.now()-t};}catch(e){return {ok:false,ms:Date.now()-t,err:e.message};}finally{clearTimeout(to);}}};
 /* Recalificación al cerrar: Azure no actualiza registros existentes, así que (con token de admin) se borra y se vuelve a insertar.
    Se marca azOk:false antes, para que el panel de tráfico lo reenvíe si algo falla a mitad. */
+/* _CAMBIAR_FECHA_V1 (19-oct-2026): corrige la FECHA DE EVALUACIÓN de un registro (QR o manual) en Azure y Firebase.
+   Orden seguro: 1) se borra en Azure (si falla, no se toca nada) · 2) se actualiza Firebase guardando fechaOriginal · 3) se reinserta en Azure (si falla, queda azOk:false y Tráfico lo reenvía). */
+window.etiCambiarFecha=async function(tipo,id,nueva){
+  if(!fbdb) throw new Error('Sin conexión a Firebase');
+  if(!sessionStorage.getItem('eti_token')) throw new Error('Tu sesión de administrador venció: vuelve a iniciar sesión');
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(nueva)) throw new Error('Fecha inválida');
+  const ref=fbdb.collection(tipo==='QR'?'respuestas_qr':COL_EVAL).doc(id), snap=await ref.get();
+  if(!snap.exists) throw new Error('El registro ya no existe');
+  const d=snap.data(), vieja=d.fecha; if(vieja===nueva) return {sinCambio:true};
+  const marca={fecha:nueva,fechaOriginal:d.fechaOriginal||vieja,fechaEditadaPor:(SESSION&&SESSION.user)||'',fechaEditadaEn:new Date().toISOString(),azOk:false};
+  if(tipo==='QR'){
+    await azAdmin('eliminar',{sesion_id:d.sesion,ids:[id]});
+    await ref.update(marca);
+    try{await azPost([regDeRespuesta({...d,fecha:nueva},id)]);await ref.update({azOk:true,azEn:new Date().toISOString()});}catch(e){console.warn('Azure reinsertar (Tráfico lo reenvía):',e.message);}
+  }else{
+    const regs=regsDeEval(d,id);
+    for(const r of regs) await azAdmin('eliminar',{desde:vieja,hasta:vieja,sector:d.sector||'',ruta:r.ruta||'',codigo:r.codigo||'',ids:[r.id]});
+    await ref.update(marca);
+    try{await azPost(regsDeEval({...d,fecha:nueva},id));await ref.update({azOk:true,azEn:new Date().toISOString()});}catch(e){console.warn('Azure reinsertar (Tráfico lo reenvía):',e.message);}
+  }
+  try{CACHE.clear();}catch(e){}
+  return {vieja,nueva};
+};
 window.etiAzureRespQR=async function(lista,calif,refs){
   const regs=lista.map(([d,id],i)=>regDeRespuesta({...d,...(calif&&calif[i]||{})},id)); if(!regs.length) return;
   if(!sessionStorage.getItem('eti_token')){console.warn('Recalificación: sin sesión de administrador; Azure conserva el valor original de',regs.length,'respuesta(s)');return;}
@@ -7139,6 +7194,7 @@ function pintarCuerpo(){
 }
 
 /* ── Editar / eliminar (admin): Azure + Firebase ── */
+window.etiMiniForm=function(){return miniForm.apply(this,arguments);};   /* _MINIFORM_GLOBAL_V1 (19-oct): lo usan Informe GH-04 y Cambiar fecha */
 function miniForm(titulo,nota,campos,onOk){
   let m=$('ix-modal'); if(!m){m=document.createElement('div');m.id='ix-modal';m.className='ix-modal';document.body.appendChild(m);}
   m.innerHTML=`<div class="ix-mbox"><h3>${titulo}</h3><p>${nota}</p>${campos.map(c=>c.lista
@@ -7750,8 +7806,9 @@ async function exportar(desde,hasta){
   toast('⏳ Preparando Excel…','i');
   try{
     const t0=new Date(desde+'T00:00:00').getTime(), t1=new Date(hasta+'T00:00:00').getTime()+864e5;
-    const [qs,ms]=await Promise.all([f.collection('respuestas_qr').where('ts','>=',t0).where('ts','<',t1).get(),
-      f.collection('evaluaciones_conocimiento').where('ts','>=',t0).where('ts','<',t1).get()]);
+    /* _EXCEL_TOTAL_V1 (19-oct): se filtra por FECHA DE EVALUACIÓN (antes por fecha de registro: se perdían las registradas otro día) */
+    const [qs,ms]=await Promise.all([f.collection('respuestas_qr').where('fecha','>=',desde).where('fecha','<=',hasta).get(),
+      f.collection('evaluaciones_conocimiento').where('fecha','>=',desde).where('fecha','<=',hasta).get()]);
     const qr=qs.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.ts||0)-(b.ts||0));
     const man=ms.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.modalidad!=='QR').sort((a,b)=>(a.ts||0)-(b.ts||0));
     if(!qr.length&&!man.length){toast('No hay evaluaciones en ese rango','i');return;}
@@ -7759,13 +7816,16 @@ async function exportar(desde,hasta){
     qr.forEach(r=>(r.secs||[]).forEach(x=>addT(x.nom))); man.forEach(m=>(m.rutas||[]).forEach(r=>(r.secs||[]).forEach(x=>addT(x.nom))));
     const P=v=>Math.round((+v||0)*1000)/10, fch=ts=>ts?new Date(ts):null;
     const filas=[];
-    qr.forEach(r=>{const o={'Fecha':r.fecha||'','Hora':fch(r.ts)?fch(r.ts).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}):'','Modalidad':'QR',
+    const fReg=ts=>ts?new Date(ts).toLocaleString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+    const progTxt=p=>!p?'':p.programada?('Programada '+(p.sesion||'')+' de '+(p.total||'')):'No programada';
+    qr.forEach(r=>{const o={'Fecha evaluación':r.fecha||'','Fecha registro':fReg(r.ts),'Fecha original':r.fechaOriginal||'','Modalidad':'QR','Usuario':r.usuarioSup||'','Aplicado con QR de':r.supQR||'',
       'Empresa':r.emp||'','Supervisor':r.sup||'','Sector / zona':r.sector||'','Tipo':r.tipo==='empleado'?'Empleado':'Obrero','Ruta / Área':r.ruta||'','Código':r.cod||'',
-      'Evaluados':1,'Resultado %':P(r.resultado),'Estado':(+r.resultado||0)>=0.7?'APROBADO':'REFUERZO','En Azure':r.azOk?'Sí':'Pendiente','Código QR':r.sesion||''};
+      'Evaluados':1,'Resultado %':P(r.resultado),'Estado':(+r.resultado||0)>=0.7?'APROBADO':'REFUERZO','En Azure':r.azOk?'Sí':'Pendiente','Código QR':r.sesion||'','Banco v':r.bancoVersion||'','Id registro':r.id};
       temas.forEach(t=>{const x=(r.secs||[]).find(y=>y.nom===t);o[t+' %']=x?P(x.pct):'';}); filas.push(o);});
-    man.forEach(m=>(m.rutas||[]).forEach(r=>{const o={'Fecha':m.fecha||'','Hora':fch(m.ts)?fch(m.ts).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}):'','Modalidad':'Manual',
+    man.forEach(m=>(m.rutas||[]).forEach((r,ri)=>{const o={'Fecha evaluación':m.fecha||'','Fecha registro':fReg(m.ts),'Fecha original':m.fechaOriginal||'','Modalidad':'Manual','Usuario':m.usuario||'','Aplicado con QR de':'',
       'Empresa':m.emp||'','Supervisor':m.sup||'','Sector / zona':m.sector||'','Tipo':m.tipo==='empleado'?'Empleado':'Obrero','Ruta / Área':r.nom||'','Código':r.cod||'',
-      'Evaluados':+r.ne||1,'Resultado %':P(r.resGrupo),'Estado':(+r.resGrupo||0)>=0.7?'APROBADO':'REFUERZO','En Azure':m.azOk?'Sí':'Pendiente','Código QR':'','Registrado por':m.nomUsuario||m.usuario||''};
+      'Evaluados':+r.ne||1,'Resultado %':P(r.resGrupo),'Estado':(+r.resGrupo||0)>=0.7?'APROBADO':'REFUERZO','En Azure':m.azOk?'Sí':'Pendiente','Código QR':'','Banco v':'','Id registro':m.id+'_'+ri,'Registrado por':m.nomUsuario||m.usuario||'',
+      'Programación':progTxt(m.prog),'Destiempo':m.destiempo?m.destiempo.tipo||'':'','Motivo destiempo':m.destiempo?m.destiempo.motivo||'':'','Reportó a coordinador':m.destiempo?m.destiempo.reportado||'':''};
       temas.forEach(t=>{const x=(r.secs||[]).find(y=>y.nom===t);o[t+' %']=x?P(x.pct!=null?x.pct:x.cum):'';}); filas.push(o);}));
     /* por supervisor */
     const sm=new Map(); filas.forEach(o=>{const g=sm.get(o.Supervisor)||{Supervisor:o.Supervisor,'Evaluados QR':0,'Evaluados manual':0,s:0,n:0,apr:0};
@@ -7784,7 +7844,8 @@ async function exportar(desde,hasta){
     if(sinDet) console.warn('Exportar: '+sinDet+' respuesta(s) sin detalle por pregunta (versión de banco no encontrada)');
     const preg=[...pq.values()].map(g=>({Tema:g.Tema,Pregunta:g.Pregunta,Respondieron:g.Respondieron,'Respuesta completa':g['Respuesta completa'],'% de logro':g.mx?Math.round(g.lo/g.mx*1000)/10:0})).sort((a,b)=>a['% de logro']-b['% de logro']);
     const wb=XLSX.utils.book_new();
-    const ws1=XLSX.utils.json_to_sheet(filas); ws1['!cols']=Object.keys(filas[0]).map(k=>({wch:Math.max(10,Math.min(40,k.length+4))}));
+    const hdr=[...new Set(filas.flatMap(o=>Object.keys(o)))];   /* todas las columnas, aunque la primera fila no las tenga */
+    const ws1=XLSX.utils.json_to_sheet(filas,{header:hdr}); ws1['!cols']=hdr.map(k=>({wch:Math.max(10,Math.min(40,k.length+4))}));
     XLSX.utils.book_append_sheet(wb,ws1,'Evaluaciones');
     XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(sups),'Por supervisor');
     if(preg.length){const ws3=XLSX.utils.json_to_sheet(preg);ws3['!cols']=[{wch:28},{wch:70},{wch:12},{wch:18},{wch:12}];XLSX.utils.book_append_sheet(wb,ws3,'Por pregunta (QR)');}
@@ -7916,8 +7977,8 @@ function escuchar(user,nom){
 }
 function filas(desde,hasta){
   const en=f=>f&&f>=desde&&f<=hasta, vis=new Map();
-  [...M.qrA,...M.qrB].forEach(r=>{if(en(r.fecha))vis.set(r.id,{mod:'QR',sup:r.sup,ts:r.ts||0,fecha:r.fecha,emp:r.emp,sector:r.sector,tipo:r.tipo,ruta:r.ruta,cod:r.cod,n:1,res:+r.resultado||0,apr:(+r.resultado||0)>=0.7?1:0,az:!!r.azOk,apl:r.supQR||'',key:r.id,ses:r.sesion||'',secs:(r.secs||[]).map(x=>({nom:x.nom,peso:+x.peso||0,pct:+x.pct||0}))});});
-  M.man.forEach(m=>{if(!en(m.fecha))return;(m.rutas||[]).forEach((r,i)=>vis.set(m.id+'_'+i,{mod:'MANUAL',sup:m.sup,ts:m.ts||0,fecha:m.fecha,emp:m.emp,sector:m.sector,tipo:m.tipo,ruta:r.nom,cod:r.cod,n:+r.ne||1,res:+r.resGrupo||0,apr:(+r.resGrupo||0)>=0.7?(+r.ne||1):0,az:!!m.azOk,key:m.id+'_'+i,secs:(r.secs||[]).map(x=>({nom:x.nom,peso:+x.peso||0,pct:x.pct!=null?+x.pct:(+x.cum||0)}))}));});
+  [...M.qrA,...M.qrB].forEach(r=>{if(en(r.fecha))vis.set(r.id,{mod:'QR',sup:r.sup,ts:r.ts||0,fecha:r.fecha,emp:r.emp,sector:r.sector,tipo:r.tipo,ruta:r.ruta,cod:r.cod,n:1,res:+r.resultado||0,apr:(+r.resultado||0)>=0.7?1:0,az:!!r.azOk,apl:r.supQR||'',key:r.id,ses:r.sesion||'',fo:r.fechaOriginal||'',secs:(r.secs||[]).map(x=>({nom:x.nom,peso:+x.peso||0,pct:+x.pct||0}))});});
+  M.man.forEach(m=>{if(!en(m.fecha))return;(m.rutas||[]).forEach((r,i)=>vis.set(m.id+'_'+i,{mod:'MANUAL',sup:m.sup,ts:m.ts||0,fecha:m.fecha,emp:m.emp,sector:m.sector,tipo:m.tipo,ruta:r.nom,cod:r.cod,n:+r.ne||1,res:+r.resGrupo||0,apr:(+r.resGrupo||0)>=0.7?(+r.ne||1):0,az:!!m.azOk,key:m.id+'_'+i,doc:m.id,fo:m.fechaOriginal||'',secs:(r.secs||[]).map(x=>({nom:x.nom,peso:+x.peso||0,pct:x.pct!=null?+x.pct:(+x.cum||0)}))}));});
   return [...vis.values()].filter(r=>(!M.f.emp||r.emp===M.f.emp)&&(!M.f.mod||r.mod===M.f.mod)&&(!M.f.tipo||(M.f.tipo==='empleado'?r.tipo==='empleado':r.tipo!=='empleado'))).sort((a,b)=>b.ts-a.ts);
 }
 function resumen(F){const q=F.filter(r=>r.mod==='QR'),m=F.filter(r=>r.mod!=='QR');const n=F.reduce((a,r)=>a+r.n,0);
@@ -7975,11 +8036,11 @@ function render(){
       <td>${i?`<span style="color:#007A3D;font-weight:700" title="${esc(i.por&&i.por!==i.usuario?'Emitido por '+i.por:'')}">✅ ${new Date(i.en).toLocaleString('es-PE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span>`:`<span style="color:#8A5A00;font-weight:700">⚠️ pendiente</span>`}</td>
       <td style="white-space:nowrap"><button class="btn bout bsm" onclick="ETIMIS.sup('${nq}')">Ver →</button> <button class="btn bpri bsm" title="Ver / enviar el reporte consolidado de este supervisor" onclick="ETIMIS.reporteDe('${nq}')">📄 Reporte</button></td></tr>`;}).join('')}
     </tbody></table></div></section>`;})():''}
-  <section class="m-card">${TD?'<h3 class="m-tit2">Detalle de registros</h3>':''}${F.length?`<div style="overflow:auto;max-height:560px"><table class="m-table"><thead><tr><th>Fecha</th><th>Hora</th>${TD?'<th>Supervisor</th>':''}<th>Modalidad</th><th>Empresa</th><th>Sector</th><th>Tipo</th><th>Ruta / Área</th><th>Código</th><th>Eval.</th><th>Resultado</th><th>Guardado</th>${adm?'<th></th>':''}</tr></thead><tbody>
-    ${F.slice(0,800).map(r=>`<tr><td>${fF(r.fecha)}</td><td>${r.ts?new Date(r.ts).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}):'—'}</td>${TD?`<td>${esc(r.sup||'—')}</td>`:''}
+  <section class="m-card">${TD?'<h3 class="m-tit2">Detalle de registros</h3>':''}${F.length?`<div style="overflow:auto;max-height:560px"><table class="m-table"><thead><tr><th>Fecha eval.</th><th>Registrado</th>${TD?'<th>Supervisor</th>':''}<th>Modalidad</th><th>Empresa</th><th>Sector</th><th>Tipo</th><th>Ruta / Área</th><th>Código</th><th>Eval.</th><th>Resultado</th><th>Guardado</th>${adm?'<th></th>':''}</tr></thead><tbody>
+    ${F.slice(0,800).map(r=>`<tr><td><b>${fF(r.fecha)}</b>${r.fo?`<div style="font-size:.68rem;color:#5B6B85" title="Fecha corregida por el administrador">antes ${fF(r.fo)}</div>`:''}</td><td style="font-size:.75rem;${r.ts&&iso(new Date(r.ts))!==r.fecha?'color:#B26A00;font-weight:700':''}" title="${r.ts&&iso(new Date(r.ts))!==r.fecha?'Registrado en un día distinto a la fecha de evaluación':''}">${r.ts?new Date(r.ts).toLocaleString('es-PE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'}</td>${TD?`<td>${esc(r.sup||'—')}</td>`:''}
       <td>${r.mod==='QR'?'📱 QR':'📋 Manual'}</td><td>${esc(String(r.emp||'').replace(' S.A.C.',''))}</td><td>${esc(r.sector||'—')}</td>
       <td>${r.tipo==='empleado'?'💼 Empleado':'👷 Obrero'}</td><td><b>${esc(r.ruta||'—')}</b>${r.apl?` <span title="Aplicada con el QR de ${esc(r.apl)} (atribuida por programación)" style="font-size:.72rem;color:#5B6B85">🤝 ${esc(r.apl.split(' ')[0])}</span>`:''}</td><td>${esc(r.cod||'—')}</td><td>${r.n}</td>
-      <td><b style="color:${r.res>=0.7?'#007A3D':'#C8102E'}">${pc(r.res)}</b></td><td>${r.az?'☁ ✓':'⏳'}</td>${adm?`<td><button class="m-ico" title="Eliminar (Azure y Firebase)" onclick="ETIMIS.eliminar('${esc(r.key)}')">🗑</button></td>`:''}</tr>`).join('')}
+      <td><b style="color:${r.res>=0.7?'#007A3D':'#C8102E'}">${pc(r.res)}</b></td><td>${r.az?'☁ ✓':'⏳'}</td>${adm?`<td style="white-space:nowrap"><button class="m-ico" title="Cambiar la fecha de evaluación (Azure y Firebase)" onclick="ETIMIS.editarFecha('${esc(r.key)}')">📅</button><button class="m-ico" title="Eliminar (Azure y Firebase)" onclick="ETIMIS.eliminar('${esc(r.key)}')">🗑</button></td>`:''}</tr>`).join('')}
     </tbody></table></div>${F.length>800?`<div class="m-mut" style="font-size:.78rem;margin-top:.4rem">Mostrando 800 de ${F.length}. Usa 📥 Excel para ver todos.</div>`:''}`:`<div class="m-empty">${M.cargando?'Cargando…':''} No hay evaluaciones entre ${fF(M.desde)} y ${fF(M.hasta)}. Apenas un trabajador responda tu QR o registres una manual, aparecerá aquí.</div>`}</section>`;
 }
 /* contador en el Inicio del supervisor */
@@ -8142,7 +8203,7 @@ window.ETIMIS={
       catch(e){console.error(e);toast('No se pudo generar el Word: '+e.message,'e');return;}
       const msg='✅ Se emitió tu Informe INF-SC-GH-04 de Evaluación ETI · '+sects[0]+' · '+fechas.map(fF).join(', ')+' en Word ('+nombre+'). RECUERDA: debes INSERTAR en el informe la evidencia fotográfica (sección 11: hoja de evaluación y grupo participante) y adjuntar el registro de asistencia y el material antes de enviarlo. El sistema no guarda el informe ni las fotos; puedes volver a emitirlo desde este mismo reporte.';
       toast('📝 Informe en Word descargado · inserta las fotos antes de enviarlo','s'); try{if(typeof confMod==='function')confMod('📝 Informe emitido en Word',msg,()=>{});}catch(e){}};
-    if(typeof miniForm==='function') miniForm('📝 Datos para el Informe INF-SC-GH-04','Completa los datos que el sistema no tiene. Lo demás (fechas, sector, rutas, indicadores, resultados y conclusiones) se llena solo con la evaluación de <b>'+esc(sects[0])+' · '+fechas.map(fF).join(', ')+'</b>.',campos,go);
+    if(window.etiMiniForm) window.etiMiniForm('📝 Datos para el Informe INF-SC-GH-04','Completa los datos que el sistema no tiene. Lo demás (fechas, sector, rutas, indicadores, resultados y conclusiones) se llena solo con la evaluación de <b>'+esc(sects[0])+' · '+fechas.map(fF).join(', ')+'</b>.',campos,go);
     else go(Object.fromEntries(campos.map(c=>[c.k,c.v])));
   },
   /* _HOJAS_QR_V1: evidencia de respuesta de cada trabajador evaluado por QR (anónima) */
@@ -8221,6 +8282,26 @@ table{${pca}}</style></head><body>
     if(!ok) return;
     let i=0; for(const sec of sects){i++; try{await window.etiAdminCambio({desde:M.desde,hasta:M.hasta,sector:sec},null,'Eliminando '+(sec||'sin sector')+' ('+i+'/'+sects.length+')');}catch(e){console.error(e);} }
     toast('🧹 Limpieza terminada. Verifica Indicadores y Tráfico.','s'); cargarTodos();
+  },
+  editarFecha(key){
+    const S=ses(); if(!S||S.rol!=='admin'||!window.etiCambiarFecha||!window.etiMiniForm){toast('Solo el administrador puede cambiar la fecha','e');return;}
+    const r=filas(M.desde,M.hasta).find(x=>x.key===key); if(!r){toast('Registro no encontrado','e');return;}
+    const tipo=r.mod==='QR'?'QR':'MANUAL', id=tipo==='QR'?r.key:r.doc;
+    const nota=`Registro de <b>${esc(r.sup||'')}</b> · ${esc(r.sector||'—')} · ${esc(r.ruta||'—')} ${esc(r.cod||'')}<br>Fecha de evaluación actual: <b>${fF(r.fecha)}</b> · registrado el ${r.ts?new Date(r.ts).toLocaleString('es-PE'):'—'}`+
+      (tipo==='MANUAL'?'<br><b>Nota:</b> en una evaluación manual la fecha se cambia para todas las rutas de ese registro.':'')+'<br>Se corrige en Azure y Firebase y se guarda la fecha original.';
+    window.etiMiniForm('📅 Cambiar fecha de evaluación',nota,[{k:'f',lbl:'Fecha real de la evaluación (dd/mm/aaaa)',v:fF(r.fecha)}],async v=>{
+      const t=String(v.f||'').trim(), m1=t.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/), m2=t.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      const nueva=m1?m1[3]+'-'+m1[2].padStart(2,'0')+'-'+m1[1].padStart(2,'0'):m2?t:'';
+      if(!nueva||isNaN(new Date(nueva+'T00:00:00'))){toast('Escribe la fecha como dd/mm/aaaa','e');return;}
+      if(nueva>hoyI()){toast('La fecha de evaluación no puede ser futura','e');return;}
+      toast('⏳ Cambiando la fecha en Azure y Firebase…','i');
+      try{const x=await window.etiCambiarFecha(tipo,id,nueva);
+        if(x&&x.sinCambio){toast('La fecha ya era esa','i');return;}
+        toast('✅ Fecha corregida: '+fF(x.vieja)+' → '+fF(x.nueva),'s');
+        if(nueva<M.desde||nueva>M.hasta){M.desde=nueva<M.desde?nueva:M.desde;M.hasta=nueva>M.hasta?nueva:M.hasta;}
+        if(M.todos)cargarTodos();else render();
+      }catch(e){console.error(e);toast('No se cambió la fecha: '+e.message,'e');}
+    });
   },
   informeDe(n){let u='';try{const x=(typeof getUsuarios==='function'?getUsuarios(true):[]).find(y=>y.rol!=='admin'&&coincide(y.nom,n));u=x?x.user:'';}catch(e){} enviarInforme(n,u);},
   abrir(){const S=ses(); if(!S) return; crearPantalla(); if(S.rol!=='admin'){iniciarSup(); if(!M.ini){M.ini=true;M.desde=iso(new Date(Date.now()-6*864e5));M.hasta=hoyI();}} go('smis');   /* _RANGO_SUP_V1: el supervisor abre con sus últimos 7 días */
