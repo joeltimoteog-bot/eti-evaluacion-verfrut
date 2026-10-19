@@ -13,6 +13,7 @@
 <!-- _LIBS_LOCALES_V1 (08-oct-2026): si el servidor externo falla, se usa la copia de lib/ -->
 <script>if(!(window.firebase))document.write('<script src="lib/firebase-app-compat.js"><\/script>');</script>
 <script>if(!(window.firebase&&firebase.firestore))document.write('<script src="lib/firebase-firestore-compat.js"><\/script>');</script>
+<script src="https://joeltimoteog-bot.github.io/sistema-rl-verfrut/frontend/js/coberturas-lector.js?v=1" async></script> <!-- _COBERTURAS_ETI_V1 (18-oct): reemplazos del RR.LL. para atribuir la evaluacion -->
 <!-- _EVAL_TRABAJADOR_V1 (29-set-2026): página que abre el trabajador al escanear el QR.
      Solo permite responder la evaluación de la sesión indicada; no da acceso al sistema. -->
 <style>
@@ -300,6 +301,10 @@ function atribuir(){
   var p=ATR.progs.filter(function(x){return x.sector&&normTxt(x.sector)===sec&&x.estado!=='ejecutada';});
   if(!p.length) return null;
   var nom=p[0].sup||'', u=null; for(var i=0;i<ATR.sups.length;i++){if(normTxt(ATR.sups[i].nom)===normTxt(nom)){u=ATR.sups[i];break;}}
+  /* _COBERTURAS_ETI_V1: si ese día el supervisor programado está ausente (RR.LL.), la evaluación va a su reemplazo */
+  try{var c=window.ETICob&&(ETICob.deTitular((u&&u.user)||'',FECHA)||ETICob.deTitular(nom,FECHA));
+    if(c){var r2=null;for(var j=0;j<ATR.sups.length;j++){var x=ATR.sups[j];if((x.user&&x.user===c.reemplazo)||ETICob.mismo(x.nom,c.reemplazo_nombre)){r2=x;break;}}
+      return {user:(r2&&r2.user)||c.reemplazo, nom:(r2&&r2.nom)||c.reemplazo_nombre||c.reemplazo, cob:c};}}catch(e){}
   return u&&u.user?{user:u.user,nom:u.nom}:null;
 }
 /* _ENVIO_SEGURO_V1 (03-oct-2026)
@@ -356,6 +361,9 @@ function enviar(){
     if(!W.docId) W.docId=db.collection(COL_RESP).doc().id;   /* mismo id en reintentos: no duplica */
     var userQR=S.asignado||S.usuario||'', at=atribuir(), supF=S.sup, userF=userQR, extra={};
     if(at&&at.user&&at.user!==userQR){supF=at.nom;userF=at.user;extra={supQR:S.sup,aplicadoPor:userQR,atribucion:'programacion'};}
+    /* _COBERTURAS_ETI_V1: deja constancia de a quién reemplaza (por programación o porque el dueño del QR está cubriendo) */
+    try{var cob=(at&&at.cob)||(window.ETICob&&(ETICob.deReemplazo(userF,FECHA)||ETICob.deReemplazo(supF,FECHA)));
+      if(cob) extra.cobertura={titular:cob.titular,titular_nombre:cob.titular_nombre,tipo:cob.tipo,desde:cob.desde,hasta:cob.hasta||'',id:cob.id||''};}catch(e){}
     var doc={sesion:SID,anonima:true,emp:W.emp||S.emp,sup:supF,sector:W.sector,tipo:W.tipo||S.tipo,ruta:W.ruta,cod:W.cod,fecha:FECHA,
       usuarioSup:userF,resp:R,pts:c.ptsN,secs:c.secs,resultado:c.resultado,estado:c.resultado>=0.7?'APROBADO':'REFUERZO',
       bancoVersion:S.bancoVersion||0,creadoEn:new Date().toISOString(),ts:Date.now()};

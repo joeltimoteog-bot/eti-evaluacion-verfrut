@@ -116,13 +116,15 @@
           var secs = (B.secs || []).map(function (s) { var pct = s.maxSec ? (sums[s.id] || 0) / s.maxSec : 0; return { nom: s.nom, pct: pct, peso: s.peso }; });
           var res = secs.reduce(function (a, s) { return a + s.pct * (+s.peso || 0); }, 0);
           evals.push({ manualDet: true, r: { id: (m.id || '') + '·' + (ri + 1) + '·' + ev.i, sup: m.sup, sector: m.sector, fecha: m.fecha, ts: m.ts, ruta: rt.nom, cod: rt.cod, tipo: m.tipo, emp: m.emp,
-              resultado: Math.round(res * 10000) / 10000, estado: res >= 0.7 ? 'APROBADO' : 'REFUERZO', secs: secs, sesion: '', evaluado: ev.i, registradoPor: m.nomUsuario || m.usuario || '' },
+              resultado: Math.round(res * 10000) / 10000, estado: res >= 0.7 ? 'APROBADO' : 'REFUERZO', secs: secs, sesion: '', evaluado: ev.i, registradoPor: m.nomUsuario || m.usuario || '', usuarioSup: m.usuario || '', cobertura: m.cobertura || null },
             filas: filas, ok: ok, tot: tot, nota: '', sup: m._sup, sector: m._sector });
         });
       });
       if (sinDet.length) { if (sinDet.length === (m.rutas || []).length) restoMan.push(m); else { var c = Object.assign({}, m); c.rutas = sinDet; restoMan.push(c); } }
     });
     man = restoMan;
+    /* _COBERTURAS_ETI_V1: ¿la evaluación se hizo cubriendo a otro supervisor? (dato guardado o reemplazo registrado en el RR.LL.) */
+    evals.forEach(function (e) { try { e.cob = e.r.cobertura || (window.ETICob && (ETICob.deReemplazo(e.r.usuarioSup || '', e.r.fecha) || ETICob.deReemplazo(e.sup, e.r.fecha))) || null; } catch (x) { e.cob = null; } });
     evals.sort(function (a, b) { return cmp(a.sup, b.sup) || cmp(a.sector, b.sector) || (a.r.fecha || '').localeCompare(b.r.fecha || '') || (a.r.ts || 0) - (b.r.ts || 0) || cmp(a.r.ruta || '', b.r.ruta || '') || (a.r.evaluado || 0) - (b.r.evaluado || 0); });
     return { evals: evals, man: man };
   }
@@ -211,7 +213,7 @@
       }
       ws.mergeCells(fl, 1, fl, 5);
       var ce = ws.getCell(fl, 1), aprob = (+r.resultado || 0) >= 0.7;
-      ce.value = 'Evaluación N° ' + e.num + '  ·  ' + modTxt(e) + '  ·  ' + fF(r.fecha) + ' ' + hora(r.ts) + '  ·  Ruta / área: ' + (r.ruta || '—') + '  ·  Código: ' + (r.cod || '—') + '  ·  ' + (r.tipo === 'empleado' ? 'Empleado' : 'Obrero') + '  ·  Correctas: ' + e.ok + ' de ' + e.tot + '  ·  ID: ' + r.id;
+      ce.value = 'Evaluación N° ' + e.num + '  ·  ' + modTxt(e) + (e.cob && window.ETICob ? '  ·  🔄 ' + ETICob.texto(e.cob) : '') + '  ·  ' + fF(r.fecha) + ' ' + hora(r.ts) + '  ·  Ruta / área: ' + (r.ruta || '—') + '  ·  Código: ' + (r.cod || '—') + '  ·  ' + (r.tipo === 'empleado' ? 'Empleado' : 'Obrero') + '  ·  Correctas: ' + e.ok + ' de ' + e.tot + '  ·  ID: ' + r.id;
       ce.font = { bold: true, size: 10 }; ce.fill = fill(C.cab);
       var cr = ws.getCell(fl, 6); pctCelda(cr, pc(r.resultado)); var cst = ws.getCell(fl, 7); cst.value = aprob ? 'APROBADO' : 'REFUERZO'; cst.font = { bold: true, color: { argb: aprob ? C.okT : C.noT } }; cst.fill = fill(aprob ? C.okF : C.noF); cst.alignment = { horizontal: 'center' };
       fl++;
@@ -319,13 +321,13 @@
         supAnt = norm(e.sup); secAnt = norm(e.sector);
         var ev = D.evals.filter(function (x) { return norm(x.sup) === supAnt && norm(x.sector) === secAnt; });
         var pr = ev.reduce(function (s, x) { return s + (+x.r.resultado || 0); }, 0) / (ev.length || 1);
-        html += '<section class="hoja"><div class="sep"><div class="mut">Supervisor</div><div class="grande">' + esc(tituloSup(e.sup)) + '</div><div class="mut" style="margin-top:10px">Sector / zona</div><div class="grande" style="font-size:18px">' + esc(e.sector) + '</div>' +
+        html += '<section class="hoja"><div class="sep"><div class="mut">Supervisor</div><div class="grande">' + esc(tituloSup(e.sup)) + '</div><div class="mut" style="margin-top:10px">Sector / zona</div><div class="grande" style="font-size:18px">' + esc(e.sector) + '</div>' + (function () { var cc = ev.find(function (x) { return x.cob; }); return cc && window.ETICob ? '<div style="margin-top:10px;background:#EEF2FF;color:#3730A3;border-radius:8px;padding:8px 10px;font-weight:700">🔄 ' + esc(tituloSup(e.sup)) + ' ' + esc(ETICob.texto(cc.cob)) + ' — registrado en el Sistema RR.LL.</div>' : ''; })() +
           '<div class="cab" style="margin-top:14px"><div><span>Evaluaciones</span><b>' + ev.length + '</b></div><div><span>Promedio</span><b>' + pc(pr) + '%</b></div><div><span>Aprobados</span><b>' + ev.filter(function (x) { return (+x.r.resultado || 0) >= 0.7; }).length + '</b></div><div><span>Refuerzo</span><b>' + ev.filter(function (x) { return (+x.r.resultado || 0) < 0.7; }).length + '</b></div></div>' +
           '<table><thead><tr><th>N°</th><th>Fecha</th><th>Hora</th><th>Ruta / área</th><th>Código</th><th>Correctas</th><th>Resultado</th></tr></thead><tbody>' +
           ev.map(function (x) { var ap = (+x.r.resultado || 0) >= 0.7; return '<tr><td class="c">' + x.num + '</td><td>' + esc(fF(x.r.fecha)) + '</td><td>' + esc(hora(x.r.ts)) + '</td><td>' + esc(x.r.ruta || '') + '</td><td>' + esc(x.r.cod || '') + '</td><td class="c">' + x.ok + '/' + x.tot + '</td><td class="c ' + (ap ? 'ok' : 'no') + '">' + pc(x.r.resultado) + '%</td></tr>'; }).join('') +
           '</tbody></table></div></section>';
       }
-      html += '<section class="hoja"><div class="franja"><b>' + esc(tituloSup(e.sup)) + ' · ' + esc(e.sector) + '</b><span>' + esc(modTxt(e)) + ' · Hoja N° ' + e.num + ' de ' + D.evals.length + '</span></div>' +
+      html += '<section class="hoja"><div class="franja"><b>' + esc(tituloSup(e.sup)) + ' · ' + esc(e.sector) + '</b><span>' + esc(modTxt(e)) + (e.cob && window.ETICob ? ' · 🔄 ' + esc(ETICob.texto(e.cob)) : '') + ' · Hoja N° ' + e.num + ' de ' + D.evals.length + '</span></div>' +
         '<div class="res"><h2>Ruta / área: ' + esc(r.ruta || '—') + '</h2><span class="badge" style="background:' + (a ? '#E6F7EE;color:#0B6B36' : '#FDE4E7;color:#B00020') + '">' + pc(r.resultado) + '% · ' + (a ? 'APROBADO' : 'REFUERZO') + '</span></div>' +
         '<div class="cab"><div><span>Fecha / hora</span><b>' + esc(fF(r.fecha) + ' ' + hora(r.ts)) + '</b></div><div><span>Empresa</span><b>' + esc(r.emp || '') + '</b></div><div><span>Tipo</span><b>' + (r.tipo === 'empleado' ? 'Empleado' : 'Obrero') + '</b></div><div><span>Código</span><b>' + esc(r.cod || '—') + '</b></div>' +
         '<div><span>Correctas</span><b>' + e.ok + ' de ' + e.tot + '</b></div><div style="grid-column:span 3"><span>Resultado por tema</span><b class="temas">' + (r.secs || []).map(function (s) { return '<span>' + esc(s.nom) + ': ' + pc(s.pct) + '%</span>'; }).join('') + '</b></div></div>' +

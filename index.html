@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <script src="https://joeltimoteog-bot.github.io/sistema-rl-verfrut/frontend/js/firebase-llave.js?v=1"></script> <!-- _FB_LLAVE_V1 (18-oct): llave anonima para presencia/mensajes del Monitor RR.LL. -->
-<script src="https://joeltimoteog-bot.github.io/sistema-rl-verfrut/frontend/js/login-comun.js?v=1"></script> <!-- _LOGIN_COMUN_V1 (18-oct): misma contrasena que el Sistema RR.LL. (Azure + respaldo Google) -->
+<script src="https://joeltimoteog-bot.github.io/sistema-rl-verfrut/frontend/js/login-comun.js?v=1"></script>
+<script src="https://joeltimoteog-bot.github.io/sistema-rl-verfrut/frontend/js/coberturas-lector.js?v=1"></script> <!-- _COBERTURAS_ETI_V1 (18-oct): reemplazos registrados en el RR.LL. --> <!-- _LOGIN_COMUN_V1 (18-oct): misma contrasena que el Sistema RR.LL. (Azure + respaldo Google) -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sistema ETI – Evaluación de Conocimiento de Buenas Prácticas Sociales y Laborales</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1121,13 +1122,13 @@ const SUPERVISORES = [
   {nom:'Flor Pulache Viera',             sector:'Los Olivares',  rol:'Supervisor', reemplazante:false},
   {nom:'Alex Zapata Suarez',             sector:'Aproa',         rol:'Supervisor', reemplazante:false},
   {nom:'Yhanell Geraldine Luzon Venegas',        sector:'Santa Rosa',    rol:'Supervisor', reemplazante:false},
-  {nom:'JHON STEVE HERNANDEZ BORRERO',    sector:'Santa Rosa',    rol:'Supervisor', reemplazante:false},   /* _SUP_BORRERO_V1 (18-oct): usuario jborrero; nombre igual al de sus evaluaciones QR */
   // SUPERVISORES REEMPLAZANTES (sector variable según a quién cubren)
   {nom:'Muriel Mechato Navarro',          sector:'', rol:'Reemplazante', reemplazante:true},
   {nom:'Socorro Miranda Pasapera',        sector:'', rol:'Reemplazante', reemplazante:true},
   {nom:'Jhonny Avendaño Granda',          sector:'', rol:'Reemplazante', reemplazante:true},
   {nom:'Jaime Siancas Viera',             sector:'', rol:'Reemplazante', reemplazante:true},
   {nom:'Deysi Quispe Juarez',             sector:'', rol:'Reemplazante', reemplazante:true},
+  {nom:'JHON STEVE HERNANDEZ BORRERO',    sector:'', rol:'Reemplazante', reemplazante:true},   /* _SUP_BORRERO_V1 (18-oct): jborrero; cubre sectores según la ausencia registrada en el RR.LL. (hoy Santa Rosa) */
 ];
 
 // ÁREAS para Empleado (editables en sesión)
@@ -1564,6 +1565,7 @@ function guardarEvalNube(res){
     creadoEn:new Date().toISOString(), ts:Date.now()
   };
   try{ const b=_detBanco(); if(b) payload.detBanco=b; }catch(e){}   /* _DETALLE_MANUAL_V1 */
+  try{ const c=window.ETICob&&ETICob.deReemplazo(res.sup,res.fecha); if(c) payload.cobertura={titular:c.titular,titular_nombre:c.titular_nombre,tipo:c.tipo,desde:c.desde,hasta:c.hasta||'',id:c.id||''}; }catch(e){}   /* _COBERTURAS_ETI_V1 */
   /* _BANDEJA_MANUAL_V1 (07-oct-2026): se guarda primero en el equipo (bandeja) con un id fijo y luego en la nube.
      Si no hay señal o se cierra la página, se reintenta sola al volver la conexión o al abrir el sistema. Nunca se duplica. */
   const id=(fbdb?fbdb.collection(COL_EVAL).doc().id:('L'+Date.now().toString(36)+Math.random().toString(36).slice(2,8)));
@@ -4575,9 +4577,19 @@ function actualizarBadgeConectados(){
   if(b){ b.textContent=_presOnline.length; b.style.display=_presOnline.length?'':'none'; }
 }
 /* ══════════ 🎯 CUMPLIMIENTO DE EVALUACIONES POR SUPERVISOR ══════════ */
+/* _COBERTURAS_ETI_V1: nombre del reemplazo tal como figura en la lista de supervisores de este sistema */
+function nomETICob(n){try{const s=SUPERVISORES.find(x=>_cumCoincide(x.nom,n));return s?s.nom:(window.ETICob?ETICob.titulo(n):n);}catch(e){return n;}}
+function escCob(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+window.addEventListener('eti-coberturas',()=>{try{const el=document.getElementById('admin-cumplimiento');if(el&&el.style.display!=='none')renderCumplimiento();}catch(e){}});   /* _COBERTURAS_ETI_V1 */
 function renderCumplimiento(){
   const kpis=document.getElementById('cum-kpis'), lista=document.getElementById('cum-lista');
   if(!kpis||!lista) return;
+  /* _COBERTURAS_ETI_V1: reemplazos vigentes (registrados en el Sistema RR.LL.) */
+  try{let cb=document.getElementById('cum-cob');
+    if(!cb){cb=document.createElement('div');cb.id='cum-cob';kpis.parentNode.insertBefore(cb,kpis);}
+    const V=window.ETICob?ETICob.vigentes():[];
+    cb.innerHTML=V.length?`<div style="background:#EEF2FF;border:1px solid #C7D2FE;border-radius:12px;padding:.6rem .9rem;margin-bottom:.8rem;font-size:.82rem;line-height:1.6"><b style="color:#3730A3">🔄 Reemplazos vigentes</b> <span style="color:#64748b">(se registran en Sistema RR.LL. › Gestión de usuarios › Ausencia)</span><br>${V.map(c=>`• <b>${escCob(ETICob.titulo(c.reemplazo_nombre||c.reemplazo))}</b> ${escCob(ETICob.texto(c))}`).join('<br>')}</div>`:'';
+  }catch(e){}
   const hoyIso=hoy();
   const progs=getProgs().filter(p=>Array.isArray(p.fechas)&&p.fechas.length);
   const evals=(_evalsNube||[]).filter(ev=>ev&&ev.fecha&&Array.isArray(ev.rutas)&&ev.rutas.length); // ignora registros basura
@@ -4591,7 +4603,15 @@ function renderCumplimiento(){
     if(!p.sup) return;
     const g=grupoDe(p.sup);
     if(p.sector) g.sectores.add(p.sector);
-    p.fechas.forEach(f=>g.fechasProg.push({f:f, ejec:(p.fechasEjecutadas||[]).indexOf(f)>=0}));
+    p.fechas.forEach(f=>{
+      const ej=(p.fechasEjecutadas||[]).indexOf(f)>=0;
+      /* _COBERTURAS_ETI_V1: si ese día el titular estaba ausente con reemplazo, la fecha la responde el reemplazo */
+      const c=(!ej&&window.ETICob)?ETICob.deTitular(p.sup,f):null;
+      if(c){ g.fechasProg.push({f:f, ejec:false, just:c});
+        const g2=grupoDe(nomETICob(c.reemplazo_nombre||c.reemplazo)); if(p.sector) g2.sectores.add(p.sector);
+        g2.fechasProg.push({f:f, ejec:false, cubre:c}); }
+      else g.fechasProg.push({f:f, ejec:ej});
+    });
   });
   evals.forEach(ev=>{
     const nom=ev.sup||ev.nomUsuario||ev.usuario; if(!nom) return;
@@ -4603,6 +4623,7 @@ function renderCumplimiento(){
     const fechas=g.fechasProg.slice().sort((a,b)=>a.f.localeCompare(b.f));
     let ejec=0,venc=0,prox=0;
     fechas.forEach(x=>{
+      if(x.just){ x.hecha=false; return; }   /* _COBERTURAS_ETI_V1: justificada (la cubre el reemplazo) */
       x.hecha=x.ejec||g.evals.some(ev=>ev.fecha===x.f);
       if(x.hecha)ejec++; else if(x.f<hoyIso)venc++; else prox++;
     });
@@ -4628,12 +4649,13 @@ function renderCumplimiento(){
     const etiqueta=f.estado==='rojo'?('🔴 ATRASADO — '+f.venc+' fecha(s) vencida(s)')
                   :f.estado==='verde'?'🟢 AL DÍA':'⚪ SIN PROGRAMACIÓN';
     const chips=f.fechas.map(x=>{
+      if(x.just) return `<span title="${escCob(window.ETICob?'Justificada: '+ETICob.tipoTxt(x.just.tipo)+' · la cubre '+ETICob.titulo(x.just.reemplazo_nombre||x.just.reemplazo):'')}" style="background:#EEF2FF;color:#4338CA;font-size:.68rem;font-weight:800;padding:.15rem .5rem;border-radius:999px;">⚕ ${x.f.slice(8,10)}/${x.f.slice(5,7)} justificada</span>`;
       const c=x.hecha?['#16a34a','#dcfce7','✓']:(x.f<hoyIso?['#dc2626','#fee2e2','✗']:['#64748b','#f1f5f9','•']);
-      return `<span title="${x.f}" style="background:${c[1]};color:${c[0]};font-size:.68rem;font-weight:800;padding:.15rem .5rem;border-radius:999px;">${c[2]} ${x.f.slice(8,10)}/${x.f.slice(5,7)}</span>`;
+      return `<span title="${x.f}${x.cubre&&window.ETICob?' · '+escCob(ETICob.texto(x.cubre)):''}" style="background:${c[1]};color:${c[0]};font-size:.68rem;font-weight:800;padding:.15rem .5rem;border-radius:999px;">${c[2]} ${x.f.slice(8,10)}/${x.f.slice(5,7)}</span>`;
     }).join(' ');
     return `<div style="border:1px solid var(--bd,#e2e8f0);border-left:5px solid ${col};border-radius:14px;padding:.9rem 1rem;margin-bottom:.7rem;background:var(--sf,#fff);box-shadow:0 2px 10px rgba(0,0,0,.05);">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.4rem;">
-        <div style="font-weight:800;font-size:.95rem;">${f.g.nombre}${f.g.sectores.size?` <span style="font-weight:400;color:var(--text2);font-size:.72rem;">· ${[...f.g.sectores].join(' · ')}</span>`:''}</div>
+        <div style="font-weight:800;font-size:.95rem;">${f.g.nombre}${f.g.sectores.size?` <span style="font-weight:400;color:var(--text2);font-size:.72rem;">· ${[...f.g.sectores].join(' · ')}</span>`:''}${(()=>{const cu=f.fechas.find(x=>x.cubre),ju=f.fechas.find(x=>x.just);return (cu?` <span style="font-size:.7rem;font-weight:800;background:#EEF2FF;color:#4338CA;border-radius:99px;padding:2px 8px">🔄 ${escCob(cu.cubre&&window.ETICob?ETICob.texto(cu.cubre):'')}</span>`:'')+(ju?` <span style="font-size:.7rem;font-weight:800;background:#FFF4E5;color:#9A5B00;border-radius:99px;padding:2px 8px">⚕ ausente: lo cubre ${escCob(window.ETICob?ETICob.titulo(ju.just.reemplazo_nombre||ju.just.reemplazo):'')}</span>`:'');})()}</div>
         <span style="color:${col};font-weight:800;font-size:.72rem;">${etiqueta}</span>
       </div>
       <div style="height:8px;background:#f1f5f9;border-radius:999px;overflow:hidden;margin:.45rem 0;">
@@ -7548,7 +7570,7 @@ console.log('[_SHELL_RL_V1] listo');
 <script>/* _SOLREPROG_V1 (30-set-2026): supervisor para "Actividad no realizada / pedir reprogramación" */
 window._etiUsuarioReprog=function(){try{if(!SESSION||!SESSION.user)return null;var r=String(SESSION.rol||'').toLowerCase();if(r==='admin'||r==='administrador'||String(SESSION.user).toLowerCase()==='jtimoteo')return null;return {usuario:SESSION.user,nombre:SESSION.nom||SESSION.user};}catch(e){return null;}};</script>
 <script src="solreprog.js?v=1"></script>
-<script src="respuestas-auditoria.js?v=4"></script>  <!-- _RESPUESTAS_AUDITORIA_V1 (18-oct): evidencia de respuestas por evaluacion (Excel + hojas PDF), solo admin, solo lectura -->
+<script src="respuestas-auditoria.js?v=5"></script>  <!-- _RESPUESTAS_AUDITORIA_V1 (18-oct): evidencia de respuestas por evaluacion (Excel + hojas PDF), solo admin, solo lectura -->
 <script>
 /* ══════════════════════════════════════════════════════════════
    _TRAFICO_V1 (03-oct-2026) — 📡 Tráfico en vivo (solo administrador)
