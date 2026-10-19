@@ -1121,6 +1121,7 @@ const SUPERVISORES = [
   {nom:'Flor Pulache Viera',             sector:'Los Olivares',  rol:'Supervisor', reemplazante:false},
   {nom:'Alex Zapata Suarez',             sector:'Aproa',         rol:'Supervisor', reemplazante:false},
   {nom:'Yhanell Geraldine Luzon Venegas',        sector:'Santa Rosa',    rol:'Supervisor', reemplazante:false},
+  {nom:'JHON STEVE HERNANDEZ BORRERO',    sector:'Santa Rosa',    rol:'Supervisor', reemplazante:false},   /* _SUP_BORRERO_V1 (18-oct): usuario jborrero; nombre igual al de sus evaluaciones QR */
   // SUPERVISORES REEMPLAZANTES (sector variable según a quién cubren)
   {nom:'Muriel Mechato Navarro',          sector:'', rol:'Reemplazante', reemplazante:true},
   {nom:'Socorro Miranda Pasapera',        sector:'', rol:'Reemplazante', reemplazante:true},
@@ -7910,7 +7911,12 @@ function crearPantalla(){
 function render(){
   const box=$('mis-box'); if(!box||!$('smis').classList.contains('active')) return;
   const F=filas(M.desde,M.hasta), R=resumen(F), S=ses(), adm=S&&S.rol==='admin', TD=adm&&M.todos;
-  let sups=[]; if(adm){try{sups=(typeof SUPERVISORES!=='undefined'?SUPERVISORES:[]).filter(x=>x.rol!=='Administrador').map(x=>x.nom);}catch(e){}}
+  let sups=[]; if(adm){try{sups=(typeof SUPERVISORES!=='undefined'?SUPERVISORES:[]).filter(x=>x.rol!=='Administrador').map(x=>x.nom);}catch(e){}
+    /* _SUPS_DATOS_V1 (18-oct): también todo supervisor que ya tenga evaluaciones registradas (aunque no esté en la lista fija) */
+    try{const V=window._etiSupsVistos=window._etiSupsVistos||new Set();[...M.qrA,...M.qrB,...M.man].forEach(r=>{if(r&&r.sup)V.add(String(r.sup).trim());});
+      const admN=(typeof SUPERVISORES!=='undefined'?SUPERVISORES:[]).filter(x=>x.rol==='Administrador').map(x=>x.nom);
+      V.forEach(n=>{if(n&&!sups.some(s=>coincide(s,n))&&!admN.some(s=>coincide(s,n)))sups.push(n);});
+      sups.sort((a,b)=>a.localeCompare(b,'es',{sensitivity:'base'}));}catch(e){}}
   const k=(v,t,c)=>`<div style="background:#fff;border:1px solid #D9E0EC;border-radius:14px;padding:.8rem .9rem"><b style="display:block;font-size:1.5rem;line-height:1.1;color:${c||'#14213D'}">${v}</b><span style="font-size:.72rem;color:#5B6B85;font-weight:700;text-transform:uppercase">${t}</span></div>`;
   const pre=(t,d,h)=>`<button class="btn ${M.desde===d&&M.hasta===h?'bpri':'bout'} bsm" onclick="ETIMIS.rango('${d}','${h}')">${t}</button>`;
   const h=new Date(), d7=new Date(Date.now()-6*864e5), m1=new Date(h.getFullYear(),h.getMonth(),1);
