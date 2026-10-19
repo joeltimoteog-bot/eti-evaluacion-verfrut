@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <script src="https://joeltimoteog-bot.github.io/sistema-rl-verfrut/frontend/js/firebase-llave.js?v=1"></script> <!-- _FB_LLAVE_V1 (18-oct): llave anonima para presencia/mensajes del Monitor RR.LL. -->
+<script src="https://joeltimoteog-bot.github.io/sistema-rl-verfrut/frontend/js/login-comun.js?v=1"></script> <!-- _LOGIN_COMUN_V1 (18-oct): misma contrasena que el Sistema RR.LL. (Azure + respaldo Google) -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sistema ETI – Evaluación de Conocimiento de Buenas Prácticas Sociales y Laborales</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1644,17 +1645,23 @@ async function doLogin(){
   if(btn){ btn.disabled = true; btn.textContent = 'Verificando...'; }
 
   try{
-    const r = await fetch(ETI_LOGIN_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ usuario: u, password: p })
-    });
-    const dd = await r.json();
+    /* _LOGIN_COMUN_V1 (18-oct): misma validación que el Sistema RR.LL. (Azure y, si Azure no responde,
+       Google). Así la contraseña del RR.LL. —también la nueva o la temporal— sirve aquí sin errores. */
+    let dd;
+    if(window.rlLoginComun){
+      const rc = await window.rlLoginComun(u, p);
+      if(rc.sinServidor){ _etiError(rc.error); return; }
+      if(rc.bloqueado){ document.getElementById('lpwd').value = ''; _etiError(rc.error || 'Usuario bloqueado temporalmente. Comunícate con el administrador del sistema, Joel Timoteo.'); return; }
+      dd = rc.ok ? { success:true, user: rc.user, token: rc.token } : { success:false, intentosRestantes: rc.intentosRestantes };
+    } else {
+      const r = await fetch(ETI_LOGIN_URL, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ usuario: u, password: p }) });
+      dd = await r.json();
+    }
 
     if(!dd || !dd.success || !dd.user){
       _etiIntentos++;
-      const quedan = ETI_MAX_INTENTOS - _etiIntentos;
-      _etiError('Datos incorrectos.' + (quedan > 0 ? ' Te quedan ' + quedan + ' intento(s).' : ''));
+      const quedan = (typeof dd?.intentosRestantes === 'number') ? dd.intentosRestantes : ETI_MAX_INTENTOS - _etiIntentos;
+      _etiError('Usuario o contraseña incorrectos (es la misma del Sistema RR.LL.).' + (quedan > 0 ? ' Te quedan ' + quedan + ' intento(s).' : ''));
       document.getElementById('lpwd').value = '';
       return;
     }
@@ -1681,7 +1688,7 @@ async function doLogin(){
 
   }catch(e){
     console.error('[_LOGIN_SERVIDOR_V1]', e);
-    _etiError('No se pudo verificar tu usuario. Revisa tu conexion, o ingresa desde el Sistema RR.LL.');
+    _etiError('No se pudo conectar con el servidor. Intenta de nuevo en unos segundos.');
   }finally{
     if(btn){ btn.disabled = false; btn.textContent = txtBtn || 'Ingresar'; }
   }
