@@ -8034,7 +8034,7 @@ function render(){
     ${L.sort((a,b)=>b.n-a.n).map(x=>{const i=infDe(x.sup);const nq=esc(x.sup).replace(/'/g,"\\'");return `<tr><td><b>${esc(x.sup)}</b></td><td>${x.qr}</td><td>${x.man}</td><td><b>${x.n}</b></td><td><b style="color:${x.s/x.n>=0.7?'#007A3D':'#C8102E'}">${pc(x.s/x.n)}</b></td><td>${x.apr}</td>
       <td>${x.ult?new Date(x.ult).toLocaleString('es-PE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'}</td>
       <td>${i?`<span style="color:#007A3D;font-weight:700" title="${esc(i.por&&i.por!==i.usuario?'Emitido por '+i.por:'')}">✅ ${new Date(i.en).toLocaleString('es-PE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span>`:`<span style="color:#8A5A00;font-weight:700">⚠️ pendiente</span>`}</td>
-      <td style="white-space:nowrap"><button class="btn bout bsm" onclick="ETIMIS.sup('${nq}')">Ver →</button> <button class="btn bpri bsm" title="Ver / enviar el reporte consolidado de este supervisor" onclick="ETIMIS.reporteDe('${nq}')">📄 Reporte</button></td></tr>`;}).join('')}
+      <td style="white-space:nowrap"><button class="btn bout bsm" onclick="ETIMIS.sup('${nq}')">Ver →</button> <button class="btn bpri bsm" title="Ver / enviar el reporte consolidado de este supervisor" onclick="ETIMIS.reporteDe('${nq}')">📄 Reporte</button> <button class="btn bpri bsm" style="background:#007A3D" title="Emite el Informe Check List ETI (INF-SC-GH-03) en Word" onclick="ETIMIS.checklistDe('${nq}')">📝 Informe</button></td></tr>`;}).join('')}
     </tbody></table></div></section>`;})():''}
   <section class="m-card">${TD?'<h3 class="m-tit2">Detalle de registros</h3>':''}${F.length?`<div style="overflow:auto;max-height:560px"><table class="m-table"><thead><tr><th>Fecha eval.</th><th>Registrado</th>${TD?'<th>Supervisor</th>':''}<th>Modalidad</th><th>Empresa</th><th>Sector</th><th>Tipo</th><th>Ruta / Área</th><th>Código</th><th>Eval.</th><th>Resultado</th><th>Guardado</th>${adm?'<th></th>':''}</tr></thead><tbody>
     ${F.slice(0,800).map(r=>`<tr><td><b>${fF(r.fecha)}</b>${r.fo?`<div style="font-size:.68rem;color:#5B6B85" title="Fecha corregida por el administrador">antes ${fF(r.fo)}</div>`:''}</td><td style="font-size:.75rem;${r.ts&&iso(new Date(r.ts))!==r.fecha?'color:#B26A00;font-weight:700':''}" title="${r.ts&&iso(new Date(r.ts))!==r.fecha?'Registrado en un día distinto a la fecha de evaluación':''}">${r.ts?new Date(r.ts).toLocaleString('es-PE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'}</td>${TD?`<td>${esc(r.sup||'—')}</td>`:''}
@@ -8150,7 +8150,7 @@ function verReporte(nomO,userO,sector){
   const F=filasRpt(nomO,sector), R=resumen(F);
   if(!R.n){toast('No hay evaluaciones en este período','i');return;}
   const txt=reporteTxt(F,R,nom); M.rpt={txt,nomO,userO,sector,sects};
-  let m=$('mis-rpt'); if(!m){m=document.createElement('div');m.id='mis-rpt';m.style.cssText='position:fixed;inset:0;background:rgba(10,20,40,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem';document.body.appendChild(m);}
+  let m=$('mis-rpt'); if(!m){m=document.createElement('div');m.id='mis-rpt';m.style.cssText='position:fixed;inset:0;background:rgba(10,20,40,.55);z-index:990;display:flex;align-items:center;justify-content:center;padding:1rem';document.body.appendChild(m);}
   m.innerHTML=`<div style="background:#fff;border-radius:16px;max-width:900px;width:100%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:.6rem;flex-wrap:wrap;padding:.9rem 1.1rem;border-bottom:1px solid #D9E0EC"><div><b style="font-size:1.05rem">📄 Reporte · ${esc(nom)}${sector?' · '+esc(sector):''}</b><div class="m-mut" style="font-size:.8rem">${esc(rangoTxt())} · ${R.n} evaluados (QR ${R.qr} · manual ${R.man})</div>
       ${sects.length>1?`<div style="margin-top:.35rem;font-size:.82rem">📍 Sector: <select class="fc" style="width:auto;padding:.25rem .5rem" onchange="ETIMIS.rptSector(this.value)"><option value="" ${!sector?'selected':''}>Todos (consolidado)</option>${sects.map(x=>`<option ${x===sector?'selected':''}>${esc(x)}</option>`).join('')}</select> <span class="m-mut">el informe oficial se emite por sector</span></div>`:''}</div>
@@ -8166,7 +8166,7 @@ function infBarra(R){
   const env=infEnviado();
   return `<div style="display:flex;justify-content:space-between;align-items:center;gap:.6rem;flex-wrap:wrap;background:${env?'#E6F7EE':'#FFF6E0'};border:1px solid ${env?'#9BD8B4':'#F3D48A'};border-radius:12px;padding:.7rem .9rem;margin:-.3rem 0 .9rem">
     <div style="font-size:.86rem">${env?`✅ <b>Informe enviado hoy</b> a las ${new Date(env).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})}. Si registras más evaluaciones, puedes reenviarlo actualizado.`:R.n?`⚠️ <b>Aún no has enviado tu informe.</b> Al terminar tus evaluaciones (QR + manual) envíalo por correo <b>una sola vez</b>: se arma solo con todas las del período.`:`ℹ️ Cuando termines tus evaluaciones, envía desde aquí tu informe consolidado por correo.`}</div>
-    <div style="display:flex;gap:.4rem;flex-wrap:wrap"><button class="btn bout bsm" style="border-color:#0B2A6F;color:#0B2A6F;font-weight:800" onclick="ETIMIS.reporte()" ${R.n?'':'disabled'}>📄 Ver reporte</button><button class="btn bout bsm" onclick="ETIMIS.excel()" ${R.n?'':'disabled'}>📥 Excel</button><button class="btn bpri bsm" onclick="ETIMIS.enviarInforme()" ${R.n?'':'disabled'}>📧 Enviar informe (${R.n})</button></div></div>`;}
+    <div style="display:flex;gap:.4rem;flex-wrap:wrap"><button class="btn bpri bsm" style="background:#007A3D" onclick="ETIMIS.checklistDe()" ${R.n?'':'disabled'} title="Emite el Informe Check List ETI (INF-SC-GH-03) en Word">📝 Informe Check List</button><button class="btn bout bsm" style="border-color:#0B2A6F;color:#0B2A6F;font-weight:800" onclick="ETIMIS.reporte()" ${R.n?'':'disabled'}>📄 Ver reporte</button><button class="btn bout bsm" onclick="ETIMIS.excel()" ${R.n?'':'disabled'}>📥 Excel</button><button class="btn bpri bsm" onclick="ETIMIS.enviarInforme()" ${R.n?'':'disabled'}>📧 Enviar informe (${R.n})</button></div></div>`;}
 window.ETIMIS={
   excel(){const F=filas(M.desde,M.hasta);excelMio(F,resumen(F));},
   enviarInforme(){enviarInforme();},
@@ -8183,6 +8183,12 @@ window.ETIMIS={
     if(typeof confMod==='function') confMod('¿Eliminar '+(r.mod==='QR'?'esta respuesta QR?':'esta evaluación manual?'),'Se elimina en Azure y Firebase '+txt+'. No se puede deshacer.',async()=>{await window.etiAdminCambio(filtro,null,'Eliminando');if(M.todos)cargarTodos();else render();});
   },
   reporte(){verReporte();},
+  /* _BTN_CHECKLIST_V1 (19-oct): acceso directo al Informe Check List (abre el reporte y lanza el formulario) */
+  checklistDe(n){let u='';if(n){try{const x=(typeof getUsuarios==='function'?getUsuarios(true):[]).find(y=>y.rol!=='admin'&&coincide(y.nom,n));u=x?x.user:'';}catch(e){}}
+    verReporte(n||undefined,u||undefined); const o=M.rpt||{}; if(!o.txt) return;
+    if(o.sects&&o.sects.length>1&&!o.sector){toast('Elige el sector 📍 en el reporte y pulsa 📝 Informe Check List','i');return;}
+    if(o.sects&&o.sects.length>1) toast('📍 Informe del sector '+o.sector+'. Si necesitas otro sector, cámbialo en el reporte y vuelve a pulsar el botón verde.','i');
+    window.ETIMIS.rptChecklist();},
   reporteDe(n){let u='';try{const x=(typeof getUsuarios==='function'?getUsuarios(true):[]).find(y=>y.rol!=='admin'&&coincide(y.nom,n));u=x?x.user:'';}catch(e){} verReporte(n,u);},
   /* _INFORME_GH04_V1 (16-oct-2026): Informe INF-SC-GH-04 con datos de la evaluación. NO se guarda. */
   rptInforme(){
