@@ -6814,6 +6814,7 @@ const QR={
         upd.resultado=lista.reduce((a,r)=>a+r.resGen*r.n,0)/resps.length;
         await fbdb.collection(COL_SES).doc(s.id).update(upd);
         lista.forEach(res=>guardarEvalNube(res));
+        try{ if(window.etiAlertaRutas) window.etiAlertaRutas(lista); }catch(eAl){ console.warn('[_ETI_ALERTA_RUTA_V1]',eAl); }   /* _ETI_ALERTA_RUTA_V1 (20-oct) */
         try{const p=progPendienteDe(s.sup);if(p&&fechasPendientes(p).includes(s.fecha))marcarProgEjecutada(p.id,s.fecha);}catch(e){}
         const ver=lista.length===1?lista[0]:{...lista[0],sector:lista.map(r=>r.sector).join(', '),rutas:lista.flatMap(r=>r.rutas.map(x=>({...x,nom:r.sector+' · '+x.nom}))),resGen:upd.resultado};
         try{localStorage.setItem('eti_last_res_'+(SESSION.user||'anon'),JSON.stringify(ver));}catch(e){}
@@ -7646,6 +7647,7 @@ console.log('[_SHELL_RL_V1] listo');
 <script>/* _SOLREPROG_V1 (30-set-2026): supervisor para "Actividad no realizada / pedir reprogramación" */
 window._etiUsuarioReprog=function(){try{if(!SESSION||!SESSION.user)return null;var r=String(SESSION.rol||'').toLowerCase();if(r==='admin'||r==='administrador'||String(SESSION.user).toLowerCase()==='jtimoteo')return null;return {usuario:SESSION.user,nombre:SESSION.nom||SESSION.user};}catch(e){return null;}};</script>
 <script src="solreprog.js?v=1"></script>
+<script src="eti-alerta-ruta.js?v=1"></script>  <!-- _ETI_ALERTA_RUTA_V1 (20-oct): alerta por ruta/tema + correo automatico al cerrar la sesion QR -->
 <script src="respuestas-auditoria.js?v=6"></script>  <!-- _RESPUESTAS_AUDITORIA_V1 (18-oct): evidencia de respuestas por evaluacion (Excel + hojas PDF), solo admin, solo lectura -->
 <script>
 /* ══════════════════════════════════════════════════════════════
