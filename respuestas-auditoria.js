@@ -128,6 +128,8 @@
     evals.sort(function (a, b) { return cmp(a.sup, b.sup) || cmp(a.sector, b.sector) || (a.r.fecha || '').localeCompare(b.r.fecha || '') || (a.r.ts || 0) - (b.r.ts || 0) || cmp(a.r.ruta || '', b.r.ruta || '') || (a.r.evaluado || 0) - (b.r.evaluado || 0); });
     return { evals: evals, man: man };
   }
+  /* _AUDITORIA_HOJA_V2 (20-oct-2026): en la hoja de auditoria la empresa va con su razon social completa */
+  function razonSocial(emp) { var x = String(emp || '').toUpperCase(); return x.indexOf('RAPEL') >= 0 ? 'Sociedad Agrícola Rapel S.A.C.' : x.indexOf('VERFRUT') >= 0 ? 'Sociedad Exportadora Verfrut S.A.C.' : String(emp || ''); }
   function modTxt(e) { return e.manualDet ? 'Manual · evaluado N° ' + e.r.evaluado : 'QR'; }
 
   /* ── separar por supervisor y sector ── */
@@ -313,7 +315,7 @@
       '<div class="cab"><div><span>Rango</span><b>' + esc(fF(F.desde) + ' al ' + fF(F.hasta)) + '</b></div><div><span>Supervisor</span><b>' + esc(sup ? tituloSup(sup) : 'Todos') + '</b></div><div><span>Sector</span><b>' + esc(sector || 'Todos') + '</b></div><div><span>Generado</span><b>' + esc(gen) + '</b></div>' +
       '<div><span>Evaluaciones con detalle</span><b>' + D.evals.length + '</b></div><div><span>Aprobados ≥70%</span><b>' + D.evals.filter(function (e) { return (+e.r.resultado || 0) >= 0.7; }).length + '</b></div><div><span>Refuerzo</span><b>' + D.evals.filter(function (e) { return (+e.r.resultado || 0) < 0.7; }).length + '</b></div><div><span>Registros manuales</span><b>' + D.man.length + '</b></div></div>' +
       '<h2 style="margin-top:8px">Contenido por supervisor y sector</h2>' + tablaGrupos() +
-      '<div class="pie">La evaluación por QR es anónima: cada hoja se identifica por fecha, hora, sector, ruta/área, código e ID del registro. Calificación automática; aprobado ≥ 70 %. Las preguntas de varias respuestas se califican de forma proporcional (½ Parcial). Generado por ' + esc(S.nom || S.user || '') + '.</div></section>';
+      '<div class="pie">La evaluación por QR es anónima: cada hoja se identifica por fecha, hora, sector, ruta/área y código. Calificación automática; aprobado ≥ 70 %. Las preguntas de varias respuestas se califican de forma proporcional (½ Parcial). Generado por ' + esc(S.nom || S.user || '') + '.</div></section>';
     var html = '', supAnt = null, secAnt = null;
     D.evals.forEach(function (e) {
       var r = e.r, a = (+r.resultado || 0) >= 0.7;
@@ -327,16 +329,16 @@
           ev.map(function (x) { var ap = (+x.r.resultado || 0) >= 0.7; return '<tr><td class="c">' + x.num + '</td><td>' + esc(fF(x.r.fecha)) + '</td><td>' + esc(hora(x.r.ts)) + '</td><td>' + esc(x.r.ruta || '') + '</td><td>' + esc(x.r.cod || '') + '</td><td class="c">' + x.ok + '/' + x.tot + '</td><td class="c ' + (ap ? 'ok' : 'no') + '">' + pc(x.r.resultado) + '%</td></tr>'; }).join('') +
           '</tbody></table></div></section>';
       }
-      html += '<section class="hoja"><div class="franja"><b>' + esc(tituloSup(e.sup)) + ' · ' + esc(e.sector) + '</b><span>' + esc(modTxt(e)) + (e.cob && window.ETICob ? ' · 🔄 ' + esc(ETICob.texto(e.cob)) : '') + ' · Hoja N° ' + e.num + ' de ' + D.evals.length + '</span></div>' +
+      html += '<section class="hoja"><div class="franja"><b>' + esc(tituloSup(e.sup)) + ' · ' + esc(e.sector) + '</b><span>' + (e.cob && window.ETICob ? '🔄 ' + esc(ETICob.texto(e.cob)) + ' · ' : '') + 'Hoja N° ' + e.num + '</span></div>' +
         '<div class="res"><h2>Ruta / área: ' + esc(r.ruta || '—') + '</h2><span class="badge" style="background:' + (a ? '#E6F7EE;color:#0B6B36' : '#FDE4E7;color:#B00020') + '">' + pc(r.resultado) + '% · ' + (a ? 'APROBADO' : 'REFUERZO') + '</span></div>' +
-        '<div class="cab"><div><span>Fecha / hora</span><b>' + esc(fF(r.fecha) + ' ' + hora(r.ts)) + '</b></div><div><span>Empresa</span><b>' + esc(r.emp || '') + '</b></div><div><span>Tipo</span><b>' + (r.tipo === 'empleado' ? 'Empleado' : 'Obrero') + '</b></div><div><span>Código</span><b>' + esc(r.cod || '—') + '</b></div>' +
+        '<div class="cab"><div><span>Fecha / hora</span><b>' + esc(fF(r.fecha) + ' ' + hora(r.ts)) + '</b></div><div><span>Empresa</span><b>' + esc(razonSocial(r.emp)) + '</b></div><div><span>Tipo</span><b>' + (r.tipo === 'empleado' ? 'Empleado' : 'Obrero') + '</b></div><div><span>Código</span><b>' + esc(r.cod || '—') + '</b></div>' +
         '<div><span>Correctas</span><b>' + e.ok + ' de ' + e.tot + '</b></div><div style="grid-column:span 3"><span>Resultado por tema</span><b class="temas">' + (r.secs || []).map(function (s) { return '<span>' + esc(s.nom) + ': ' + pc(s.pct) + '%</span>'; }).join('') + '</b></div></div>' +
         (e.nota ? '<div class="mut" style="margin:4px 0">⚠ ' + esc(e.nota) + '</div>' : '') +
         '<table><thead><tr><th style="width:4%">N°</th><th style="width:35%">Pregunta</th><th style="width:25%">' + (e.manualDet ? 'Puntaje anotado' : 'Respuesta marcada') + '</th><th style="width:25%">' + (e.manualDet ? 'Puntaje máximo' : 'Respuesta correcta') + '</th><th style="width:11%">Resultado</th></tr></thead><tbody>' +
         e.filas.map(function (f) { var cl = f.est === 'Correcta' ? 'ok' : f.est === 'Parcial' ? 'pa' : 'no';
           return '<tr><td class="c">' + f.n + '</td><td>' + esc(f.t) + (f.multi ? ' <span class="mut">(varias)</span>' : '') + '</td><td' + (f.est !== 'Correcta' ? ' class="mal"' : '') + '>' + esc(f.marcada.join(' · ') || '—') + '</td><td>' + esc(f.correcta.join(' · ') || '—') + '</td><td class="c ' + cl + '">' + (f.est === 'Correcta' ? '✓ ' : f.est === 'Parcial' ? '½ ' : '✗ ') + esc(f.est) + '<br><span style="font-weight:400">' + f.pts + (f.max !== '' ? ' / ' + f.max : '') + ' pts</span></td></tr>'; }).join('') +
         '</tbody></table>' +
-        '<div class="pie">ID del registro: ' + esc(r.id) + ' · Código QR: ' + esc(r.sesion || '') + ' · ' + (e.manualDet ? 'Evaluación manual registrada por ' + esc(r.registradoPor || 'el supervisor') + ' (puntajes transcritos del formato físico)' : 'Evaluación anónima respondida por el trabajador desde su celular') + ' · Generado el ' + esc(gen) + '</div></section>';
+        '<div class="pie">Código QR: ' + esc(r.sesion || '') + ' · ' + (e.manualDet ? 'Evaluación manual registrada por ' + esc(r.registradoPor || 'el supervisor') + ' (puntajes transcritos del formato físico)' : 'Evaluación anónima respondida por el trabajador desde su celular') + ' · Generado el ' + esc(gen) + '</div></section>';
     });
     var temasM = []; D.man.forEach(function (m) { (m.rutas || []).forEach(function (r) { (r.secs || []).forEach(function (s) { if (s.nom && temasM.indexOf(s.nom) < 0) temasM.push(s.nom); }); }); });
     var manual = !D.man.length ? '' : '<section class="hoja"><div class="franja"><b>Evaluaciones manuales — resumen por grupo</b><span>' + D.man.length + ' registro(s)</span></div><div class="mut" style="margin:4px 0 6px">Registradas por el supervisor por ruta / área. El sistema guarda el resultado del grupo y el % por tema; la respuesta de cada trabajador consta en el formato físico firmado.</div>' +
