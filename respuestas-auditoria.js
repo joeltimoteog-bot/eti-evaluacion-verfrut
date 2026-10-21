@@ -338,7 +338,7 @@
         e.filas.map(function (f) { var cl = f.est === 'Correcta' ? 'ok' : f.est === 'Parcial' ? 'pa' : 'no';
           return '<tr><td class="c">' + f.n + '</td><td>' + esc(f.t) + (f.multi ? ' <span class="mut">(varias)</span>' : '') + '</td><td' + (f.est !== 'Correcta' ? ' class="mal"' : '') + '>' + esc(f.marcada.join(' · ') || '—') + '</td><td>' + esc(f.correcta.join(' · ') || '—') + '</td><td class="c ' + cl + '">' + (f.est === 'Correcta' ? '✓ ' : f.est === 'Parcial' ? '½ ' : '✗ ') + esc(f.est) + '<br><span style="font-weight:400">' + f.pts + (f.max !== '' ? ' / ' + f.max : '') + ' pts</span></td></tr>'; }).join('') +
         '</tbody></table>' +
-        '<div class="pie">Código QR: ' + esc(r.sesion || '') + ' · ' + (e.manualDet ? 'Evaluación manual registrada por ' + esc(r.registradoPor || 'el supervisor') + ' (puntajes transcritos del formato físico)' : 'Evaluación anónima respondida por el trabajador desde su celular') + ' · Generado el ' + esc(gen) + '</div></section>';
+        '</section>';   /* _AUDITORIA_HOJA_V3 (20-oct-2026): sin pie (Codigo QR / generado) en la hoja de auditoria */
     });
     var temasM = []; D.man.forEach(function (m) { (m.rutas || []).forEach(function (r) { (r.secs || []).forEach(function (s) { if (s.nom && temasM.indexOf(s.nom) < 0) temasM.push(s.nom); }); }); });
     var manual = !D.man.length ? '' : '<section class="hoja"><div class="franja"><b>Evaluaciones manuales — resumen por grupo</b><span>' + D.man.length + ' registro(s)</span></div><div class="mut" style="margin:4px 0 6px">Registradas por el supervisor por ruta / área. El sistema guarda el resultado del grupo y el % por tema; la respuesta de cada trabajador consta en el formato físico firmado.</div>' +
