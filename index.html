@@ -1643,7 +1643,7 @@ if(SESSION) setTimeout(()=>{
 
    Se agrega ademas limite de intentos, que este sistema no tenia.
    ═══════════════════════════════════════════════════════════════════════════ */
-const ETI_LOGIN_URL = 'https://rl-functions-verfrut-c0ctfjc0cjf5f0hz.brazilsouth-01.azurewebsites.net/api/auth/login';
+const ETI_LOGIN_URL = 'https://rl-fn-verfrut.azurewebsites.net/api/auth/login';
 const ETI_MAX_INTENTOS = 5;
 let _etiIntentos = 0;
 
@@ -1856,7 +1856,7 @@ function togglePwd(){
       el: se le muestra el login para que use su contraseña.
       Cuando el pase del servidor este probado, poner ETI_ACEPTA_PASE_ANTIGUO=false.
    ═══════════════════════════════════════════════════════════════════════════ */
-const ETI_SSO_URL = 'https://rl-functions-verfrut-c0ctfjc0cjf5f0hz.brazilsouth-01.azurewebsites.net/api/auth/sso';
+const ETI_SSO_URL = 'https://rl-fn-verfrut.azurewebsites.net/api/auth/sso';
 const ETI_ACEPTA_PASE_ANTIGUO = true;
 async function _ssoEntrar(){
   if(window._ssoHecho) return false;
@@ -6921,7 +6921,7 @@ console.log('[_MODULOS_V1] listo');
    ══════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-const AZ_ETI='https://rl-functions-verfrut-c0ctfjc0cjf5f0hz.brazilsouth-01.azurewebsites.net/api/etieval';
+const AZ_ETI='https://rl-fn-verfrut.azurewebsites.net/api/etieval';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const pct=v=>(Math.round((v||0)*1000)/10).toFixed(1)+'%';
