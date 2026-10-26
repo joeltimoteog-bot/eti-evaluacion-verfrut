@@ -1,0 +1,3 @@
+/* Evaluaciones ETI · index.html · bloque 08-solreprog-usuario (antes en la linea 7647) · extraido el 26-oct-2026 sin cambios (_EVAL_MODULAR_V1) */
+/* _SOLREPROG_V1 (30-set-2026): supervisor para "Actividad no realizada / pedir reprogramación" */
+window._etiUsuarioReprog=function(){try{if(!SESSION||!SESSION.user)return null;var r=String(SESSION.rol||'').toLowerCase();if(r==='admin'||r==='administrador'||String(SESSION.user).toLowerCase()==='jtimoteo')return null;return {usuario:SESSION.user,nombre:SESSION.nom||SESSION.user};}catch(e){return null;}};

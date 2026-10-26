@@ -1,0 +1,4311 @@
+/* Evaluaciones ETI · index.html · bloque 01-nucleo-evaluaciones (antes en la linea 1029) · extraido el 26-oct-2026 sin cambios (_EVAL_MODULAR_V1) */
+// ══════════════════════════════════════════
+// CUESTIONARIO REAL — 35 preguntas extraídas
+// Cada pregunta: {n: número, t: texto, max: puntaje máximo}
+// Lógica: el puntaje máximo de cada sección = suma de max de sus preguntas
+// ══════════════════════════════════════════
+const SECS = [
+  {
+    id:'leg', nom:'Legislación Laboral', peso:0.18,
+    pregs:[
+      {n:1,  t:'¿Sabes cuánto te pagan al mes? Escríbelo.',                                                                      max:2},
+      {n:2,  t:'La jornada legal de trabajo son las horas que debemos trabajar, ¿cuántas horas tú trabajas al día y a la semana?', max:2},
+      {n:3,  t:'Si el jefe lo solicita, está permitido hacer sobretiempo, ¿cuántas horas extras podemos hacer como máximo al día o en una semana?', max:2},
+      {n:4,  t:'¿Dónde debes marcar tu asistencia al entrar y salir? Indica la hora de ingreso y de salida.',                     max:2},
+      {n:5,  t:'¿Cuánto tiempo tienes de refrigerio para comer o descansar?',                                                     max:2},
+      {n:6,  t:'¿Qué beneficios de acuerdo a la Ley te otorga la empresa además de las vacaciones?',                              max:4},
+      {n:7,  t:'¿Sabes dónde encontrar el Reglamento Interno de Trabajo y la boleta mensual de pago?',                            max:4},
+    ]
+  },
+  {
+    id:'bie', nom:'Bienestar Social', peso:0.32,
+    pregs:[
+      {n:8,  t:'¿Conoces a la asistenta social? Escribe su nombre.',                                                              max:2},
+      {n:9,  t:'¿Cómo se llama el comité o grupo de representantes de los trabajadores? Si conoces a algún representante, escribe su nombre.', max:4},
+      {n:10, t:'Las quejas o sugerencias se pueden dejar en los buzones azules, ¿dónde están estos buzones?',                     max:4},
+      {n:11, t:'Si tienes una queja o una sugerencia, ¿con quién puedes hablar?',                                                 max:4},
+      {n:12, t:'¿Sabes quién revisa los buzones de sugerencias y quejas y qué días los revisa?',                                  max:4},
+      {n:13, t:'¿Dónde se publica el registro de respuestas a las quejas o sugerencias?',                                         max:2},
+      {n:14, t:'Si un compañero te realiza bromas de connotación sexual o te acosa sexualmente, ¿a quién debes pedirle ayuda y realizar tu denuncia?', max:2},
+      {n:15, t:'Cuando un trabajador hombre tiene un bebé, puede pedir un permiso que se llama "licencia de paternidad", ¿cuántos días pagados puede faltar con esta licencia?', max:1},
+      {n:16, t:'Cuando una trabajadora mujer tiene un bebé, puede pedir un permiso que se llama "licencia de maternidad", ¿cuántos días pagados puede faltar con esta licencia?', max:1},
+      {n:17, t:'¿Cuántos días pagados puedes faltar cuando pides la licencia por accidente grave o enfermedad terminal de un familiar directo?', max:2},
+      {n:18, t:'¿Cuántos días pagados puedes faltar si fallece un familiar directo?',                                              max:2},
+      {n:19, t:'¿Qué otros beneficios adicionales, distintos a los de ley, te otorga la empresa? (Ejemplo: Celebración del día de la madre o del padre)', max:4},
+    ]
+  },
+  {
+    id:'sus', nom:'Sustentabilidad', peso:0.16,
+    pregs:[
+      {n:20, t:'¿Qué quiere decir que una empresa es "sustentable"? Selecciona una.',                                             max:2},
+      {n:21, t:'¿Cuántos son los Objetivos de Desarrollo Sostenible (ODS)?',                                                      max:2},
+      {n:22, t:'¿Qué ODS: Objetivos de Desarrollo Sostenible recuerdas? Escribe al menos tres ejemplos.',                         max:4},
+      {n:23, t:'Las sugerencias o ideas para cuidar el planeta y a la sociedad se pueden dejar en los buzones verdes, ¿dónde están estos buzones?', max:4},
+      {n:24, t:'¿Quiénes revisan los buzones de ideas verdes y qué días los revisan?',                                             max:4},
+    ]
+  },
+  {
+    id:'eti', nom:'Ética Empresarial', peso:0.06,
+    pregs:[
+      {n:25, t:'¿Qué otro nombre tienen las políticas de ética y buenas prácticas laborales? Escribe el nombre de las que recuerdas.', max:2},
+      {n:26, t:'El código de conducta tiene 11 principios, ¿cuáles recuerdas? Escribe al menos tres.',                            max:2},
+      {n:27, t:'Una empresa ética lo demuestra previniendo y reportando los casos de posibles delitos como fraude tributario, corrupción a funcionarios, favoritismos.', max:2},
+    ]
+  },
+  {
+    id:'sst', nom:'Seguridad y Salud en el Trabajo', peso:0.12,
+    pregs:[
+      {n:28, t:'¿Conoces el procedimiento de lavado de manos? Escribe al menos dos momentos en los que debes lavarte las manos.', max:2},
+      {n:29, t:'¿Qué equipos de protección personal o EPPs debes usar en tu labor? Escribe al menos dos.',                        max:2},
+      {n:30, t:'¿Conoces dónde está el tópico más cercano? Escribe ubicación (sector, oficina). ¿Conoces dónde está el lactario más cercano? Escribe ubicación.', max:4},
+      {n:31, t:'Si ocurre un accidente o te sientes mal de Salud, ¿a quién le comunicas y cómo te comunicas?',                    max:2},
+      {n:32, t:'¿Qué haces para cuidar el medio ambiente en tu área de trabajo?',                                                 max:2},
+    ]
+  },
+  {
+    id:'med', nom:'Compromiso Medioambiental', peso:0.16,
+    pregs:[
+      {n:33, t:'El cambio climático son todos esos cambios en el clima que traen efectos negativos al planeta, ¿qué consecuencias recuerdas? Escribe al menos tres.',                              max:4},
+      {n:34, t:'En la empresa tenemos animalitos, zonas con plantas nativas, jardines y reservorios con peces, ¿cómo podemos ayudar a proteger esta biodiversidad?',                              max:4},
+      {n:35, t:'Todos los desperdicios tienen una forma distinta de separarse, ¿qué debemos hacer para que los desechos estén bien manejados? Escribe al menos tres.',                             max:4},
+      {n:36, t:'¿Cómo podemos ahorrar energía en la empresa? Escribe al menos tres ejemplos.',                                     max:4},
+    ]
+  }
+];
+
+// Calcular máximo real por sección
+SECS.forEach(s => { s.maxSec = s.pregs.reduce((a,p)=>a+p.max,0); });
+
+// ══════════════════════════════════════════
+// SUPERVISORES CON SECTORES ASIGNADOS
+// ══════════════════════════════════════════
+const SUPERVISORES = [
+  // ADMINISTRADORES
+  {nom:'Joel Timoteo Gonza',              sector:'',   rol:'Administrador',  reemplazante:false},
+  {nom:'Olga Vilela Ludeña',              sector:'',   rol:'Administrador',  reemplazante:false},
+  {nom:'Jorge Chavez Coordova',           sector:'',   rol:'Administrador',  reemplazante:false},
+  // SUPERVISORES CON SECTOR FIJO
+  {nom:'Elberth Castro Bayona',           sector:'San Vicente',   rol:'Supervisor', reemplazante:false},
+  {nom:'Sergio Viera Giron',              sector:'Algarrobos',    rol:'Supervisor', reemplazante:false},
+  {nom:'Alexander Martinez Juarez',       sector:'Punta Arenas',  rol:'Supervisor', reemplazante:false},
+  {nom:'Roberto Molero Abad',             sector:'Planta Rapel',  rol:'Supervisor', reemplazante:false},
+  {nom:'Pool Tamayo Rodriguez',           sector:'',              rol:'Supervisor', reemplazante:false, multiSector:true, sectores:['El Papayo','Limones']},
+  {nom:'Alex Tineo Ramos',               sector:'Olivares Bajo', rol:'Supervisor', reemplazante:false},
+  {nom:'Flor Pulache Viera',             sector:'Los Olivares',  rol:'Supervisor', reemplazante:false},
+  {nom:'Alex Zapata Suarez',             sector:'Aproa',         rol:'Supervisor', reemplazante:false},
+  {nom:'Yhanell Geraldine Luzon Venegas',        sector:'Santa Rosa',    rol:'Supervisor', reemplazante:false},
+  // SUPERVISORES REEMPLAZANTES (sector variable según a quién cubren)
+  {nom:'Muriel Mechato Navarro',          sector:'', rol:'Reemplazante', reemplazante:true},
+  {nom:'Socorro Miranda Pasapera',        sector:'', rol:'Reemplazante', reemplazante:true},
+  {nom:'Jhonny Avendaño Granda',          sector:'', rol:'Reemplazante', reemplazante:true},
+  {nom:'Jaime Siancas Viera',             sector:'', rol:'Reemplazante', reemplazante:true},
+  {nom:'Deysi Quispe Juarez',             sector:'', rol:'Reemplazante', reemplazante:true},
+  {nom:'JHON STEVE HERNANDEZ BORRERO',    sector:'', rol:'Reemplazante', reemplazante:true},   /* _SUP_BORRERO_V1 (18-oct): jborrero; cubre sectores según la ausencia registrada en el RR.LL. (hoy Santa Rosa) */
+];
+
+// ÁREAS para Empleado (editables en sesión)
+let AREAS = [
+  'Riego','Sanidad','Administración','Operaciones',
+  'Departamento Técnico','Gestión Humana',
+  'Seguridad y Salud en el Trabajo','BPM',
+  'Salud Ocupacional','Transporte','Adquisiciones'
+];
+
+function supSector(nombre){
+  const sup = SUPERVISORES.find(s=>s.nom===nombre);
+  return sup ? sup.sector : '—';
+}
+
+function getSectorActual(){
+  // Devuelve el sector real considerando si es reemplazante o multi-sector
+  const sel     = document.getElementById('p1s').value;
+  const supData = SUPERVISORES.find(s=>s.nom===sel);
+  if(!supData || supData.reemplazante || supData.multiSector){
+    // Reemplazante o multi-sector: leer del select editable
+    return document.getElementById('p1sector-inp')?.value || '';
+  }
+  return supData.sector || '';
+}
+
+function p1sectorInpChange(){
+  // Mostrar/ocultar hint
+  const v    = document.getElementById('p1sector-inp')?.value;
+  const hint = document.getElementById('p1sector-hint');
+  if(hint) hint.style.display = v ? 'none' : 'block';
+}
+
+function renderSupSelect(){
+  const adm  = SUPERVISORES.filter(s=>s.rol==='Administrador');
+  const fijo = SUPERVISORES.filter(s=>s.rol==='Supervisor');
+  const remp = SUPERVISORES.filter(s=>s.rol==='Reemplazante');
+  const supLabel = s => s.multiSector
+    ? `${s.nom} — ${s.sectores.join(' / ')}`
+    : `${s.nom} — ${s.sector}`;
+  return `<option value="">— Seleccionar supervisor —</option>
+    <optgroup label="── Administradores ──">
+      ${adm.map(s=>`<option value="${s.nom}">${s.nom}</option>`).join('')}
+    </optgroup>
+    <optgroup label="── Supervisores de Sector ──">
+      ${fijo.map(s=>`<option value="${s.nom}">${supLabel(s)}</option>`).join('')}
+    </optgroup>
+    <optgroup label="── Supervisores Reemplazantes ──">
+      ${remp.map(s=>`<option value="${s.nom}">${s.nom} (reemplazante)</option>`).join('')}
+    </optgroup>`;
+}
+
+// Sectores disponibles para reemplazantes (lista global de fundos)
+const SECTORES_TODOS = [
+  'San Vicente','Algarrobos','Punta Arenas','Planta Rapel',
+  'El Papayo','Limones','Olivares Bajo','Los Olivares','Aproa','Santa Rosa'
+];
+
+// Aviso proactivo: fechas programadas de evaluación para el supervisor elegido
+function actualizarAlertaProgP1(){
+  const div=document.getElementById('p1-prog-info'); if(!div) return;
+  const sel=document.getElementById('p1s')?.value||'';
+  if(!sel){ div.style.display='none'; return; }
+  const prog=progPendienteDe(sel);
+  if(!prog){ div.style.display='none'; return; }
+  const ejec=prog.fechasEjecutadas||[];
+  const pend=prog.fechas.filter(f=>!ejec.includes(f));
+  if(!pend.length){ div.style.display='none'; return; }
+  const vencidas=pend.filter(f=>f<hoy());
+  div.style.display='block';
+  if(vencidas.length){
+    div.style.background='#FCE4E7'; div.style.borderLeft='4px solid #C8102E';
+    div.innerHTML=`<strong style="color:#C8102E;">🚨 Programación VENCIDA de evaluaciones de checklist</strong><br>
+      La programación de tus evaluaciones era para el: <strong>${pend.map(fmtF).join(' · ')}</strong>.
+      ${ejec.length?`Ya ejecutaste: ${ejec.map(fmtF).join(' · ')}.`:''}
+      Al continuar se te pedirá justificar el <strong>destiempo</strong>.`;
+  } else {
+    div.style.background='rgba(0,61,165,.07)'; div.style.borderLeft='4px solid #003DA5';
+    div.innerHTML=`<strong style="color:#003DA5;">📅 Evaluaciones de checklist programadas</strong><br>
+      La programación de tus evaluaciones es para el: <strong>${pend.map(fmtF).join(' · ')}</strong>${ejec.length?` · Ya ejecutadas: ${ejec.map(fmtF).join(' · ')}`:''}${prog.obs?`<br><span style="color:#4A5A80;">Obs: ${prog.obs}</span>`:''}`;
+  }
+}
+
+function onSupChange(){
+  actualizarAlertaProgP1();
+  const sel    = document.getElementById('p1s').value;
+  const secBox = document.getElementById('sector-autobox');
+  const secEl  = document.getElementById('p1sector');
+  const secInp = document.getElementById('p1sector-inp');
+  const secLbl = document.getElementById('p1sector-lbl');
+  const secHint= document.getElementById('p1sector-hint');
+  if(!sel){ secBox.style.display='none'; return; }
+
+  const supData = SUPERVISORES.find(s=>s.nom===sel);
+  secBox.style.display = 'block';
+
+  if(!supData || supData.reemplazante){
+    // REEMPLAZANTE: mostrar selector con todos los sectores
+    if(secEl)  secEl.style.display  = 'none';
+    if(secInp){
+      secInp.style.display = 'block';
+      secInp.innerHTML = `<option value="">— ¿Qué sector está cubriendo? —</option>`
+        + SECTORES_TODOS.map(s=>`<option value="${s}">${s}</option>`).join('');
+      secInp.value = '';
+    }
+    if(secLbl) secLbl.textContent = '📍 Sector que está cubriendo (reemplazante)';
+    if(secHint) secHint.textContent = 'Seleccione el sector del supervisor al que está reemplazando';
+  } else if(supData.multiSector){
+    // MULTI-SECTOR: mostrar selector restringido a sus sectores
+    if(secEl)  secEl.style.display  = 'none';
+    if(secInp){
+      secInp.style.display = 'block';
+      secInp.innerHTML = `<option value="">— ¿En qué sector evaluará? —</option>`
+        + supData.sectores.map(s=>`<option value="${s}">${s}</option>`).join('');
+      secInp.value = '';
+    }
+    if(secLbl) secLbl.textContent = '📍 ¿En qué fundo o sector realizará la evaluación?';
+    if(secHint) secHint.textContent = `Seleccione el sector — ${supData.nom} cubre: ${supData.sectores.join(' / ')}`;
+  } else {
+    // SUPERVISOR FIJO: mostrar sector automático
+    if(secEl)  secEl.style.display  = 'block';
+    if(secInp) secInp.style.display = 'none';
+    if(secLbl) secLbl.textContent   = '📍 Sector asignado (automático)';
+    if(secEl)  secEl.textContent    = supData.sector || '—';
+  }
+}
+
+// ══════════════════════════════════════════
+// ÁREAS — render dinámico
+// ══════════════════════════════════════════
+function renderAreasSelect(){
+  const el = document.getElementById('p2areas');
+  if(!el) return;
+  el.innerHTML = `<option value="">— Seleccionar área —</option>`
+    + AREAS.map(a=>`<option value="${a}">${a}</option>`).join('');
+}
+
+function agregarArea(){
+  const inp = document.getElementById('p2newarea');
+  if(!inp) return;
+  const val = inp.value.trim();
+  if(!val){toast('Escribe el nombre del área','e');return;}
+  if(AREAS.includes(val)){toast('Esa área ya existe','i');return;}
+  AREAS.push(val);
+  renderAreasSelect();
+  inp.value = '';
+  toast(`Área "${val}" agregada correctamente`,'s');
+}
+
+// ══════════════════════════════════════════
+// SISTEMA DE USUARIOS Y LOGIN
+// ══════════════════════════════════════════
+
+// Usuarios base del sistema
+// ── SEGURIDAD: las contraseñas NO se guardan en texto plano.
+// "ph" es la huella SHA-256 de (usuario|contraseña|sal). Nadie que lea este
+// código fuente puede recuperar la contraseña a partir de la huella.
+const ETI_SALT='ETI-VERFRUT-2026';
+async function etiHash(user,pwd){
+  const data=new TextEncoder().encode(String(user)+'|'+String(pwd)+'|'+ETI_SALT);
+  const buf=await crypto.subtle.digest('SHA-256',data);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+const USUARIOS_BASE = [
+  {user:'jtimoteo',  nom:'Joel Timoteo Gonza',       rol:'admin'},
+  {user:'ecastro',   nom:'Elberth Castro Bayona',    rol:'supervisor'},
+  {user:'yluzon',    nom:'Yhanell Geraldine Luzon Venegas',  rol:'supervisor'},
+  {user:'almartinez',nom:'Alexander Martinez Juarez',rol:'supervisor'},
+  {user:'sviera',    nom:'Sergio Viera Giron',       rol:'supervisor'},
+  {user:'rmolero',   nom:'Roberto Molero Abad',      rol:'supervisor'},
+  {user:'fzapata',   nom:'Alex Zapata Suarez',       rol:'supervisor'},
+  {user:'javendano', nom:'Jhonny Avendaño Granda',   rol:'supervisor'},
+  {user:'mmechato',  nom:'Muriel Mechato Navarro',   rol:'supervisor'},
+  {user:'fpulache',  nom:'Flor Pulache Viera',       rol:'supervisor'},
+  {user:'atineo',    nom:'Alex Tineo Ramos',         rol:'supervisor'},
+  {user:'glucia',    nom:'Lucia (Asistente)',        rol:'supervisor'},
+  {user:'ovilela',   nom:'Olga Vilela Ludeña',       rol:'supervisor'},
+  {user:'jchavez',   nom:'Jorge Chavez Coordova',    rol:'supervisor'},
+  {user:'ptamayo',   nom:'Pool Tamayo Rodriguez',    rol:'supervisor'},
+];
+
+// Cargar usuarios extras agregados por admin
+/* _USUARIOS_NUBE_V1 (03-oct-2026): estado de cada usuario en la nube (config_eti/accesos → usuarios[user]):
+   activo:false = desactivado (no entra a los módulos y su QR permanente se pausa)
+   eliminado:true = oculto en todo el sistema (se puede restaurar; su historial se conserva)
+   extra:true,nom,rol = usuario agregado por el admin (visible en todos los dispositivos) */
+function getUsuarios(incluirEliminados){
+  let extras=[]; try{extras=JSON.parse(localStorage.getItem('eti_usuarios_extra')||'[]')||[];}catch(e){}
+  const acc=(window.etiAccData&&window.etiAccData().usuarios)||{};
+  const vistos=new Set([...USUARIOS_BASE,...extras].map(u=>String(u.user).toLowerCase()));
+  Object.entries(acc).forEach(([k,r])=>{if(r&&r.extra&&!vistos.has(k)){extras.push({user:k,nom:r.nom||k,rol:r.rol||'supervisor'});vistos.add(k);}});
+  const todos=[...USUARIOS_BASE,...extras];
+  return incluirEliminados?todos:todos.filter(u=>!(acc[String(u.user).toLowerCase()]||{}).eliminado);
+}
+
+function saveUsuariosExtra(lista){
+  const base=USUARIOS_BASE.map(u=>u.user);
+  const extras=lista.filter(u=>!base.includes(u.user));
+  localStorage.setItem('eti_usuarios_extra',JSON.stringify(extras));
+}
+
+// Usuario activo en sesión
+let SESSION = JSON.parse(sessionStorage.getItem('eti_session')||'null');
+/* _SEG_SESION_V1 (24-set-2026): el rol NUNCA se toma de lo guardado en el
+   navegador (se podia editar a mano). Se recalcula con la lista de usuarios.
+   El admin ademas necesita el token que entrego el servidor al ingresar. */
+(function(){
+  if(!SESSION) return;
+  try{
+    const f=getUsuarios().find(x=>String(x.user||'').toLowerCase()===String(SESSION.user||'').toLowerCase());
+    SESSION = f ? {user:f.user, nom:f.nom, rol:f.rol} : null;
+    if(SESSION && SESSION.rol==='admin' && !sessionStorage.getItem('eti_token')) SESSION=null;
+  }catch(e){ SESSION=null; }
+  if(SESSION) sessionStorage.setItem('eti_session',JSON.stringify(SESSION));
+  else { sessionStorage.removeItem('eti_session'); sessionStorage.removeItem('eti_token'); }
+})();
+
+// ══════════════════════════════════════════
+// FIREBASE (nube) + GOOGLE SHEETS
+// ══════════════════════════════════════════
+const FB_CONFIG={
+  apiKey:"AIzaSyAv-1VcbT8VCerClNAeVtVXzOxhSffeDpc",
+  authDomain:"sistema-eti-verfrut.firebaseapp.com",
+  projectId:"sistema-eti-verfrut",
+  storageBucket:"sistema-eti-verfrut.firebasestorage.app",
+  messagingSenderId:"209614676744",
+  appId:"1:209614676744:web:23b4b1cd8c18b77e9742bd"
+};
+let fbdb=null;
+try{ firebase.initializeApp(FB_CONFIG); fbdb=firebase.firestore(); }
+catch(e){ console.error('Firebase no disponible:',e); }
+const COL_EVAL='evaluaciones_conocimiento';
+const COL_PROG_EV='programaciones_eval';
+
+// ── Canal de PRESENCIA + MENSAJERÍA del Sistema RR.LL (Realtime Database) ──
+// Mismas rutas /presencia y /mensajes que usan presencia.js y el Monitor RR.LL,
+// para que el admin vea y converse con los usuarios desde cualquiera de los dos sistemas.
+const RL_DB_URL='https://sistema-rl-verfrut-default-rtdb.firebaseio.com';
+const RL_ADMINS=['jtimoteo'];
+const RL_MODULO_ETI='Evaluaciones ETI';
+const RL_FB_CONFIG={
+  apiKey:"AIzaSyBTp4WHO5bGEoYDhTbyWZVfdQxbAQHwp4I",
+  authDomain:"sistema-rl-verfrut.firebaseapp.com",
+  databaseURL:RL_DB_URL,
+  projectId:"sistema-rl-verfrut",
+  storageBucket:"sistema-rl-verfrut.firebasestorage.app",
+  messagingSenderId:"769176418481",
+  appId:"1:769176418481:web:53a487fcaf736b11e24a90"
+};
+let rldb=null;
+try{
+  const _rlApp=firebase.initializeApp(RL_FB_CONFIG,'rl');
+  rldb=firebase.database(_rlApp);
+}catch(e){ console.warn('RTDB RR.LL no disponible (se usará respaldo REST):',e); }
+
+// URL del Google Apps Script conectado a la hoja "Registros Evaluaciones ETI"
+const SHEETS_WEBHOOK_URL='https://script.google.com/macros/s/AKfycbytqd5PsSs--Sl1Yixr1Arr0DlmrCgcGulA4jBevVKgtKKrwVBuNaZlrSGkn3ETLR9H/exec';
+
+let _progsNube=null;  // cache en vivo de programaciones (Firestore)
+let _evalsNube=null;  // cache en vivo de evaluaciones (Firestore)
+
+let _nubeEscuchando=false;
+function escucharNube(){
+  if(!fbdb) return;
+  escucharEvalsNube();          // _HIST_ROL_V1: evaluaciones segun rol (se re-suscribe si cambia el usuario)
+  if(_nubeEscuchando) return;   // evitar listeners duplicados
+  _nubeEscuchando=true;
+  try{if(SESSION&&SESSION.rol==='admin')setTimeout(guardarAtribucion,4000);}catch(e){}   /* _ATRIBUCION_V1 */
+  try{
+    fbdb.collection(COL_PROG_EV).onSnapshot(snap=>{
+      _progsNube=snap.docs.map(d=>({id:d.id,...d.data()}));
+      const el=document.getElementById('admin-prog');
+      if(el && el.style.display!=='none') renderPgLista();
+      _cumRefrescarSiVisible();
+    },e=>console.error('Nube prog:',e));
+    // FIX: las programaciones de EVALUACIONES DE CHECKLIST se registran desde el
+    // Sistema ETI (Capacitaciones) en la colección programaciones_eti. Antes este
+    // sistema solo leía programaciones_eval (vacía) y no las veía. Ahora se
+    // escuchan también y se normalizan al mismo formato.
+    fbdb.collection('programaciones_eti').onSnapshot(snap=>{
+      _progsEtiChk=snap.docs
+        .map(d=>({id:d.id,...d.data()}))
+        .filter(p=>String(p.tema||'').toUpperCase().indexOf('CHECKLIST')>=0)
+        .map(p=>({id:p.id,_col:'programaciones_eti',sup:p.supervisor||'',sector:p.sector||'',
+          estado:p.estado||'pendiente',
+          fechas:(Array.isArray(p.fechas)&&p.fechas.length?p.fechas.slice().sort()
+                 :[p.fechaProgramada,p.fechaFin||p.fechaProgramada].filter(Boolean).sort()),
+          fechasEjecutadas:p.fechasEjecutadas||[],
+          reprogramaciones:p.reprogramaciones||[], vecesReprogramada:p.vecesReprogramada||0, solicitudesReprog:p.solicitudesReprog||[]}));   /* _SOLREPROG_V1: no perder historial al reprogramar */
+      const el=document.getElementById('admin-prog');
+      if(el && el.style.display!=='none') renderPgLista();
+      _cumRefrescarSiVisible();
+    },e=>console.error('Nube prog eti:',e));
+  }catch(e){console.error(e);}
+}
+let _progsEtiChk=null;   // programaciones de CHECKLIST registradas en programaciones_eti (normalizadas)
+function _cumRefrescarSiVisible(){
+  try{ const el=document.getElementById('admin-cumplimiento');
+       if(el && el.style.display!=='none') renderCumplimiento(); }catch(e){}
+}
+/* ═══ _HIST_ROL_V1 (24-set-2026) — historial completo por rol ═══
+   ANTES: orderBy('ts').limit(800) sobre TODAS las evaluaciones, para todos.
+          Lo antiguo desaparecia y cada supervisor descargaba las de todos.
+   AHORA: Admin      → todas las evaluaciones, sin tope (todos los años).
+          Supervisor → solo las suyas: registradas por el (usuario) o a su
+                       nombre (sup), de todos los años. Nada de otros equipos. */
+let _evalsUnsub=[], _evalsPara=null;
+function detenerEvalsNube(){
+  _evalsUnsub.forEach(f=>{try{f();}catch(e){}});
+  _evalsUnsub=[]; _evalsPara=null; _evalsNube=null;
+}
+function _alRecibirEvals(){
+  const reg=document.getElementById('admin-registros');
+  if(reg && reg.style.display!=='none') renderAdminRegistros();
+  const st=document.getElementById('admin-stats');
+  if(st && st.style.display!=='none') renderAdminStats();
+  const us=document.getElementById('admin-users');
+  if(us && us.style.display!=='none') renderAdminUsers();
+  _cumRefrescarSiVisible();
+  sincronizarHistorialNube();   // cada usuario ve SUS registros desde cualquier dispositivo
+  try{ miCumplimiento(); }catch(e){}
+}
+function escucharEvalsNube(){
+  if(!fbdb || !SESSION) return;
+  const clave=SESSION.rol+'|'+SESSION.user;
+  if(_evalsPara===clave) return;            // ya escuchando para este usuario
+  detenerEvalsNube();
+  _evalsPara=clave;
+  const col=fbdb.collection(COL_EVAL);
+  const err=e=>console.error('Nube eval:',e);
+  if(SESSION.rol==='admin'){
+    _evalsUnsub.push(col.orderBy('ts','desc').onSnapshot(snap=>{
+      _evalsNube=snap.docs.map(d=>({id:d.id,...d.data()}));
+      _alRecibirEvals();
+    },err));
+    return;
+  }
+  // Supervisor: dos consultas simples (sin indices compuestos) unidas por id
+  const partes={u:[],s:[]};
+  const unir=()=>{
+    const m=new Map(); [...partes.u,...partes.s].forEach(d=>m.set(d.id,d));
+    _evalsNube=[...m.values()].sort((a,b)=>(b.ts||0)-(a.ts||0));
+    _alRecibirEvals();
+  };
+  _evalsUnsub.push(col.where('usuario','==',SESSION.user).onSnapshot(snap=>{
+    partes.u=snap.docs.map(d=>({id:d.id,...d.data()})); unir();
+  },err));
+  const noms=[...new Set([SESSION.nom,
+    ...(typeof SUPERVISORES!=='undefined'?SUPERVISORES:[]).map(x=>x.nom).filter(n=>_cumCoincide(n,SESSION.nom))
+  ])].filter(Boolean).slice(0,10);
+  if(noms.length) _evalsUnsub.push(col.where('sup','in',noms).onSnapshot(snap=>{
+    partes.s=snap.docs.map(d=>({id:d.id,...d.data()})); unir();
+  },err));
+}
+// Coincidencia laxa de nombres (tolera orden distinto y variantes: ZAPATA SUAREZ ~ ZAPATA JUAREZ)
+function _cumCoincide(a,b){
+  const N=s=>String(s||'').toUpperCase().replace(/\s+/g,' ').trim();
+  a=N(a); b=N(b);
+  if(!a||!b) return false;
+  if(a===b) return true;
+  const A=a.split(' ').filter(w=>w.length>2), B=b.split(' ').filter(w=>w.length>2);
+  const ig=(x,y)=>x===y||(x.length>=4&&y.length>=4&&(x.indexOf(y)===0||y.indexOf(x)===0));
+  return A.filter(w=>B.some(v=>ig(w,v))).length>=2;
+}
+
+// ── HISTORIAL PERSONAL DESDE LA NUBE ──
+// Cada usuario ve sus propios registros desde cualquier dispositivo (Firestore).
+function histDesdeNube(user){
+  const todos=[];
+  (_evalsNube||[]).forEach(ev=>{
+    if(ev.usuario!==user) return;
+    (ev.rutas||[]).forEach(r=>{
+      todos.push({nom:r.nom, cod:r.cod, emp:ev.emp, sup:ev.sup, sector:ev.sector,
+                  tipo:ev.tipo, fecha:ev.fecha, resGrupo:r.resGrupo, ts:ev.ts,
+                  usuario:ev.usuario, nomUsuario:ev.nomUsuario,
+                  destiempo:ev.destiempo?ev.destiempo.tipo:'',
+                  motivoDestiempo:ev.destiempo?ev.destiempo.motivo:'',
+                  repCoordinador:ev.destiempo?ev.destiempo.reportado:''});
+    });
+  });
+  return todos;
+}
+
+function sincronizarHistorialNube(){
+  if(!SESSION || _evalsNube===null) return;
+  const nube=histDesdeNube(SESSION.user);
+  // Unir con registros locales antiguos que quizá nunca llegaron a la nube
+  const key=SESSION.rol==='admin'?'eti_v4':'eti_v4_'+SESSION.user;
+  let local=[]; try{local=JSON.parse(localStorage.getItem(key)||'[]');}catch(e){}
+  const claveDe=r=>(r.fecha||'')+'|'+(r.cod||'')+'|'+(r.nom||'')+'|'+(r.resGrupo!=null?r.resGrupo.toFixed(4):'');
+  const vistos=new Set(nube.map(claveDe));
+  const soloLocal=local.filter(r=>!vistos.has(claveDe(r)));
+  hist=[...nube,...soloLocal].sort((a,b)=>(a.ts||0)-(b.ts||0));
+  // Refrescar vistas visibles
+  const sd=document.getElementById('sdash');
+  if(sd && sd.classList.contains('active')) renderDash();
+  const ad=document.getElementById('admin-dash');
+  if(ad && ad.style.display!=='none') renderAdminDash();
+}
+
+/* _DETALLE_MANUAL_V1 (18-oct-2026): para auditoría, la evaluación manual guarda además el puntaje que el
+   supervisor anotó para CADA evaluado en CADA pregunta (lo mismo que ya escribe en pantalla; antes solo se
+   guardaba el promedio del grupo). Solo agrega campos: det (por ruta) y detBanco (preguntas y pesos usados).
+   Cálculo, Azure y Google Sheets no cambian. Si algo falla aquí, la evaluación se guarda igual que antes. */
+function _detBanco(){
+  return {v:1,
+    secs:SECS.map(s=>({id:s.id, nom:s.nom, peso:s.peso, maxSec:s.maxSec})),
+    pregs:[].concat(...SECS.map(s=>s.pregs.map(p=>({s:s.id, n:p.n, t:String(p.t||'').replace(/<[^>]*>/g,''), max:+p.max||0, f:+p.f||1}))))};
+}
+function _detManual(r){
+  try{
+    const ne=r.ne||0, ev=[];
+    for(let ei=0;ei<ne;ei++){
+      if(!evPresente(r,ei)) continue;
+      const p=[]; SECS.forEach(sec=>sec.pregs.forEach(preg=>{const v=parseFloat(r.sc?.[sec.id]?.[preg.n]?.[ei]); p.push(isNaN(v)?'':String(v));}));
+      ev.push({i:ei+1, p:p.join(',')});
+    }
+    return ev.length?{v:1, ev}:null;
+  }catch(e){ console.warn('[_DETALLE_MANUAL_V1]',e); return null; }
+}
+
+// Guardar evaluación calculada en Firestore + Google Sheets
+function guardarEvalNube(res){
+  const payload={
+    emp:res.emp, sup:res.sup, sector:res.sector||'', tipo:res.tipo, fecha:res.fecha,
+    resGen:res.resGen,
+    usuario:SESSION?.user||'—', nomUsuario:SESSION?.nom||'—',
+    destiempo:res.destiempo||null,
+    prog:(function(){try{const p=progPendienteDe(res.sup);if(!p)return {programada:false};const fs=(p.fechas||[]).slice().sort();const i=fs.indexOf(res.fecha);return {programada:i>=0,id:p.id||null,sector:p.sector||'',sesion:i>=0?(i+1):null,total:fs.length,fechas:fs};}catch(e){return null;}})(),   /* _SESION_PROG_V1: sesión programada (N de M) o no programada */
+    modalidad:res.modalidad||'Manual', sesionQR:res.sesionQR||null,   // _MODULOS_V1
+    rutas:res.rutas.map(r=>{const o={nom:r.nom, cod:r.cod, ne:r.ne, resGrupo:r.resGrupo, hom:r.hom!=null?+r.hom:null, muj:r.muj!=null?+r.muj:null,   /* _SEXO_V1 */
+      secs:r.secs.map(s=>({id:s.id, nom:s.nom, peso:s.peso, pct:s.cum, pond:s.pond, promSec:s.promSec}))};
+      const d=_detManual(r); if(d) o.det=d; return o;}),   /* _DETALLE_MANUAL_V1: puntaje de cada evaluado por pregunta */
+    creadoEn:new Date().toISOString(), ts:Date.now()
+  };
+  try{ const b=_detBanco(); if(b) payload.detBanco=b; }catch(e){}   /* _DETALLE_MANUAL_V1 */
+  try{ const c=window.ETICob&&ETICob.deReemplazo(res.sup,res.fecha); if(c) payload.cobertura={titular:c.titular,titular_nombre:c.titular_nombre,tipo:c.tipo,desde:c.desde,hasta:c.hasta||'',id:c.id||''}; }catch(e){}   /* _COBERTURAS_ETI_V1 */
+  /* _BANDEJA_MANUAL_V1 (07-oct-2026): se guarda primero en el equipo (bandeja) con un id fijo y luego en la nube.
+     Si no hay señal o se cierra la página, se reintenta sola al volver la conexión o al abrir el sistema. Nunca se duplica. */
+  const id=(fbdb?fbdb.collection(COL_EVAL).doc().id:('L'+Date.now().toString(36)+Math.random().toString(36).slice(2,8)));
+  etiBandeja.poner(id,payload);
+  etiBandeja.subir(id,payload);
+  enviarASheets(payload);
+}
+const etiBandeja=(function(){
+  const K='eti_bandeja_eval';
+  const leer=()=>{try{return JSON.parse(localStorage.getItem(K)||'{}')||{};}catch(e){return {};}};
+  const grabar=m=>{try{localStorage.setItem(K,JSON.stringify(m));}catch(e){}};
+  const enCurso=new Set();
+  function poner(id,p){const m=leer();m[id]={p,t:Date.now()};grabar(m);}
+  function quitar(id){const m=leer();delete m[id];grabar(m);}
+  async function subir(id,p){
+    if(!fbdb||enCurso.has(id)) return false; enCurso.add(id);
+    try{
+      const ref=fbdb.collection(COL_EVAL).doc(id);
+      await Promise.race([ref.set(p),new Promise((_,no)=>setTimeout(()=>no(new Error('sin respuesta de la nube')),20000))]);
+      quitar(id); console.log('✅ Evaluación guardada en la nube');
+      try{ if(window.etiAzureEvalManual) etiAzureEvalManual(p, id, ref); }catch(e){}   // _INDICADORES_V1: copia en Azure SQL
+      return true;
+    }catch(e){console.warn('Evaluación en bandeja (se reintenta sola):',e.message);return false;}
+    finally{enCurso.delete(id);}
+  }
+  function reintentar(){const m=leer();Object.entries(m).forEach(([id,x])=>{if(x&&x.p&&Date.now()-(x.t||0)<30*864e5)subir(id,x.p);else quitar(id);});}
+  window.addEventListener('online',reintentar);
+  setInterval(reintentar,60000);
+  setTimeout(reintentar,4000);
+  return {poner,subir,reintentar,pendientes:()=>Object.keys(leer()).length};
+})();
+window.etiBandeja=etiBandeja;
+
+// Enviar a Google Sheets (Apps Script webhook)
+function enviarASheets(p){
+  if(!SHEETS_WEBHOOK_URL) return;
+  try{
+    /* _SHEETS_ORDEN_V1: el Apps Script lee los temas por posición (Legislación, Bienestar, Sustentabilidad, Ética, SST, Medioambiente).
+       Si un tema no tiene preguntas con visto bueno, se envía vacío en su lugar para que la fila no falle ni se corra de columna. */
+    const ORD=['leg','bie','sus','eti','sst','med'];
+    const q={...p,rutas:(p.rutas||[]).map(r=>{const by={};(r.secs||[]).forEach(x=>{if(x&&x.id)by[x.id]=x;});
+      const fijo=ORD.map(id=>by[id]||{id,pct:null});
+      return {...r,secs:(r.secs||[]).every(x=>x&&x.id)?fijo:(r.secs||[])};})};
+    fetch(SHEETS_WEBHOOK_URL,{method:'POST',mode:'no-cors',
+      headers:{'Content-Type':'text/plain'},body:JSON.stringify(q)});
+  }catch(e){console.error('Sheets:',e);}
+}
+
+// Si hay sesión activa (recarga de página), sincronizar de inmediato
+if(SESSION && SESSION.rol==='admin') setTimeout(_etiRevalidarAdmin,300);  // _SEG_SESION_V1
+if(SESSION) setTimeout(()=>{
+  escucharNube();
+  iniciarPresencia();
+  iniciarChat();
+  if(SESSION.rol==='admin') escucharPresenciaAdmin();
+},50);
+
+// ── LOGIN ──
+/* ═══════════════════════════════════════════════════════════════════════════
+   _LOGIN_SERVIDOR_V1 (06-set-2026)
+   ---------------------------------------------------------------------------
+   ANTES: la contrasena se verificaba AQUI, en el navegador, contra una lista
+   de huellas escritas en este mismo archivo. Como esta pagina es publica,
+   cualquiera podia leer la lista completa del personal con sus huellas, y
+   quien supiera del tema entraba sin contrasena saltandose la comparacion.
+
+   AHORA: la contrasena viaja al MISMO servidor que valida el Sistema RR.LL.
+   Este archivo ya no guarda ninguna huella: no hay nada que leer ni que
+   saltarse. La decision de dejar entrar la toma el servidor.
+
+   SI EL SERVIDOR NO RESPONDE no se abre ninguna puerta de emergencia a
+   proposito. La via alterna es la de siempre y no necesita contrasena aqui:
+   entrar por el Sistema RR.LL. y hacer clic en la tarjeta de Evaluaciones,
+   que emite un pase firmado.
+
+   Se agrega ademas limite de intentos, que este sistema no tenia.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const ETI_LOGIN_URL = 'https://rl-fn-verfrut.azurewebsites.net/api/auth/login';
+const ETI_MAX_INTENTOS = 5;
+let _etiIntentos = 0;
+
+function _etiError(msg){
+  const err = document.getElementById('lerr');
+  if(!err) return;
+  err.textContent = msg;
+  err.style.display = 'block';
+}
+
+async function doLogin(){
+  const u = document.getElementById('linput').value.trim();
+  const p = document.getElementById('lpwd').value;
+  const err = document.getElementById('lerr');
+  if(err) err.style.display = 'none';
+
+  if(_etiIntentos >= ETI_MAX_INTENTOS){
+    _etiError('Demasiados intentos. Ingresa desde el Sistema RR.LL. o avisa al administrador.');
+    return;
+  }
+  if(!u || !p){ _etiError('Ingresa tu usuario y contrasena.'); return; }
+
+  const btn = document.getElementById('lbtn');
+  const txtBtn = btn ? btn.textContent : '';
+  if(btn){ btn.disabled = true; btn.textContent = 'Verificando...'; }
+
+  try{
+    /* _LOGIN_COMUN_V1 (18-oct): misma validación que el Sistema RR.LL. (Azure y, si Azure no responde,
+       Google). Así la contraseña del RR.LL. —también la nueva o la temporal— sirve aquí sin errores. */
+    let dd;
+    if(window.rlLoginComun){
+      const rc = await window.rlLoginComun(u, p);
+      if(rc.sinServidor){ _etiError(rc.error); return; }
+      if(rc.bloqueado){ document.getElementById('lpwd').value = ''; _etiError(rc.error || 'Usuario bloqueado temporalmente. Comunícate con el administrador del sistema, Joel Timoteo.'); return; }
+      dd = rc.ok ? { success:true, user: rc.user, token: rc.token } : { success:false, intentosRestantes: rc.intentosRestantes };
+    } else {
+      const r = await fetch(ETI_LOGIN_URL, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ usuario: u, password: p }) });
+      dd = await r.json();
+    }
+
+    if(!dd || !dd.success || !dd.user){
+      _etiIntentos++;
+      const quedan = (typeof dd?.intentosRestantes === 'number') ? dd.intentosRestantes : ETI_MAX_INTENTOS - _etiIntentos;
+      _etiError('Usuario o contraseña incorrectos (es la misma del Sistema RR.LL.).' + (quedan > 0 ? ' Te quedan ' + quedan + ' intento(s).' : ''));
+      document.getElementById('lpwd').value = '';
+      return;
+    }
+
+    _etiIntentos = 0;
+    if(dd.token) sessionStorage.setItem('eti_token', dd.token);   // _SEG_SESION_V1
+    else sessionStorage.removeItem('eti_token');
+    const su = dd.user;
+    const usuario = String(su.usuario || u).toLowerCase().trim();
+
+    /* El rol de ESTE sistema no es el del RR.LL.: aqui solo el administrador
+       tiene login manual. Se resuelve con la lista de siempre, que ya no
+       guarda contrasenas: solo nombre y rol. */
+    const ficha = getUsuarios().find(x => String(x.user||'').toLowerCase() === usuario);
+    const rolEti = ficha ? ficha.rol : 'supervisor';
+
+    if(rolEti !== 'admin'){
+      document.getElementById('lpwd').value = '';
+      mostrarAvisoIngresoRRLL();
+      return;
+    }
+
+    iniciarSesionCon({ user: usuario, nom: (ficha && ficha.nom) || su.nombre || usuario, rol: rolEti });
+
+  }catch(e){
+    console.error('[_LOGIN_SERVIDOR_V1]', e);
+    _etiError('No se pudo conectar con el servidor. Intenta de nuevo en unos segundos.');
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = txtBtn || 'Ingresar'; }
+  }
+}
+
+/* _SSO_RECEPTOR_V1 (20-set-2026)
+   Este sistema NUNCA leia el pase que emite el login del Sistema RR.LL
+   (#sso=<pase>.<firma>, vigente 90 s). El supervisor llegaba al login, su
+   clave del RR.LL no sirve aqui y el aviso lo mandaba de vuelta: un rebote.
+   Ahora: si el pase esta firmado y vigente, entra directo. El rol lo decide la
+   ficha local (solo los admin listados son admin); los demas, supervisor. */
+async function ssoDesdeRRLL(){ return _ssoEntrar(); }   // _SSO_SERVIDOR_V1: un solo receptor
+if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ssoDesdeRRLL);
+else ssoDesdeRRLL();
+
+function mostrarAvisoIngresoRRLL(){
+  let ov=document.getElementById('avisoSSO');
+  if(!ov){
+    ov=document.createElement('div');
+    ov.id='avisoSSO';
+    ov.style.cssText='position:fixed;inset:0;background:rgba(10,20,40,.75);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:420px;text-align:center;padding:30px 26px;box-shadow:0 20px 60px rgba(0,0,0,.45)">'+
+      '<div style="font-size:44px">🔐</div>'+
+      '<div style="font-size:17px;font-weight:800;color:#0a2463;margin-top:8px">El ingreso ahora es desde el Sistema RR.LL</div>'+
+      '<div style="font-size:13.5px;color:#475569;margin-top:10px;line-height:1.55">Por seguridad, entra al <b>Sistema de Relaciones Laborales</b> con tu usuario y contraseña de siempre, y haz clic en la tarjeta de <b>Evaluaciones ETI</b>: entrarás directo, sin volver a escribir tu clave.</div>'+
+      '<button onclick="window.location.href=\'https://joeltimoteog-bot.github.io/sistema-rl-verfrut/index.html\'" style="margin-top:18px;background:#0a2463;color:#fff;border:none;border-radius:10px;padding:12px 24px;font-weight:800;font-size:14px;cursor:pointer">🏢 Ir al Sistema RR.LL</button>'+
+      '<div style="margin-top:10px;font-size:12px;color:#94a3b8;cursor:pointer" onclick="document.getElementById(\'avisoSSO\').remove()">cerrar</div></div>';
+    document.body.appendChild(ov);
+  } else { ov.style.display='flex'; }
+}
+
+// Arranque de sesión (lo usa el login normal y el ingreso directo SSO desde RR.LL)
+function iniciarSesionCon(usr){
+  SESSION={user:usr.user, nom:usr.nom, rol:usr.rol};
+  sessionStorage.setItem('eti_session',JSON.stringify(SESSION));
+  escucharNube(); // sincronizar programaciones y evaluaciones desde la nube
+  iniciarPresencia();   // marcar en línea (visible para el administrador)
+  iniciarChat();        // mensajería admin ↔ usuario
+  if(usr.rol==='admin') escucharPresenciaAdmin();
+
+  // Cargar historial del usuario (local como respaldo; la nube lo actualiza al sincronizar)
+  const key=usr.rol==='admin'?'eti_v4':'eti_v4_'+usr.user;
+  hist=JSON.parse(localStorage.getItem(key)||'[]');
+  sincronizarHistorialNube();
+
+  // ── Restaurar último reporte guardado ──
+  try{
+    const rKey='eti_last_res_'+usr.user;
+    const tKey='eti_last_rpt_'+usr.user;
+    const savedRes=localStorage.getItem(rKey);
+    const savedRpt=localStorage.getItem(tKey);
+    if(savedRes) window._res=JSON.parse(savedRes);
+    if(savedRpt) window._rpt=savedRpt;
+  }catch(e){}
+
+  document.getElementById('linput').value='';
+  document.getElementById('lpwd').value='';
+
+  // Mensaje de bienvenida personalizado
+  const hora=new Date().getHours();
+  const saludo=hora<12?'Buenos días':hora<18?'Buenas tardes':'Buenas noches';
+  const esAdmin=usr.rol==='admin';
+  setTimeout(()=>{
+    toast(`${saludo}, ${usr.nom.split(' ')[0]} 👋`,'s');
+    if(!esAdmin){
+      setTimeout(()=>{
+        toast('Hola, te saluda Joel Timoteo. Si tienes alguna duda del proceso de registro, no dudes en comunicarte al 960853224','i');
+      },1800);
+    }
+  },300);
+
+  if(usr.rol==='admin'){
+    document.getElementById('admin-user-lbl').textContent=usr.nom+' (Admin)';
+    renderAdmin();
+    go('sadmin');
+  } else {
+    // Preseleccionar supervisor en paso 1
+    setTimeout(()=>{
+      const sel=document.getElementById('p1s');
+      if(sel){
+        sel.innerHTML=renderSupSelect();
+        // Buscar el supervisor que corresponde al usuario
+        const supMatch=SUPERVISORES.find(s=>
+          s.nom.toLowerCase().includes(usr.nom.split(' ')[0].toLowerCase())||
+          s.nom.toLowerCase().includes(usr.nom.split(' ')[1]?.toLowerCase()||'')
+        );
+        if(supMatch){
+          sel.value=supMatch.nom;
+          onSupChange();
+          // Alerta de evaluaciones programadas (espera la sincronización con la nube)
+          setTimeout(()=>{
+            const pv=progPendienteDe(supMatch.nom);
+            if(pv){
+              const pend=fechasPendientes(pv);
+              if(pend.length){
+                const venc=pend.some(f=>f<hoy());
+                toast(venc
+                  ?`🚨 La programación de tus evaluaciones de checklist era para el: ${pend.map(fmtF).join(' · ')} — estás A DESTIEMPO`
+                  :`📅 Tienes evaluaciones de checklist programadas para el: ${pend.map(fmtF).join(' · ')}`,
+                  venc?'e':'i');
+                actualizarAlertaProgP1();
+              }
+            }
+          },4000);
+        }
+      }
+    },100);
+    updMenuReporte();
+    go('sm');
+  }
+}
+
+function doLogout(){
+  detenerPresencia();  // marcar fuera de línea antes de salir
+  detenerChat();
+  detenerEvalsNube();  // _HIST_ROL_V1: no dejar datos del usuario anterior
+  SESSION=null;
+  sessionStorage.removeItem('eti_session');
+  sessionStorage.removeItem('eti_token');   // _SEG_SESION_V1
+  hist=[];
+  go('slogin');
+  toast('Sesión cerrada','i');
+}
+
+function togglePwd(){
+  const i=document.getElementById('lpwd');
+  i.type=i.type==='password'?'text':'password';
+}
+
+// ── SSO desde el Sistema RR.LL: pase de un solo uso en la dirección ──
+// Si la página llega con #sso=<pase>.<firma> válido y vigente (90 s), entra
+// directo sin mostrar el login. El pase se borra de la barra de direcciones
+// al instante: copiar la URL a otro monitor lleva al login normal.
+/* ═══ _SSO_SERVIDOR_V1 (24-set-2026) ═══════════════════════════════════════
+   1) #…&sso2=<pase>  → lo verifica el SERVIDOR Azure (/api/auth/sso). Vale
+      para todos, incluido el admin. El secreto no esta en esta pagina.
+   2) #sso=<pase>.<firma> (antiguo, firmado en el navegador) → se acepta SOLO
+      para supervisores mientras dure la transicion. El admin NUNCA entra con
+      el: se le muestra el login para que use su contraseña.
+      Cuando el pase del servidor este probado, poner ETI_ACEPTA_PASE_ANTIGUO=false.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const ETI_SSO_URL = 'https://rl-fn-verfrut.azurewebsites.net/api/auth/sso';
+const ETI_ACEPTA_PASE_ANTIGUO = true;
+async function _ssoEntrar(){
+  if(window._ssoHecho) return false;
+  const h = location.hash || '';
+  const m2 = h.match(/[#&]sso2=([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)/);
+  const m  = h.match(/#sso=([^.&]+)\.([a-f0-9]{64})/);
+  if(!m2 && !m) return false;
+  window._ssoHecho = true;
+  history.replaceState(null,'',location.pathname+location.search);   // borrar el pase
+  const fichaDe = u => getUsuarios().find(x=>String(x.user||'').toLowerCase()===u);
+  /* _SSO_ALTA_V1 (15-oct-2026): pase valido de un usuario que AUN no esta en la lista de este
+     sistema (p. ej. lcastillo, o uno agregado en la nube que todavia no cargo). Antes: se le
+     mostraba el login y su clave del RR.LL no sirve aqui -> rebote. Ahora entra como supervisor
+     con el nombre que trae el pase y queda en la lista de este navegador para la recarga.
+     Capacitaciones ETI ya hacia lo mismo. El admin nunca se crea por esta via. */
+  const altaSso = (u, nom) => {
+    const f = { user: u, nom: String(nom || u).trim() || u, rol: 'supervisor', extra: true };
+    try { const ex = JSON.parse(localStorage.getItem('eti_usuarios_extra')||'[]')||[]; if(!ex.some(x=>String(x.user||'').toLowerCase()===u)){ ex.push(f); localStorage.setItem('eti_usuarios_extra', JSON.stringify(ex)); } } catch(e){}
+    console.log('[SSO] alta automatica como supervisor:', u);
+    return f;
+  };
+
+  // 0) _SSO_RAPIDO_V1: supervisor con pase antiguo valido → entra AL INSTANTE (sin esperar al servidor)
+  if(m && ETI_ACEPTA_PASE_ANTIGUO){
+    try{
+      const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(m[1]+'|RL-SSO-VERFRUT-2026'));
+      const firma=Array.from(new Uint8Array(buf)).map(x=>x.toString(16).padStart(2,'0')).join('');
+      const d=(firma===m[2])?JSON.parse(decodeURIComponent(escape(atob(m[1])))):null;
+      if(d&&d.u&&d.exp&&Date.now()<=Number(d.exp)){
+        const _u0=String(d.u).toLowerCase().trim();
+        const usr=fichaDe(_u0) || altaSso(_u0, d.n);   /* _SSO_ALTA_V1 */
+        if(usr && usr.rol!=='admin'){
+          sessionStorage.removeItem('eti_token');
+          iniciarSesionCon(usr);
+          return true;
+        }
+      }
+    }catch(e){}
+  }
+
+  // 1) Pase del servidor (admin, o quien no traiga pase antiguo)
+  if(m2){
+    try{
+      const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(),6000);
+      const r=await fetch(ETI_SSO_URL,{method:'POST',signal:ctl.signal,
+        headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:'verificar',pase:m2[1]})});
+      clearTimeout(t);
+      const j=await r.json();
+      if(j && j.success && j.user && j.user.usuario){
+        const _u1=String(j.user.usuario).toLowerCase().trim();
+        const usr=fichaDe(_u1) || (String(j.user.rol||'')!=='admin' ? altaSso(_u1, j.user.nombre) : null);   /* _SSO_ALTA_V1 */
+        if(usr){
+          if(j.token) sessionStorage.setItem('eti_token', j.token);
+          iniciarSesionCon(usr);
+          console.log('[SSO] ingreso validado por el servidor:', usr.user, usr.rol);
+          return true;
+        }
+        return false;   // usuario no existe aqui → login normal
+      }
+    }catch(e){ console.warn('[SSO] servidor no disponible, se usa el pase antiguo', e&&e.name); }
+  }
+
+  // 2) Pase antiguo (transicion): solo supervisores
+  if(m && ETI_ACEPTA_PASE_ANTIGUO){
+    try{
+      const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(m[1]+'|RL-SSO-VERFRUT-2026'));
+      const firma=Array.from(new Uint8Array(buf)).map(x=>x.toString(16).padStart(2,'0')).join('');
+      if(firma!==m[2]) return false;                                     // pase adulterado
+      const d=JSON.parse(decodeURIComponent(escape(atob(m[1]))));
+      if(!d||!d.u||!d.exp||Date.now()>Number(d.exp)) return false;       // pase caducado
+      const _u2=String(d.u).toLowerCase().trim();
+      const usr=fichaDe(_u2) || altaSso(_u2, d.n);   /* _SSO_ALTA_V1 */
+      if(!usr) return false;                                             // usuario no existe aqui
+      if(usr.rol==='admin'){
+        const li=document.getElementById('linput'); if(li) li.value=usr.user;
+        setTimeout(()=>toast('🔐 Por seguridad, el administrador ingresa con su contraseña','i'),400);
+        return false;
+      }
+      sessionStorage.removeItem('eti_token');
+      iniciarSesionCon(usr);
+      return true;
+    }catch(e){ return false; }
+  }
+  return false;
+}
+
+// Revalida la sesion del admin al recargar. Si el servidor dice que el token
+// no vale → cierra la sesion. Si no hay red, no bloquea (se reintenta al recargar).
+async function _etiRevalidarAdmin(){
+  try{
+    const tk=sessionStorage.getItem('eti_token');
+    if(!SESSION || SESSION.rol!=='admin') return;
+    if(!tk){ doLogout(); return; }
+    const r=await fetch(ETI_SSO_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({accion:'sesion',token:tk})});
+    if(r.status===503) return;                        // servidor sin SSO configurado: no bloquear
+    const j=await r.json().catch(()=>null);
+    const ok = j && j.success && j.user && String(j.user.usuario).toLowerCase()===String(SESSION.user).toLowerCase();
+    if(!ok){ doLogout(); toast('🔐 Tu sesión venció. Ingresa de nuevo.','i'); }
+  }catch(e){ /* sin red: no bloquear */ }
+}
+_ssoEntrar();   // recibir el pase (despues de declarar las constantes)
+
+// Guardar historial por usuario al calcular
+function guardarHistorialUsuario(nuevosRegistros){
+  if(!SESSION) return;
+  const key=SESSION.rol==='admin'?'eti_v4':'eti_v4_'+SESSION.user;
+  hist.push(...nuevosRegistros.map(r=>({...r, usuario:SESSION.user, nomUsuario:SESSION.nom})));
+  try{localStorage.setItem(key,JSON.stringify(hist.slice(-500)));}catch(e){}
+}
+
+// ── PANEL ADMINISTRADOR ──
+function adminTab(tab){
+  ['admin-stats','admin-users','admin-registros','admin-eval','admin-dash','admin-prog','admin-conectados','admin-cumplimiento']
+    .forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
+  const el=document.getElementById('admin-'+tab);
+  if(el) el.style.display='block';
+
+  const tabs=['stats','users','registros','eval','dash','prog','conectados','cumplimiento'];
+  ['atab1','atab2','atab3','atab4','atab5','atab6','atab7','atab8'].forEach((id,i)=>{
+    const btn=document.getElementById(id);
+    if(btn) btn.className=tab===tabs[i]?'btn bpri bsm':'btn bout bsm';
+  });
+
+  if(tab==='dash') renderAdminDash();
+  if(tab==='eval') updAdminUltReporte();
+  if(tab==='prog') renderProgEval();
+  if(tab==='cumplimiento') renderCumplimiento();
+  if(tab==='conectados') renderConectados();
+}
+
+function iniciarComoAdmin(){
+  // El admin inicia evaluación y vuelve al panel admin al terminar
+  iniciar();
+  // Sobreescribir botón volver del menú para regresar al admin
+  go('sp1');
+}
+
+function updAdminUltReporte(){
+  const panel=document.getElementById('admin-ult-reporte');
+  const meta=document.getElementById('admin-rpt-meta');
+  if(!panel||!meta) return;
+  if(!window._res||!window._rpt){ panel.style.display='none'; return; }
+  panel.style.display='block';
+  const res=window._res;
+  const pg=(res.resGen*100).toFixed(1), ok=res.resGen>=0.7;
+  meta.innerHTML=`<span style="color:${ok?'#3ecf8e':'#FF7080'};font-size:1.1rem;font-weight:800;">${pg}%</span>
+    &nbsp;${ok?'✅':'⚠️'} ${ok?'APROBADO':'REFUERZO'}
+    &nbsp;·&nbsp; ${res.emp} &nbsp;·&nbsp; ${res.sup}
+    &nbsp;·&nbsp; 📍${res.sector||'—'} &nbsp;·&nbsp; ${fmtF(res.fecha)}`;
+}
+
+function renderAdminDash(){
+  // Mostrar dashboard del admin (sus propios registros)
+  const kpis=document.getElementById('admin-dash-kpis');
+  const lista=document.getElementById('admin-dash-lista');
+  if(!kpis||!lista) return;
+
+  if(!hist.length){
+    kpis.innerHTML='';
+    lista.innerHTML='<div style="color:var(--text2);font-size:.85rem;padding:1rem;">Aún no has registrado evaluaciones.</div>';
+    return;
+  }
+
+  const total=hist.length;
+  const aprobados=hist.filter(r=>r.resGrupo>=0.7).length;
+  const prom=hist.reduce((a,r)=>a+r.resGrupo,0)/total;
+  const ordenados=[...hist].sort((a,b)=>b.resGrupo-a.resGrupo);
+
+  kpis.innerHTML=`
+    <div class="kcard kg"><div class="klbl">Total Registros</div><div class="kval">${total}</div><div class="ksub">mis evaluaciones</div></div>
+    <div class="kcard kg"><div class="klbl">Aprobados</div><div class="kval">${aprobados}</div><div class="ksub">${((aprobados/total)*100).toFixed(0)}%</div></div>
+    <div class="kcard kr"><div class="klbl">Refuerzo</div><div class="kval">${total-aprobados}</div><div class="ksub">${(((total-aprobados)/total)*100).toFixed(0)}%</div></div>
+    <div class="kcard"><div class="klbl">Promedio</div><div class="kval">${(prom*100).toFixed(1)}%</div><div class="ksub">${prom>=0.7?'✅ Aprobado':'⚠ Refuerzo'}</div></div>`;
+
+  lista.innerHTML=`<div style="overflow-x:auto;"><table class="rtbl">
+    <thead><tr><th>#</th><th>Ruta/Área</th><th>Empresa</th><th>Sector</th><th>Tipo</th><th>Fecha</th><th>Resultado</th><th>Estado</th></tr></thead>
+    <tbody>
+      ${ordenados.map((r,i)=>{
+        const rp=(r.resGrupo*100).toFixed(1), rok=r.resGrupo>=0.7;
+        return `<tr>
+          <td>${i+1}</td>
+          <td style="font-weight:700;">${r.nom||'—'}</td>
+          <td>${r.emp||'—'}</td>
+          <td>${r.sector||'—'}</td>
+          <td style="font-size:.75rem;">${r.tipo==='obrero'?'Obrero':'Empleado'}</td>
+          <td style="font-size:.78rem;">${fmtF(r.fecha)}</td>
+          <td style="font-weight:800;color:${rok?'var(--gdim)':'var(--red)'};">${rp}%</td>
+          <td><span class="bdg ${rok?'bg':'br'}">${rok?'APROBADO':'REFUERZO'}</span></td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+function renderAdmin(){
+  renderAdminStats();
+  renderAdminUsers();
+  renderAdminRegistros();
+}
+
+function getAllHist(){
+  // Fuente principal: NUBE (Firestore) — el admin ve todas las evaluaciones de todos los equipos
+  if(_evalsNube!==null && _evalsNube.length){
+    const todos=[];
+    _evalsNube.forEach(ev=>{
+      (ev.rutas||[]).forEach(r=>{
+        todos.push({nom:r.nom, cod:r.cod, emp:ev.emp, sup:ev.sup, sector:ev.sector,
+                    tipo:ev.tipo, fecha:ev.fecha, resGrupo:r.resGrupo, ts:ev.ts,
+                    usuario:ev.usuario, nomUsuario:ev.nomUsuario,
+                    destiempo:ev.destiempo?ev.destiempo.tipo:'',
+                    motivoDestiempo:ev.destiempo?ev.destiempo.motivo:'',
+                    repCoordinador:ev.destiempo?ev.destiempo.reportado:'',
+                    modalidad:ev.modalidad||'Manual', ne:+r.ne||1, sesionQR:ev.sesionQR||null});   /* _REG_QR_V1: solo campos extra */
+      });
+    });
+    return todos;
+  }
+  // Respaldo: historial local de todos los usuarios (este dispositivo)
+  const todos=[];
+  getUsuarios().forEach(u=>{
+    const key=u.rol==='admin'?'eti_v4':'eti_v4_'+u.user;
+    const h=JSON.parse(localStorage.getItem(key)||'[]');
+    h.forEach(r=>todos.push({...r, usuario:r.usuario||u.user, nomUsuario:r.nomUsuario||u.nom}));
+  });
+  return todos;
+}
+
+function renderAdminStats(){
+  const todos=getAllHist();
+  const total=todos.length;
+  const aprobados=todos.filter(r=>r.resGrupo>=0.7).length;
+  const prom=total?todos.reduce((a,r)=>a+r.resGrupo,0)/total:0;
+
+  document.getElementById('admin-kpis').innerHTML=`
+    <div class="kcard"><div class="klbl">Total Registros</div><div class="kval">${total}</div><div class="ksub">todos los usuarios</div></div>
+    <div class="kcard kg"><div class="klbl">Aprobados</div><div class="kval">${aprobados}</div><div class="ksub">${total?((aprobados/total)*100).toFixed(0)+'%':0} del total</div></div>
+    <div class="kcard kr"><div class="klbl">En Refuerzo</div><div class="kval">${total-aprobados}</div><div class="ksub">${total?((1-aprobados/total)*100).toFixed(0)+'%':0} del total</div></div>
+    <div class="kcard"><div class="klbl">Promedio Global</div><div class="kval">${total?(prom*100).toFixed(1)+'%':'—'}</div><div class="ksub">${prom>=0.7?'✅ Aprobado':'⚠ Refuerzo'}</div></div>
+    <div class="kcard kr"><div class="klbl">⏰ A Destiempo</div><div class="kval">${todos.filter(r=>r.destiempo).length}</div><div class="ksub">${todos.filter(r=>r.destiempo&&r.repCoordinador!=='SI').length} sin reportar</div></div>
+    <div class="kcard"><div class="klbl">Usuarios Activos</div><div class="kval">${getUsuarios().length}</div><div class="ksub">registrados en sistema</div></div>`;
+
+  // Por supervisor
+  const porSup={};
+  todos.forEach(r=>{
+    const k=r.nomUsuario||r.usuario||'—';
+    if(!porSup[k]) porSup[k]={nom:k,total:0,aprobados:0,sumaRes:0};
+    porSup[k].total++;
+    if(r.resGrupo>=0.7) porSup[k].aprobados++;
+    porSup[k].sumaRes+=r.resGrupo;
+  });
+
+  const supList=Object.values(porSup).sort((a,b)=>b.total-a.total);
+  document.getElementById('admin-por-sup').innerHTML=supList.length?`
+    <table class="rtbl">
+      <thead><tr>
+        <th>Supervisor</th><th>Total Reg.</th><th>Aprobados</th><th>Refuerzo</th><th>Promedio</th><th>Estado</th>
+      </tr></thead>
+      <tbody>
+        ${supList.map(s=>{
+          const pm=(s.sumaRes/s.total*100).toFixed(1);
+          const ok=s.sumaRes/s.total>=0.7;
+          return `<tr>
+            <td style="font-weight:700;">${s.nom}</td>
+            <td style="text-align:center;">${s.total}</td>
+            <td style="text-align:center;color:var(--gdim);font-weight:700;">${s.aprobados}</td>
+            <td style="text-align:center;color:var(--red);font-weight:700;">${s.total-s.aprobados}</td>
+            <td style="text-align:center;font-weight:800;color:${ok?'var(--gdim)':'var(--red)'};">${pm}%</td>
+            <td style="text-align:center;"><span class="bdg ${ok?'bg':'br'}">${ok?'APROBADO':'REFUERZO'}</span></td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>` : '<div style="color:var(--text2);font-size:.85rem;padding:1rem;">Sin registros aún.</div>';
+
+  renderAdminChartSup(supList);
+}
+
+// ── GRÁFICO: Promedio por supervisor (Admin) ──
+let _aChart=null;
+function renderAdminChartSup(supList){
+  const cv=document.getElementById('admin-chart-sup');
+  if(!cv||typeof Chart==='undefined') return;
+  const box=cv.parentElement.parentElement;
+  if(!supList.length){ box.style.display='none'; return; }
+  box.style.display='block';
+  const orden=[...supList].sort((a,b)=>(b.sumaRes/b.total)-(a.sumaRes/a.total));
+  const labels=orden.map(s=>s.nom.split(' ').slice(0,2).join(' '));
+  const data=orden.map(s=>+((s.sumaRes/s.total)*100).toFixed(1));
+  if(_aChart) _aChart.destroy();
+  _aChart=new Chart(cv,{
+    type:'bar',
+    data:{labels,datasets:[{label:'Promedio (%)',data,
+      backgroundColor:data.map(v=>v>=70?'rgba(0,122,61,.75)':'rgba(200,16,46,.75)'),
+      borderRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%'}},x:{ticks:{font:{size:9}}}},
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{afterLabel:c=>{const s=orden[c.dataIndex];return `${s.total} registros · ${s.aprobados} aprobados`;}}}}}
+  });
+}
+
+let _verElim=false;
+function renderAdminUsers(){
+  if(window.etiSubirExtras) window.etiSubirExtras();
+  const usuarios=getUsuarios();
+  const acc=(window.etiAccData&&window.etiAccData().usuarios)||{};
+  const est=u=>acc[String(u).toLowerCase()]||{};
+  const elim=getUsuarios(true).filter(u=>est(u.user).eliminado);
+  const _todosH=getAllHist();   // _HIST_ROL_V1: conteo real desde la nube
+  const yo=String(SESSION&&SESSION.user||'').toLowerCase();
+  document.getElementById('admin-user-list').innerHTML=`
+    <table class="rtbl">
+      <thead><tr><th>#</th><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th>Registros</th><th>Acción</th></tr></thead>
+      <tbody>
+        ${usuarios.map((u,i)=>{
+          const regs=_todosH.filter(r=>r.usuario===u.user).length;
+          const k=String(u.user).toLowerCase(), off=est(u.user).activo===false, prot=(k==='jtimoteo'||k===yo);
+          return `<tr style="${off?'opacity:.6':''}">
+            <td>${i+1}</td>
+            <td><code style="background:var(--sf2);padding:2px 6px;border-radius:4px;font-size:.8rem;">${u.user}</code></td>
+            <td style="font-weight:700;">${u.nom}</td>
+            <td><span class="bdg ${u.rol==='admin'?'bg':'br'}" style="font-size:.7rem;">${u.rol==='admin'?'ADMIN':'SUPERVISOR'}</span></td>
+            <td><span class="bdg ${off?'br':'bg'}" style="font-size:.7rem;">${off?'DESACTIVADO':'ACTIVO'}</span></td>
+            <td style="text-align:center;">${regs}</td>
+            <td style="white-space:nowrap">${prot?'<span style="font-size:.72rem;color:var(--text2);">'+(k==='jtimoteo'?'Creador':'Tú')+'</span>':
+              `<button class="btn ${off?'bpri':'bout'} bsm" onclick="etiUsrActivo('${u.user}',${off})" style="font-size:.72rem;">${off?'▶ Activar':'⏸ Desactivar'}</button>
+               <button class="btn bdng bsm" onclick="delUser('${u.user}')" style="font-size:.72rem;">🗑 Eliminar</button>`}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+    ${elim.length?`<div style="margin-top:.8rem"><button class="btn bout bsm" onclick="_verElim=!_verElim;renderAdminUsers()">${_verElim?'▲ Ocultar':'▼ Ver'} usuarios eliminados (${elim.length})</button></div>
+    ${_verElim?`<table class="rtbl" style="margin-top:.5rem"><thead><tr><th>Usuario</th><th>Nombre</th><th>Eliminado</th><th>Acción</th></tr></thead><tbody>
+      ${elim.map(u=>`<tr style="opacity:.75"><td><code>${u.user}</code></td><td>${u.nom}</td><td style="font-size:.75rem">${est(u.user).eliminadoEn?new Date(est(u.user).eliminadoEn).toLocaleString('es-PE'):'—'}${est(u.user).eliminadoPor?' · '+est(u.user).eliminadoPor:''}</td>
+        <td><button class="btn bpri bsm" onclick="etiUsrRestaurar('${u.user}')" style="font-size:.72rem;">↺ Restaurar</button></td></tr>`).join('')}</tbody></table>`:''}`:''}`;
+}
+function _renderAdminUsersViejo(){
+  const usuarios=getUsuarios();
+  const _todosH=getAllHist();
+  document.getElementById('admin-user-list').innerHTML=`
+    <table class="rtbl">
+      <thead><tr><th>#</th><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Registros</th><th>Acción</th></tr></thead>
+      <tbody>
+        ${usuarios.map((u,i)=>{
+          const regs=_todosH.filter(r=>r.usuario===u.user).length;
+          const esBase=USUARIOS_BASE.find(b=>b.user===u.user);
+          return `<tr>
+            <td>${i+1}</td>
+            <td><code style="background:var(--sf2);padding:2px 6px;border-radius:4px;font-size:.8rem;">${u.user}</code></td>
+            <td style="font-weight:700;">${u.nom}</td>
+            <td><span class="bdg ${u.rol==='admin'?'bg':'br'}" style="font-size:.7rem;">${u.rol==='admin'?'ADMIN':'SUPERVISOR'}</span></td>
+            <td style="text-align:center;">${regs}</td>
+            <td>${!esBase?`<button class="btn bdng bsm" onclick="delUser('${u.user}')" style="font-size:.72rem;">Eliminar</button>`:'<span style="font-size:.72rem;color:var(--text2);">Base</span>'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+async function addUser(){
+  const u=document.getElementById('nu-user').value.trim();
+  const p=document.getElementById('nu-pwd').value.trim();
+  const n=document.getElementById('nu-nom').value.trim();
+  if(!u||!p||!n){toast('Completa todos los campos','e');return;}
+  const todos=getUsuarios();
+  if(getUsuarios(true).find(x=>String(x.user).toLowerCase()===u.toLowerCase())){toast('Ese usuario ya existe (si fue eliminado, restáuralo desde "Ver usuarios eliminados")','e');return;}
+  const extras=JSON.parse(localStorage.getItem('eti_usuarios_extra')||'[]');
+  extras.push({user:u,ph:await etiHash(u,p),nom:n,rol:'supervisor'});
+  localStorage.setItem('eti_usuarios_extra',JSON.stringify(extras));
+  if(window.etiUsrNube) etiUsrNube(u,{extra:true,nom:n,rol:'supervisor',activo:true,eliminado:false});   /* _USUARIOS_NUBE_V1: visible en todos los dispositivos */
+  document.getElementById('nu-user').value='';
+  document.getElementById('nu-pwd').value='';
+  document.getElementById('nu-nom').value='';
+  renderAdminUsers();
+  toast('Usuario "'+u+'" agregado correctamente','s');
+}
+
+function delUser(userKey){
+  confMod('¿Eliminar usuario?','El usuario "'+userKey+'" ya no podrá entrar, desaparece de las listas y su QR permanente se pausa. Sus evaluaciones e historial se conservan, y puedes restaurarlo cuando quieras.',async()=>{
+    if(!window.etiUsrNube){toast('Sin conexión a la nube','e');return;}
+    try{
+      await etiUsrNube(userKey,{eliminado:true,activo:false,eliminadoEn:new Date().toISOString(),eliminadoPor:SESSION.user});
+      const n=window.etiQRDeUsuario?await etiQRDeUsuario(userKey,false):0;
+      renderAdminUsers(); toast('🗑 Usuario eliminado'+(n?` · ${n} QR pausado(s)`:''),'s');
+    }catch(e){toast('No se pudo eliminar: '+e.message,'e');}
+  });
+}
+function etiUsrActivo(userKey,activar){
+  confMod(activar?'¿Activar usuario?':'¿Desactivar usuario?',activar?'"'+userKey+'" vuelve a tener acceso y su QR permanente se reactiva.':'"'+userKey+'" no podrá usar los módulos y su QR permanente se pausa (los trabajadores verán que está pausado). Sus datos se conservan.',async()=>{
+    try{
+      await etiUsrNube(userKey,{activo:!!activar});
+      const n=window.etiQRDeUsuario?await etiQRDeUsuario(userKey,!!activar):0;
+      renderAdminUsers(); toast((activar?'▶ Usuario activado':'⏸ Usuario desactivado')+(n?` · ${n} QR ${activar?'reactivado(s)':'pausado(s)'}`:''),'s');
+    }catch(e){toast('No se pudo actualizar: '+e.message,'e');}
+  });
+}
+function etiUsrRestaurar(userKey){
+  confMod('¿Restaurar usuario?','"'+userKey+'" vuelve a aparecer y queda activo; su QR permanente se reactiva.',async()=>{
+    try{
+      await etiUsrNube(userKey,{eliminado:false,activo:true,restauradoEn:new Date().toISOString()});
+      const n=window.etiQRDeUsuario?await etiQRDeUsuario(userKey,true):0;
+      renderAdminUsers(); toast('↺ Usuario restaurado'+(n?` · ${n} QR reactivado(s)`:''),'s');
+    }catch(e){toast('No se pudo restaurar: '+e.message,'e');}
+  });
+}
+
+let _regPag=0;                                   // _HIST_ROL_V1
+function _regIr(p){ _regPag=p; renderAdminRegistros(); }
+/* _REG_QR_V1 (19-oct-2026): Registros también muestra las evaluaciones QR que aún no se consolidaron
+   (agrupadas por sesión, fecha, sector, tipo, ruta y código). Rango: el año/mes elegido o los últimos 90 días. */
+let _regQR={rango:'',filas:[],cargando:false};
+function _regRango(){
+  const a=document.getElementById('filtro-anio')?.value||'', m=document.getElementById('filtro-mes')?.value||'';
+  if(a&&m){const ult=new Date(+a,+m,0).getDate();return [a+'-'+m+'-01',a+'-'+m+'-'+String(ult).padStart(2,'0')];}
+  if(a) return [a+'-01-01',a+'-12-31'];
+  const d=new Date(Date.now()-89*864e5); return [d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'),hoy()];
+}
+async function _regCargarQR(){
+  if(!fbdb||_regQR.cargando) return; const [d,h]=_regRango(), k=d+'|'+h; if(_regQR.rango===k) return;
+  _regQR.cargando=true;
+  try{
+    const q=await fbdb.collection('respuestas_qr').where('fecha','>=',d).where('fecha','<=',h).get();
+    const cons=new Set((_evalsNube||[]).map(e=>e.sesionQR).filter(Boolean)), g=new Map();
+    q.docs.forEach(doc=>{const x=doc.data(); if(cons.has((x.sesion||'')+'_'+x.fecha)) return;
+      const key=[x.sesion,x.fecha,x.sector,x.tipo,String(x.ruta||'').toUpperCase(),String(x.cod||'').toUpperCase(),x.sup].join('|');
+      const o=g.get(key)||{nom:String(x.ruta||'').toUpperCase(),cod:String(x.cod||'').toUpperCase(),emp:x.emp||'',sup:x.sup||'',sector:x.sector||'',tipo:x.tipo||'obrero',fecha:x.fecha,
+        usuario:x.usuarioSup||'',nomUsuario:x.sup||'',modalidad:'QR',ne:0,s:0,ts:0,destiempo:'',motivoDestiempo:'',repCoordinador:''};
+      o.ne++; o.s+=(+x.resultado||0); o.ts=Math.max(o.ts,x.ts||0); g.set(key,o);});
+    _regQR.filas=[...g.values()].map(o=>({...o,resGrupo:o.ne?o.s/o.ne:0})); _regQR.rango=k;
+  }catch(e){console.warn('Registros QR:',e&&e.message);}
+  _regQR.cargando=false; renderAdminRegistros();
+}
+function renderAdminRegistros(){
+  _regCargarQR();
+  const todos=getAllHist().concat(_regQR.filas);
+  const filtro=document.getElementById('filtro-sup')?.value||'';
+
+  // Poblar filtro
+  const sups=[...new Set(todos.map(r=>r.nomUsuario||r.usuario||'—'))].sort();
+  const sel=document.getElementById('filtro-sup');
+  if(sel){
+    const actual=sel.value;
+    sel.innerHTML='<option value="">Todos los supervisores</option>'+
+      sups.map(s=>`<option value="${s}" ${s===actual?'selected':''}>${s}</option>`).join('');
+  }
+
+  let filtrados=filtro?todos.filter(r=>(r.nomUsuario||r.usuario)===filtro):todos;
+  const fEst=document.getElementById('filtro-est')?.value||'';
+  if(fEst==='aprobado') filtrados=filtrados.filter(r=>r.resGrupo>=0.7);
+  if(fEst==='refuerzo') filtrados=filtrados.filter(r=>r.resGrupo<0.7);
+  if(fEst==='destiempo') filtrados=filtrados.filter(r=>r.destiempo);
+  // _HIST_ROL_V1: filtros por año / mes
+  const selA=document.getElementById('filtro-anio');
+  if(selA){
+    const act=selA.value;
+    const anios=[...new Set(todos.map(r=>String(r.fecha||'').slice(0,4)).filter(a=>/^\d{4}$/.test(a)))].sort().reverse();
+    selA.innerHTML='<option value="">Todos los años</option>'+anios.map(a=>`<option value="${a}" ${a===act?'selected':''}>${a}</option>`).join('');
+  }
+  const fAn=selA?.value||'', fMes=document.getElementById('filtro-mes')?.value||'';
+  if(fAn)  filtrados=filtrados.filter(r=>String(r.fecha||'').slice(0,4)===fAn);
+  if(fMes) filtrados=filtrados.filter(r=>String(r.fecha||'').slice(5,7)===fMes);
+  const ordenados=[...filtrados].sort((a,b)=>new Date(b.fecha||0)-new Date(a.fecha||0));
+  // _HIST_ROL_V1: paginación de 50 filas
+  const POR_PAG=50, totPag=Math.max(1,Math.ceil(ordenados.length/POR_PAG));
+  if(_regPag>=totPag) _regPag=totPag-1; if(_regPag<0) _regPag=0;
+  const desde=_regPag*POR_PAG, pagina=ordenados.slice(desde,desde+POR_PAG);
+  const pagHtml=totPag>1?`<div style="display:flex;justify-content:center;align-items:center;gap:.5rem;margin:.8rem 0;">
+      <button class="btn bout bsm" ${_regPag===0?'disabled':''} onclick="_regIr(0)">⏮</button>
+      <button class="btn bout bsm" ${_regPag===0?'disabled':''} onclick="_regIr(${_regPag-1})">◀ Anterior</button>
+      <span style="font-size:.8rem;font-weight:700;color:var(--text2);">Página ${_regPag+1} de ${totPag}</span>
+      <button class="btn bout bsm" ${_regPag>=totPag-1?'disabled':''} onclick="_regIr(${_regPag+1})">Siguiente ▶</button>
+      <button class="btn bout bsm" ${_regPag>=totPag-1?'disabled':''} onclick="_regIr(${totPag-1})">⏭</button>
+    </div>`:'';
+
+  document.getElementById('admin-registros-tabla').innerHTML=ordenados.length?`
+    <div style="font-size:.75rem;color:var(--text2);margin-bottom:.5rem;font-weight:700;">${_regQR.cargando?'⏳ Cargando evaluaciones QR… · ':''}📱 QR sin consolidar incluidas (${(()=>{const [a,b]=_regRango();return fmtF(a)+' – '+fmtF(b);})()}) · Mostrando ${desde+1}–${desde+pagina.length} de ${ordenados.length} filtrados (${todos.length} en total) ${_evalsNube!==null?'· ☁️ sincronizado con la nube':'· 💾 datos locales'}</div>
+    <div style="overflow-x:auto;">
+    <table class="rtbl">
+      <thead><tr>
+        <th>#</th><th>Supervisor</th><th>Modalidad</th><th>Empresa</th><th>Sector</th><th>Tipo</th>
+        <th>Ruta/Área</th><th>Código</th><th>Eval.</th><th>Fecha eval.</th><th>Registrado</th><th>Resultado</th><th>Estado</th>
+        <th>⏰ Destiempo</th><th>Reportó</th>
+      </tr></thead>
+      <tbody>
+        ${pagina.map((r,i)=>{
+          const rp=(r.resGrupo*100).toFixed(1), rok=r.resGrupo>=0.7;
+          return `<tr>
+            <td>${desde+i+1}</td>
+            <td style="font-weight:700;">${r.nomUsuario||r.usuario||'—'}</td>
+            <td style="font-size:.72rem;">${r.modalidad==='QR'?'📱 QR':'📋 Manual'}</td>
+            <td>${r.emp||'—'}</td>
+            <td>${r.sector||'—'}</td>
+            <td style="font-size:.75rem;">${r.tipo==='obrero'?'Obrero':'Empleado'}</td>
+            <td style="font-weight:600;">${r.nom||'—'}</td>
+            <td><span class="cpill">${r.cod||'—'}</span></td>
+            <td style="text-align:center;">${r.ne||1}</td>
+            <td style="font-size:.78rem;">${fmtF(r.fecha)}</td>
+            <td style="font-size:.72rem;${r.ts&&new Date(r.ts).toLocaleDateString('en-CA')!==r.fecha?'color:#B26A00;font-weight:700;':''}">${r.ts?new Date(r.ts).toLocaleDateString('es-PE'):'—'}</td>
+            <td style="font-weight:800;color:${rok?'var(--gdim)':'var(--red)'};">${rp}%</td>
+            <td><span class="bdg ${rok?'bg':'br'}">${rok?'APROBADO':'REFUERZO'}</span></td>
+            <td style="font-size:.72rem;">${r.destiempo?`<span class="bdg br" title="${(r.motivoDestiempo||'').replace(/"/g,'&quot;')}">⏰ ${r.destiempo}</span>`:'<span style="color:var(--text2);">—</span>'}</td>
+            <td style="text-align:center;font-size:.75rem;">${r.destiempo?(r.repCoordinador==='SI'?'<span style="color:var(--gdim);font-weight:800;">✅ SÍ</span>':'<span style="color:var(--red);font-weight:800;">❌ NO</span>'):'—'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table></div>${pagHtml}` : '<div style="color:var(--text2);font-size:.85rem;padding:1rem;">Sin registros que coincidan con los filtros.</div>';
+}
+
+function exportAdminExcel(){
+  /* _EXCEL_TOTAL_V1 (19-oct-2026): Excel Global = exportador completo (QR + manual, todas las columnas) del año/mes elegido o de toda la base */
+  if(window.ETITF&&ETITF.exportar){const a=document.getElementById('filtro-anio')?.value||'', m=document.getElementById('filtro-mes')?.value||'';
+    if(a){const [d,h]=_regRango();ETITF.exportar(d,h);} else ETITF.exportar('2000-01-01',hoy()); return;}
+  if(typeof XLSX==='undefined'){toast('Librería Excel cargando...','e');return;}
+  const todos=getAllHist();
+  if(!todos.length){toast('Sin registros para exportar','e');return;}
+
+  const wb=XLSX.utils.book_new();
+  const rows=[
+    ['REPORTE GLOBAL - SISTEMA ETI - TODOS LOS USUARIOS'],
+    ['Sistema - Departamento de Gestion Humana - Area de Relaciones Laborales'],
+    ['Exportado: '+new Date().toLocaleString('es-PE')],
+    [''],
+    ['#','Supervisor','Usuario','Empresa','Sector','Tipo','Ruta/Area','Codigo','Fecha','Resultado (%)','Estado','Destiempo','Motivo Destiempo','Reportado a Coordinador']
+  ];
+  const ordenados=[...todos].sort((a,b)=>new Date(b.fecha||0)-new Date(a.fecha||0));
+  ordenados.forEach((r,i)=>{
+    rows.push([
+      i+1,
+      r.nomUsuario||'—',
+      r.usuario||'—',
+      r.emp||'—',
+      r.sector||'—',
+      r.tipo==='obrero'?'Obrero':'Empleado',
+      r.nom||'—',
+      r.cod||'—',
+      r.fecha||'—',
+      parseFloat((r.resGrupo*100).toFixed(1)),
+      r.resGrupo>=0.7?'APROBADO':'REQUIERE REFUERZO',
+      r.destiempo||'',
+      r.motivoDestiempo||'',
+      r.destiempo?(r.repCoordinador==='SI'?'SI':'NO'):''
+    ]);
+  });
+
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:5},{wch:28},{wch:14},{wch:12},{wch:14},{wch:16},{wch:28},{wch:9},{wch:12},{wch:14},{wch:18},{wch:24},{wch:34},{wch:12}];
+  if(ws['A1']) ws['A1'].s={font:{bold:true,sz:13,color:{rgb:'003DA5'}}};
+  XLSX.utils.book_append_sheet(wb, ws, 'Registros Globales');
+  XLSX.writeFile(wb, `ETI-Global-${hoy()}.xlsx`);
+  toast('Excel global exportado','s');
+}
+let tipo = '';
+let hist = [];
+let S = {emp:'',sup:'',sector:'',tipo:'',fecha:'',rutas:[]};
+
+// Escapar texto para atributos/HTML (evita que comillas o < rompan el markup)
+function escA(s){return String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+
+// ── Arranque: verificar sesión activa (restaurar sesión al recargar) ──
+(function(){
+  if(SESSION){
+    const key=SESSION.rol==='admin'?'eti_v4':'eti_v4_'+SESSION.user;
+    hist=JSON.parse(localStorage.getItem(key)||'[]');
+    // Restaurar último reporte guardado
+    try{
+      const savedRes=localStorage.getItem('eti_last_res_'+SESSION.user);
+      const savedRpt=localStorage.getItem('eti_last_rpt_'+SESSION.user);
+      if(savedRes) window._res=JSON.parse(savedRes);
+      if(savedRpt) window._rpt=savedRpt;
+    }catch(e){}
+    // Ir directo a la pantalla que corresponde (sin pedir login de nuevo)
+    setTimeout(()=>{ go(SESSION.rol==='admin'?'sadmin':'sm'); },0);
+  }
+})();
+
+// ══════════════════════════════════════════
+// NAVEGACIÓN
+// ══════════════════════════════════════════
+function go(id){
+  if(!SESSION && id!=='slogin'){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('slogin').classList.add('active');
+    return;
+  }
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+  if(id==='sm'){
+    updMenuReporte();
+    const lbl=document.getElementById('menu-user-lbl');
+    if(lbl && SESSION) lbl.textContent=SESSION.nom;
+  }
+  if(id==='sadmin'){
+    renderAdmin();
+    updAdminUltReporte();
+    document.getElementById('admin-user-lbl').textContent=(SESSION?.nom||'')+' (Admin)';
+  }
+}
+
+// Botón de volver al panel admin desde cualquier pantalla
+function volverAdmin(){
+  if(SESSION?.rol==='admin') go('sadmin');
+  else go('sm');
+}
+
+function stpr(eid, act){
+  const steps=[{n:1,l:'Datos Generales'},{n:2,l:'Cantidad de Rutas'},{n:3,l:'Cuestionarios'}];
+  document.getElementById(eid).innerHTML=steps.map((st,i)=>{
+    const c=st.n<act?'done':st.n===act?'active':'';
+    return `<div class="si"><div class="sd ${c}">${st.n<act?'✓':st.n}</div><span class="sl ${c}">${st.l}</span></div>${i<steps.length-1?'<span class="ssep">›</span>':''}`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// PASO 1
+// ══════════════════════════════════════════
+function iniciar(){
+  S={emp:'',sup:'',sector:'',tipo:'',fecha:'',rutas:[]};tipo='';
+  // Renderizar select supervisores dinámico
+  const selSup = document.getElementById('p1s');
+  if(selSup) selSup.innerHTML = renderSupSelect();
+  document.getElementById('p1e').value='';
+  document.getElementById('p1f').value=hoy();
+  document.getElementById('bt1').classList.remove('sel');
+  document.getElementById('bt2').classList.remove('sel');
+  const secBox = document.getElementById('sector-autobox');
+  if(secBox) secBox.style.display='none';
+  stpr('stb1',1); go('sp1');
+}
+
+function selT(t){
+  tipo=t;
+  document.getElementById('bt1').classList.toggle('sel',t==='obrero');
+  document.getElementById('bt2').classList.toggle('sel',t==='empleado');
+  // Actualizar label paso 2 según tipo
+  const lbl2 = document.getElementById('p2-lbl-tipo');
+  if(lbl2) lbl2.textContent = t==='obrero' ? 'Número de rutas evaluadas' : 'Número de áreas evaluadas';
+  const hint2 = document.getElementById('p2-hint-tipo');
+  if(hint2) hint2.textContent = t==='obrero'
+    ? 'Se generará un cuestionario completo ('+etiNPregs()+' preguntas) por cada ruta'
+    : 'Se generará un cuestionario completo ('+etiNPregs()+' preguntas) por cada área';
+}
+
+function p1next(){
+  const e=document.getElementById('p1e').value;
+  const s=document.getElementById('p1s').value;
+  if(!e||!s){toast('Seleccione empresa y supervisor','e');return;}
+  if(!tipo){toast('Seleccione el tipo de personal','e');return;}
+  const sector = getSectorActual();
+  const supData = SUPERVISORES.find(sv=>sv.nom===s);
+  if(supData && supData.reemplazante && !sector){
+    toast('Seleccione el sector que está cubriendo','e'); return;
+  }
+  if(supData && supData.multiSector && !sector){
+    toast('Seleccione el fundo o sector donde realizará la evaluación','e'); return;
+  }
+  S.emp=e; S.sup=s; S.sector=sector; S.tipo=tipo;
+  S.fecha=document.getElementById('p1f').value||hoy();
+
+  // ── CONTROL DE DESTIEMPO (evaluaciones programadas) ──
+  S.destiempo=null; S.progId=null;
+  const progEv=progPendienteDe(s);
+  if(progEv){
+    const pend=fechasPendientes(progEv);
+    const ult=pend.length?pend[pend.length-1]:progEv.fechas[progEv.fechas.length-1];
+    const enFecha=pend.includes(S.fecha) && hoy()<=ult;
+    if(enFecha){
+      S.progId=progEv.id; // en fecha: al calcular se marcará esta fecha como ejecutada
+    } else {
+      mdestAbrir(progEv);
+      return; // continúa al confirmar el modal de destiempo
+    }
+  }
+  p1continue();
+}
+
+function p1continue(){
+  const e=S.emp, s=S.sup, sector=S.sector;
+  const supData2 = SUPERVISORES.find(sv=>sv.nom===s);
+  const esRemp   = supData2?.reemplazante;
+  const esMulti  = supData2?.multiSector;
+  const sectorLbl= esRemp ? `📍 ${sector} (Reemplazante)` : esMulti ? `📍 ${sector} (Multi-sector)` : `📍 ${sector}`;
+  const tl=tipo==='obrero'?'👷 Obrero':'💼 Empleado';
+  document.getElementById('p2cfg').innerHTML=`<div class="ibt">Sesión configurada</div>
+    <div style="margin-top:.4rem;display:flex;gap:.32rem;flex-wrap:wrap;">
+      <span class="chip">🏢 ${e}</span>
+      <span class="chip">👤 ${s}</span>
+      <span class="chip">${sectorLbl}</span>
+      <span class="chip">${tl}</span>
+      <span class="chip">📅 ${fmtF(S.fecha)}</span>
+    </div>`;
+  // Actualizar textos del paso 2
+  const lbl2 = document.getElementById('p2-lbl-tipo');
+  if(lbl2) lbl2.textContent = tipo==='obrero' ? 'Número de rutas evaluadas' : 'Número de áreas evaluadas';
+  const hint2 = document.getElementById('p2-hint-tipo');
+  if(hint2) hint2.textContent = tipo==='obrero'
+    ? 'Se generará un cuestionario completo ('+etiNPregs()+' preguntas) por cada ruta'
+    : 'Se generará un cuestionario completo ('+etiNPregs()+' preguntas) por cada área';
+  // Actualizar título paso 2
+  const wt2=document.getElementById('p2-wtit');
+  const ws2=document.getElementById('p2-wsub');
+  if(wt2) wt2.textContent=tipo==='obrero'?'¿Cuántas rutas procedieron?':'¿Cuántas áreas se evaluaron?';
+  if(ws2) ws2.textContent=tipo==='obrero'
+    ?'Número de rutas que completaron la jornada ETI'
+    :'Número de áreas que completaron la jornada ETI';
+  // Panel de áreas (solo empleado)
+  const areasPanel = document.getElementById('p2-areas-panel');
+  if(areasPanel) areasPanel.style.display = tipo==='empleado' ? 'block' : 'none';
+  if(tipo==='empleado') renderAreasSelect();
+  document.getElementById('p2n').value='';
+  document.getElementById('p2prev').style.display='none';
+  stpr('stb2',2); go('sp2');
+}
+
+// ══════════════════════════════════════════
+// PASO 2
+// ══════════════════════════════════════════
+function p2ch(){
+  const n=parseInt(document.getElementById('p2n').value);
+  const b=document.getElementById('p2prev');
+  if(!n){b.style.display='none';return;}
+  b.style.display='block';
+  const palabra=S.tipo==='obrero'?(n===1?'ruta':'rutas'):(n===1?'área':'áreas');
+  document.getElementById('p2pv').textContent=`${n} ${palabra}`;
+  document.getElementById('p2ps').textContent=`${n} cuestionario${n>1?'s':''} de ${etiNPregs()} preguntas cada uno`;
+}
+
+function p2next(){
+  const n=parseInt(document.getElementById('p2n').value);
+  const palabra=S.tipo==='obrero'?'rutas':'áreas';
+  if(!n){toast(`Seleccione el número de ${palabra}`,'e');return;}
+  const prev=S.rutas||[];
+  const areaPresel=S.tipo==='empleado'?(document.getElementById('p2areas')?.value||''):'';
+  S.rutas=Array.from({length:n},(_,i)=>prev[i]||{
+    nom:S.tipo==='empleado'&&i===0&&areaPresel?areaPresel:'',
+    cod:'',tot:50,nev:5,sc:{}
+  });
+  renderP3(); stpr('stb3',3); go('sp3');
+}
+
+// ══════════════════════════════════════════
+// PASO 3 — ACORDEÓN
+// ══════════════════════════════════════════
+// maxEv: obrero = 10% del total (max 10), empleado = puede ser hasta el total del área
+function maxEv(t){
+  if(S.tipo==='empleado') return Math.min(250, Math.max(1, t||5));
+  return Math.min(10,Math.max(1,Math.ceil(t*0.1)));
+}
+/* _FIX_FECHA_V1: fecha LOCAL (antes usaba UTC y despues de las 7 pm daba el dia siguiente) */
+function hoy(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+
+function renderP3(){
+  const tl=S.tipo==='obrero'?'👷 Obrero':'💼 Empleado';
+  const palabra=S.tipo==='obrero'?'rutas':'áreas';
+  document.getElementById('p3banner').innerHTML=`<div class="ibt">Tipo de personal · Sector</div>
+    <div style="font-weight:800;font-size:1rem;color:var(--text);margin-top:.2rem">${tl} &nbsp;·&nbsp; 📍 ${S.sector}</div>
+    <div style="font-size:.71rem;color:var(--text2);margin-top:.08rem">${S.emp} · ${S.sup} · ${fmtF(S.fecha)}</div>`;
+  // Paso 3 título dinámico
+  const wt=document.querySelector('#sp3 .wtit');
+  const ws=document.querySelector('#sp3 .wsub');
+  if(wt) wt.textContent=`Complete cada ${S.tipo==='obrero'?'ruta':'área'} con las ${etiNPregs()} preguntas`;
+  if(ws) ws.textContent=`Un evaluado por columna — seleccione el puntaje obtenido en cada pregunta`;
+  document.getElementById('p3list').innerHTML=S.rutas.map((_,i)=>mkAc(i)).join('');
+  updP3();
+  toggleAc(0,true);
+}
+
+function buildEvOpts(neAct, tot){
+  let o='';
+  if(S.tipo==='empleado'){
+    // Empleado: input numérico libre de 1 a 250
+    // Se renderiza como select con rangos para no saturar
+    const maxPerm=Math.min(250, tot||250);
+    const grupos=[
+      ...Array.from({length:Math.min(20,maxPerm)},(_,i)=>i+1),
+      ...[25,30,35,40,45,50,60,70,80,90,100,120,150,180,200,220,250]
+        .filter(v=>v>20&&v<=maxPerm)
+    ];
+    // Eliminar duplicados y ordenar
+    const vals=[...new Set(grupos)].sort((a,b)=>a-b);
+    vals.forEach(v=>{
+      o+=`<option value="${v}" ${v===neAct?'selected':''}>${v} evaluado${v>1?'s':''}</option>`;
+    });
+  } else {
+    // Obrero: 10% del total, máximo 10
+    const minReq=Math.max(1,Math.ceil((tot||50)*0.1));
+    const maxPerm=Math.min(10, minReq+4);
+    for(let v=1;v<=maxPerm;v++){
+      const isMin=v===minReq;
+      o+=`<option value="${v}" ${v===neAct?'selected':''}>${v} evaluado${v>1?'s':''}${isMin?' (mín 10%)':''}</option>`;
+    }
+  }
+  return o;
+}
+
+function mkAc(i){
+  const r=S.rutas[i], ne=r.nev||maxEv(r.tot||50), pct=calcPct(i), done=pct>=100;
+  const esEmp=S.tipo==='empleado';
+  const nomLabel = esEmp ? 'Área evaluada' : 'Nombre de la ruta';
+  const nomPlaceholder = esEmp ? 'Ej: Gestión Humana' : 'Ej: Ruta Norte – Campo A';
+  const defNom = esEmp ? `Área ${i+1}` : `Ruta ${i+1}`;
+  const codLabel = esEmp ? 'Código área' : 'Código ruta';
+  const codPlaceholder = esEmp ? 'AR-01' : 'RT-01';
+  const totLabel = esEmp ? 'Total empleados en área' : 'Total trabajadores en ruta';
+  return `<div class="ac ${done?'done':''}" id="ac${i}">
+    <div class="acpbar"><div class="acpfill" id="apf${i}" style="width:${pct}%"></div></div>
+    <div class="achdr" onclick="toggleAc(${i})">
+      <div class="acnum">${i+1}</div>
+      <div class="acinfo">
+        <div class="acname" id="acn${i}">${escA(r.nom)||`${defNom} — (sin nombre)`}</div>
+        <div class="acmeta" id="acm${i}">${r.cod?r.cod+' · ':''}${r.tot||50} pers. · ${ne} eval. · ${pct.toFixed(0)}% completado</div>
+      </div>
+      <span class="bdg ${done?'bg':'br'}" id="acbdg${i}">${done?'LISTO':'PENDIENTE'}</span>
+      <span class="acarr">▼</span>
+    </div>
+    <div class="acbody">
+      <div class="rfields">
+        <div class="fg" style="margin:0">
+          <label class="fl" style="font-size:.7rem">${nomLabel} <span class="req">*</span></label>
+          ${esEmp
+            ? `<select class="fc" style="padding:.45rem .78rem;font-size:.82rem" id="rn${i}" onchange="rfchArea(${i})">
+                <option value="">— Seleccionar —</option>
+                ${AREAS.map(a=>`<option value="${a}" ${r.nom===a?'selected':''}>${a}</option>`).join('')}
+               </select>`
+            : `<input class="fc" style="padding:.45rem .78rem;font-size:.82rem" id="rn${i}" placeholder="${nomPlaceholder}" value="${escA(r.nom)}" oninput="rfch(${i})">`
+          }
+        </div>
+        <div class="fg" style="margin:0">
+          <label class="fl" style="font-size:.7rem">${codLabel}</label>
+          <input class="fc" style="padding:.45rem .78rem;font-size:.82rem" id="rc${i}" placeholder="${codPlaceholder}" value="${escA(r.cod)}" oninput="rfch(${i})">
+        </div>
+        <div class="fg" style="margin:0">
+          <label class="fl" style="font-size:.7rem">${totLabel}</label>
+          <input class="fc" type="number" style="padding:.45rem .78rem;font-size:.82rem" id="rt${i}"
+            placeholder="${esEmp?'Ej: 80':'50'}" min="1" max="${esEmp?'250':'500'}"
+            value="${r.tot||''}" oninput="rfch(${i})">
+        </div>
+        <div class="fg" style="margin:0">
+          <label class="fl" style="font-size:.7rem">N° evaluados <span style="color:var(--text2);font-weight:400">${esEmp?'(1 al total del área)':'(mín 10% · máx 10)'}</span></label>
+          ${esEmp
+            ? `<input class="fc" type="number" style="padding:.45rem .78rem;font-size:.82rem" id="rev${i}"
+                placeholder="Ej: 80" min="1" max="250"
+                value="${ne}" oninput="rfchEvEmp(${i})">`
+            : `<select class="fc" style="padding:.45rem .78rem;font-size:.82rem" id="rev${i}" onchange="rfchEv(${i})">
+                ${buildEvOpts(ne, r.tot||50)}
+              </select>`
+          }
+        </div>
+        <div class="fg" style="margin:0">
+          <label class="fl" style="font-size:.7rem">👨 Hombres <span class="req">*</span></label>
+          <input class="fc" type="number" min="0" max="250" style="padding:.45rem .78rem;font-size:.82rem" id="rh${i}" placeholder="0" value="${r.hom!=null?r.hom:''}" oninput="rfchSexo(${i})">
+        </div>
+        <div class="fg" style="margin:0">
+          <label class="fl" style="font-size:.7rem">👩 Mujeres <span class="req">*</span></label>
+          <input class="fc" type="number" min="0" max="250" style="padding:.45rem .78rem;font-size:.82rem" id="rm${i}" placeholder="0" value="${r.muj!=null?r.muj:''}" oninput="rfchSexo(${i})">
+          <span class="fh" id="rsx${i}" style="font-size:.68rem"></span>
+        </div>
+      </div>
+      <div class="cqwrap" id="cq${i}">${mkCuest(i)}</div>
+    </div>
+  </div>`;
+}
+
+/* _SEXO_V1 (19-oct-2026): hombres y mujeres evaluados por ruta/área (deben sumar el N° de evaluados) */
+function rfchSexo(i){
+  const r=S.rutas[i]; if(!r) return;
+  const vh=document.getElementById(`rh${i}`)?.value, vm=document.getElementById(`rm${i}`)?.value;
+  r.hom=vh===''?null:Math.max(0,parseInt(vh)||0); r.muj=vm===''?null:Math.max(0,parseInt(vm)||0);
+  const ne=r.nev||maxEv(r.tot||50), h=document.getElementById(`rsx${i}`);
+  if(h){ if(r.hom==null||r.muj==null){h.textContent='';} else { const t=r.hom+r.muj; h.textContent=t===ne?'✅ suman '+ne:'⚠️ suman '+t+' (evaluados: '+ne+')'; h.style.color=t===ne?'#007A3D':'#C8102E'; } }
+}
+function rfchEvEmp(i){
+  const inp=document.getElementById(`rev${i}`);
+  if(!inp) return;
+  let ne=parseInt(inp.value)||1;
+  ne=Math.max(1,Math.min(250,ne));
+  if(ne!==parseInt(inp.value)) inp.value=ne;
+  S.rutas[i].nev=ne;
+  document.getElementById(`acm${i}`).textContent=
+    `${S.rutas[i].cod?S.rutas[i].cod+' · ':''}${S.rutas[i].tot||0} empl. · ${ne} eval. · ${calcPct(i).toFixed(0)}% completado`;
+  document.getElementById(`cq${i}`).innerHTML=mkCuest(i);
+  updAc(i); updP3();
+}
+
+function rfchArea(i){
+  const sel=document.getElementById(`rn${i}`);
+  if(!sel) return;
+  S.rutas[i].nom=sel.value;
+  document.getElementById(`acn${i}`).textContent=sel.value||`Área ${i+1} — (sin nombre)`;
+  updAc(i); updP3();
+}
+
+function mkCuest(ri){
+  const r=S.rutas[ri], ne=r.nev||maxEv(r.tot||50);
+  const esEmp=S.tipo==='empleado';
+  // Ancho fijo por columna según cantidad de evaluados
+  const colW = ne<=5?86: ne<=10?76: ne<=20?66: ne<=50?58:52;
+  const txtW = 240; // ancho fijo del texto pregunta
+  const numW = 24;  // ancho del número
+  const totalW = numW + txtW + ne*colW + 40; // ancho total mínimo
+
+  let html='';
+  SECS.forEach(sec=>{
+    const maxSec=sec.maxSec;
+    html+=`<div class="secblk">
+      <div class="sbhdr">
+        <span class="sbt">📌 ${sec.nom}</span>
+        <span class="sbm">Peso: ${+(sec.peso*100).toFixed(2)}% · ${sec.pregs.length} preguntas</span>
+      </div>
+      <div class="sbody">
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+        <table style="border-collapse:collapse;width:100%;min-width:${totalW}px;">
+          <thead>
+            <tr style="background:var(--navy);">
+              <th style="width:${numW}px;padding:5px 4px;position:sticky;left:0;z-index:4;background:var(--navy);"></th>
+              <th style="width:${txtW}px;min-width:${txtW}px;padding:5px 8px;text-align:left;font-size:.68rem;color:rgba(255,255,255,.7);font-weight:600;position:sticky;left:${numW}px;z-index:4;background:var(--navy);box-shadow:3px 0 6px -2px rgba(0,0,0,.25);">Pregunta</th>
+              ${Array.from({length:ne},(_,ei)=>`
+                <th style="width:${colW}px;min-width:${colW}px;padding:5px 2px;text-align:center;font-size:.62rem;color:#fff;font-weight:700;border-left:1px solid rgba(255,255,255,.1);">
+                  Eval.<br>${ei+1}
+                </th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>`;
+
+    sec.pregs.forEach(preg=>{
+      const savedVals=Array.from({length:ne},(_,ei)=>r.sc?.[sec.id]?.[preg.n]?.[ei]??'');
+      html+=`<tr style="border-bottom:1px solid var(--surf2);">
+        <td style="width:${numW}px;padding:6px 4px;vertical-align:top;text-align:center;position:sticky;left:0;z-index:2;background:#fff;">
+          <span class="pnum">${preg.n}</span>
+        </td>
+        <td style="width:${txtW}px;min-width:${txtW}px;padding:6px 8px;vertical-align:middle;position:sticky;left:${numW}px;z-index:2;background:#fff;box-shadow:3px 0 6px -2px rgba(0,61,165,.15);">
+          <span class="ptxt" style="display:block;">${preg.t}</span>
+          <span class="pmx">Máx ${preg.max} pt${preg.max>1?'s':''} · escribe 0–${preg.max}${preg.pct!=null?` · vale ${+(+preg.pct).toFixed(2)}%`:''}</span>
+        </td>`;
+      for(let ei=0;ei<ne;ei++){
+        const v=savedVals[ei];
+        const cls='psel'+(v!==''&&v!==undefined&&v!==null?' scored'+(parseInt(v)===preg.max?' smax':''):'');
+        html+=`<td style="width:${colW}px;min-width:${colW}px;padding:4px 3px;vertical-align:middle;text-align:center;border-left:1px solid var(--surf2);">
+          <input class="${cls}" type="number" inputmode="numeric" min="0" max="${preg.max}" step="1"
+            style="width:${colW-6}px;font-size:.73rem;padding:.25rem .1rem;text-align:center;"
+            id="s${ri}_${sec.id}_${preg.n}_${ei}" value="${v??''}"
+            placeholder="0–${preg.max}" title="Escribe el puntaje: 0 a ${preg.max}, o deja en blanco si no respondió"
+            data-ri="${ri}" data-sid="${sec.id}" data-pn="${preg.n}" data-ei="${ei}" data-max="${preg.max}"
+            oninput="onPts(this,true)" onchange="onPts(this,false)"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();ptsSiguiente(this);}"
+            onfocus="this.select()">
+        </td>`;
+      }
+      html+=`</tr>`;
+    });
+
+    html+=`</tbody></table></div>`;
+
+    // Fila subtotal
+    html+=`<div class="strow">
+      <span class="stlbl">Promedio sección</span>
+      <span><span class="stval" id="stv${ri}_${sec.id}">—</span>
+      <span style="font-size:.7rem;color:var(--text2)" id="stp${ri}_${sec.id}"></span></span>
+    </div>`;
+    html+=`</div></div>`;
+  });
+  return html;
+}
+
+function mkOpts(max, saved){
+  let o=`<option value="" ${!saved?'selected':''}>— pts —</option>`;
+  for(let v=1;v<=max;v++) o+=`<option value="${v}" ${saved==v?'selected':''}>${v} pt${v>1?'s':''} ${v===max?'✓':''}  </option>`;
+  return o;
+}
+
+function toggleAc(i,force=false){
+  const el=document.getElementById(`ac${i}`);
+  if(force||!el.classList.contains('open')) el.classList.add('open');
+  else el.classList.remove('open');
+}
+
+function rfch(i){
+  const r=S.rutas[i];
+  const nom=document.getElementById(`rn${i}`).value.trim();
+  const cod=document.getElementById(`rc${i}`).value.trim();
+  const tot=parseInt(document.getElementById(`rt${i}`).value)||50;
+  const totCambio = tot!==(r.tot||50);
+  r.nom=nom; r.cod=cod; r.tot=tot;
+  const defNom=S.tipo==='empleado'?`Área ${i+1}`:`Ruta ${i+1}`;
+  document.getElementById(`acn${i}`).textContent=nom||`${defNom} — (sin nombre)`;
+  // Solo si cambió el TOTAL: reconstruir opciones de evaluados y regenerar cuestionario
+  if(totCambio){
+    const selEv=document.getElementById(`rev${i}`);
+    const neAct=r.nev||maxEv(tot);
+    if(selEv && S.tipo!=='empleado') selEv.innerHTML=buildEvOpts(neAct,tot);
+    const ne=selEv?parseInt(selEv.value)||maxEv(tot):maxEv(tot);
+    if(ne!==r.nev){
+      r.nev=ne;
+      document.getElementById(`cq${i}`).innerHTML=mkCuest(i);
+      recalcSubs(i);
+    }
+  }
+  updAc(i);
+  updP3();
+}
+
+function rfchEv(i){
+  // Cambio manual del número de evaluados
+  const selEv=document.getElementById(`rev${i}`);
+  const ne=parseInt(selEv.value)||maxEv(S.rutas[i].tot||50);
+  S.rutas[i].nev=ne;
+  S.rutas[i].sc={}; // limpiar scores al cambiar evaluados
+  document.getElementById(`cq${i}`).innerHTML=mkCuest(i);
+  recalcSubs(i);
+  updAc(i);
+  updP3();
+  toast(`Ruta ${i+1}: ${ne} evaluado${ne>1?'s':''} configurado${ne>1?'s':''}. Cuestionario regenerado.`,'i');
+}
+
+// ── Puntaje escrito a mano, validado contra el máximo de cada pregunta ──
+let _ptsAvisoT=0;
+function avisoPts(mx){
+  const ahora=Date.now();
+  if(ahora-_ptsAvisoT<1800) return;   // no repetir el aviso en cada tecla
+  _ptsAvisoT=ahora;
+  const lista=Array.from({length:mx+1},(_,i)=>i);
+  const opciones=lista.length>1?lista.slice(0,-1).join(', ')+' o '+lista[lista.length-1]:String(lista[0]);
+  toast(`⚠️ El puntaje de esta pregunta va de 0 a ${mx}. Puedes escribir ${opciones}, o dejarlo en blanco si el evaluado no respondió.`,'e');
+}
+function onPts(el, avanzar){
+  const mx=+el.dataset.max;
+  const raw=String(el.value).trim();
+  if(raw===''){ el.classList.remove('perr'); onSel(el); return; }
+  const n=Number(raw);
+  if(!Number.isInteger(n) || n<0 || n>mx){
+    avisoPts(mx);
+    el.value='';                       // se limpia: puede volver a escribir un valor válido
+    onSel(el);
+    el.classList.add('perr');
+    setTimeout(()=>{ el.classList.remove('perr'); },1400);
+    return;
+  }
+  el.classList.remove('perr');
+  onSel(el);
+  // Avance automático: puntaje válido escrito → saltar a la siguiente casilla
+  if(avanzar) ptsSiguiente(el);
+}
+
+// ── Avance automático: baja por la columna del evaluado; al terminar la
+// última pregunta, salta a la primera pregunta del siguiente evaluado ──
+let _ptsOrden=null;
+function ptsOrdenGlobal(){
+  if(_ptsOrden) return _ptsOrden;
+  _ptsOrden=[];
+  SECS.forEach(s=>s.pregs.forEach(p=>_ptsOrden.push({sid:s.id, pn:p.n})));
+  return _ptsOrden;
+}
+function ptsSiguiente(el){
+  try{
+    const ri=+el.dataset.ri, sid=el.dataset.sid, pn=+el.dataset.pn, ei=+el.dataset.ei;
+    const orden=ptsOrdenGlobal();
+    const idx=orden.findIndex(o=>String(o.sid)===String(sid) && o.pn===pn);
+    if(idx<0) return;
+    let nIdx=idx+1, nEi=ei;
+    if(nIdx>=orden.length){ nIdx=0; nEi=ei+1; }   // fin de la columna → siguiente evaluado
+    const r=S.rutas[ri], ne=r.nev||maxEv(r.tot||50);
+    if(nEi>=ne){                                   // último evaluado completado
+      el.blur();
+      toast('✅ Llegaste al final: todos los evaluados de este grupo fueron recorridos.','s');
+      return;
+    }
+    const nx=document.getElementById(`s${ri}_${orden[nIdx].sid}_${orden[nIdx].pn}_${nEi}`);
+    if(nx){
+      nx.focus();
+      if(nx.select) nx.select();
+      nx.scrollIntoView({block:'nearest', inline:'nearest', behavior:'smooth'});
+    }
+  }catch(e){}
+}
+
+function onSel(el){
+  const ri=+el.dataset.ri, sid=el.dataset.sid, pn=+el.dataset.pn, ei=+el.dataset.ei, mx=+el.dataset.max;
+  const v=el.value;
+  if(!S.rutas[ri].sc) S.rutas[ri].sc={};
+  if(!S.rutas[ri].sc[sid]) S.rutas[ri].sc[sid]={};
+  if(!S.rutas[ri].sc[sid][pn]) S.rutas[ri].sc[sid][pn]=[];
+  S.rutas[ri].sc[sid][pn][ei]=v;
+  el.className='psel'+(v?' scored'+(parseInt(v)===mx?' smax':''):'');
+  recalcSubs(ri);
+  updAc(ri);
+  updP3();
+}
+
+// ══════════════════════════════════════════
+// LÓGICA DE CÁLCULO CORRECTA
+// Para cada sección:
+//   1. Por cada evaluado EVALUADO: suma sus respuestas en esa sección.
+//      Las preguntas en blanco cuentan como 0 (no respondió = no demostró conocimiento).
+//   2. Suma todos los subtotales de evaluados
+//   3. Divide entre cantidad de evaluados → promedio sección del grupo
+// Un evaluado completamente vacío (configurado pero nunca evaluado) NO cuenta.
+// ══════════════════════════════════════════
+// ¿El evaluado ei tiene al menos una respuesta en toda la ruta?
+function evPresente(r, ei){
+  return SECS.some(sec=>sec.pregs.some(preg=>{
+    const v=r.sc?.[sec.id]?.[preg.n]?.[ei];
+    return v!==undefined && v!=='' && v!==null;
+  }));
+}
+
+function recalcSubs(ri){
+  const r=S.rutas[ri], ne=r.nev||maxEv(r.tot||50);
+  SECS.forEach(sec=>{
+    // Paso 1: subtotal por evaluado en esta sección (blanco = 0)
+    const evSubs=[];
+    for(let ei=0;ei<ne;ei++){
+      if(!evPresente(r, ei)) continue; // evaluado no evaluado → no cuenta
+      let sum=0;
+      sec.pregs.forEach(preg=>{
+        const v=parseFloat(r.sc?.[sec.id]?.[preg.n]?.[ei]);
+        sum += isNaN(v)?0:v*(preg.f||1); // _PCT_PREGUNTA_V1: puntaje → % del total (blanco = 0)
+      });
+      evSubs.push(sum);
+    }
+    const stvEl=document.getElementById(`stv${ri}_${sec.id}`);
+    const stpEl=document.getElementById(`stp${ri}_${sec.id}`);
+    if(!stvEl) return;
+    if(evSubs.length){
+      // Paso 2+3: promedio = suma subtotales / N evaluados completos
+      const prom=evSubs.reduce((a,b)=>a+b,0)/evSubs.length;
+      const pct=(prom/sec.maxSec*100).toFixed(1);
+      stvEl.textContent=prom.toFixed(2)+' de '+(+sec.maxSec.toFixed(2))+'%';
+      stvEl.style.color=parseFloat(pct)>=70?'var(--gdim)':'var(--red)';
+      stpEl.textContent=` (${pct}%)`;
+    } else {
+      stvEl.textContent='—'; stvEl.style.color='var(--text2)';
+      stpEl.textContent='';
+    }
+  });
+}
+
+function calcPct(ri){
+  const r=S.rutas[ri], ne=r.nev||maxEv(r.tot||50);
+  let tot=0,fill=0;
+  SECS.forEach(sec=>sec.pregs.forEach(preg=>{
+    for(let ei=0;ei<ne;ei++){
+      tot++;
+      const v=r.sc?.[sec.id]?.[preg.n]?.[ei];
+      if(v!==undefined&&v!==''&&v!==null) fill++;
+    }
+  }));
+  return tot>0?fill/tot*100:0;
+}
+
+function updAc(i){
+  const pct=calcPct(i), done=pct>=100, r=S.rutas[i], ne=r.nev||maxEv(r.tot||50);
+  const el=document.getElementById(`ac${i}`);
+  el.classList.toggle('done',done);
+  const pf=document.getElementById(`apf${i}`);
+  if(pf) pf.style.width=pct+'%';
+  const acm=document.getElementById(`acm${i}`);
+  if(acm) acm.textContent=`${r.cod?r.cod+' · ':''}${r.tot||50} trab. · ${ne} eval. · ${pct.toFixed(0)}% completado`;
+  const bdg=document.getElementById(`acbdg${i}`);
+  if(bdg){bdg.textContent=done?'LISTO':'PENDIENTE';bdg.className=`bdg ${done?'bg':'br'}`;}
+}
+
+function updP3(){
+  const tot=S.rutas.length;
+  const done=S.rutas.filter((_,i)=>calcPct(i)>=100).length;
+  const totalEval=S.rutas.reduce((a,r)=>a+(r.nev||maxEv(r.tot||50)),0);
+  document.getElementById('p3prog').textContent=`${done} / ${tot}`;
+  document.getElementById('p3fill').style.width=tot?done/tot*100+'%':'0%';
+  // Banner totales
+  const banner=document.getElementById('p3totbanner');
+  if(banner){
+    const rutasN=tot;
+    const evPorRuta=S.rutas.map(r=>r.nev||maxEv(r.tot||50));
+    const todosIgual=evPorRuta.every(v=>v===evPorRuta[0]);
+    const resumen=todosIgual
+      ? `${rutasN} rutas × ${evPorRuta[0]} evaluados = ${totalEval} evaluaciones totales`
+      : `${rutasN} rutas con distinto N° evaluados = ${totalEval} evaluaciones totales`;
+    banner.innerHTML=`
+      <div class="teb-item"><div class="teb-label">Rutas</div><div class="teb-val">${rutasN}</div></div>
+      <div class="teb-sep">×</div>
+      <div class="teb-item"><div class="teb-label">Eval. promedio</div><div class="teb-val">${todosIgual?evPorRuta[0]:'Varios'}</div></div>
+      <div class="teb-sep">=</div>
+      <div class="teb-item"><div class="teb-label">Total evaluaciones</div><div class="teb-val" style="color:#fff">${totalEval}</div></div>
+      <div class="teb-eq">${resumen}</div>`;
+  }
+}
+
+// ══════════════════════════════════════════
+// CÁLCULO FINAL
+// ══════════════════════════════════════════
+function calcular(){
+  const inc=S.rutas.filter((_,i)=>calcPct(i)<100).length;
+  if(inc>0){if(!confirm(`${inc} ruta(s) sin completar. ¿Calcular con datos disponibles?`))return;}
+  if(S.rutas.findIndex(r=>!r.nom.trim())>=0){toast('Hay rutas sin nombre','e');return;}
+  /* _SEXO_V1: aviso si falta o no cuadra hombres/mujeres (no bloquea) */
+  {const mal=S.rutas.filter(r=>{const ne=r.nev||maxEv(r.tot||50);return r.hom==null||r.muj==null||(r.hom+r.muj)!==ne;}).map(r=>r.nom||'(sin nombre)');
+   if(mal.length&&!confirm('Falta o no cuadra el número de HOMBRES y MUJERES en: '+mal.join(', ')+'.\n\n¿Calcular de todas formas? (Puedes cancelar y completarlo)'))return;}
+
+  const rRes=S.rutas.map((ruta,ri)=>{
+    const ne=ruta.nev||maxEv(ruta.tot||50);
+    const secs=SECS.map(sec=>{
+      // PASO 1: subtotal de cada evaluado en esta sección (blanco = 0)
+      const evSubs=[];
+      for(let ei=0;ei<ne;ei++){
+        if(!evPresente(ruta, ei)) continue; // evaluado no evaluado → no cuenta
+        let sum=0;
+        sec.pregs.forEach(preg=>{
+          const v=parseFloat(ruta.sc?.[sec.id]?.[preg.n]?.[ei]);
+          sum += isNaN(v)?0:v*(preg.f||1); // _PCT_PREGUNTA_V1: puntaje → % del total (blanco = 0)
+        });
+        evSubs.push(sum);
+      }
+      // PASO 2: suma de subtotales / cantidad evaluados = promedio sección
+      const promSec=evSubs.length?evSubs.reduce((a,b)=>a+b,0)/evSubs.length:0;
+      // PASO 3: normalizar
+      const cum=promSec/sec.maxSec;
+      // PASO 4: ponderar
+      const pond=cum*sec.peso;
+      return{...sec, promSec, cum, pond, evSubs};
+    });
+    // PASO 5: resultado grupo = suma de ponderados
+    const resGrupo=secs.reduce((a,s)=>a+s.pond,0);
+    return{...ruta, ne, secs, resGrupo};
+  });
+
+  // RESULTADO GENERAL = promedio de todos los grupos
+  const resGen=rRes.reduce((a,r)=>a+r.resGrupo,0)/rRes.length;
+  const res={emp:S.emp, sup:S.sup, sector:S.sector, tipo:S.tipo, fecha:S.fecha, rutas:rRes, resGen,
+             destiempo:S.destiempo||null};
+
+  // Historial — guardar con usuario activo
+  const palabra=S.tipo==='obrero'?'ruta':'área';
+  rRes.forEach(r=>{
+    hist.push({nom:r.nom, cod:r.cod, emp:S.emp, sup:S.sup, sector:S.sector,
+               tipo:S.tipo, fecha:S.fecha, resGrupo:r.resGrupo, ts:Date.now(),
+               usuario:SESSION?.user||'—', nomUsuario:SESSION?.nom||'—',
+               destiempo:S.destiempo?S.destiempo.tipo:'',
+               motivoDestiempo:S.destiempo?S.destiempo.motivo:'',
+               repCoordinador:S.destiempo?S.destiempo.reportado:''});
+  });
+  const histKey=SESSION?.rol==='admin'?'eti_v4':'eti_v4_'+(SESSION?.user||'anon');
+  try{localStorage.setItem(histKey,JSON.stringify(hist.slice(-500)));}catch(e){}
+
+  // Marcar la fecha ejecutada en la programación (parcial: solo la fecha usada)
+  if(S.progId) marcarProgEjecutada(S.progId, S.fecha);
+
+  // Guardar evaluación en la nube (Firestore) y en Google Sheets
+  try{ guardarEvalNube(res); }catch(e){ console.error('Nube:',e); }
+
+  window._res=res;
+  renderRes(res);
+  // Persistir último reporte en localStorage
+  try{
+    const rKey='eti_last_res_'+(SESSION?.user||'anon');
+    localStorage.setItem(rKey, JSON.stringify(res));
+  }catch(e){}
+  updMenuReporte();
+  go('sres');
+  toast(`✅ ${S.rutas.length} ${palabra}(s) calculadas correctamente`,'s');
+}
+
+// ══════════════════════════════════════════
+// RENDER RESULTADOS
+// ══════════════════════════════════════════
+function renderRes(res){
+  const pg=(res.resGen*100).toFixed(1), ok=res.resGen>=0.7;
+  const tl=res.tipo==='obrero'?'👷 Obrero':'💼 Empleado';
+  const palabraP=res.tipo==='obrero'?'ruta(s)':'área(s)';
+  const palabraS=res.tipo==='obrero'?'Ruta / Grupo':'Área Evaluada';
+  const palabraR=res.tipo==='obrero'?'Rutas':'Áreas';
+  const tR=res.tipo==='obrero'?'Obrero':'Empleado';
+  const pal=res.tipo==='obrero'?'rutas':'áreas';
+
+  document.getElementById('rmeta').textContent=
+    `${res.emp} · ${res.sup} · 📍${res.sector||'—'} · ${tl} · ${fmtF(res.fecha)} · ${res.rutas.length} ${palabraP}`;
+
+  // ── Encabezado tabla dinámico ──
+  const thGrupo = document.querySelector('#sres .rtbl thead tr th:nth-child(2)');
+  if(thGrupo) thGrupo.textContent = palabraS;
+
+  // ── KPIs ──
+  const totalEval = res.rutas.reduce((a,r)=>a+r.ne,0);
+  const mismosEval = res.rutas.every(r=>r.ne===res.rutas[0].ne);
+  document.getElementById('rkpis').innerHTML=`
+    <div class="kcard ${ok?'kg':'kr'}">
+      <div class="klbl">Resultado General</div>
+      <div class="kval" style="color:${ok?'var(--gdim)':'var(--red)'}">${pg}%</div>
+      <div class="ksub">${ok?'✅ APROBADO':'⚠️ REQUIERE REFUERZO'}</div>
+    </div>
+    <div class="kcard">
+      <div class="klbl">Sector · Personal</div>
+      <div class="kval" style="font-size:.8rem;margin-top:.3rem;line-height:1.3">${res.sector||'—'}</div>
+      <div class="ksub">${tl} · ${res.emp}</div>
+    </div>
+    <div class="kcard kg">
+      <div class="klbl">${palabraR} Aprobadas</div>
+      <div class="kval">${res.rutas.filter(r=>r.resGrupo>=0.7).length}</div>
+      <div class="ksub">de ${res.rutas.length}</div>
+    </div>
+    <div class="kcard kr">
+      <div class="klbl">En Refuerzo</div>
+      <div class="kval">${res.rutas.filter(r=>r.resGrupo<0.7).length}</div>
+      <div class="ksub">< 70%</div>
+    </div>
+    <div class="kcard">
+      <div class="klbl">Total Evaluaciones</div>
+      <div class="kval">${totalEval}</div>
+      <div class="ksub">${res.rutas.length} ${pal} × ${mismosEval?res.rutas[0].ne+' eval. c/u':'varios'}</div>
+    </div>`;
+
+  // ── Tabla rutas/áreas ──
+  document.getElementById('rtbody').innerHTML=res.rutas.map(r=>{
+    const rp=(r.resGrupo*100).toFixed(1), rok=r.resGrupo>=0.7;
+    return `<tr>
+      <td><span class="cpill">${r.cod||'—'}</span></td>
+      <td style="font-weight:600">${r.nom}</td>
+      <td style="font-size:.7rem">${res.tipo==='obrero'?'Obrero':'Empleado'}</td>
+      <td style="text-align:center">${r.ne}</td>
+      ${r.secs.map(s=>`<td style="text-align:center;font-size:.74rem;color:${s.cum>=0.7?'var(--gdim)':'var(--red)'}">${(s.cum*100).toFixed(1)}%</td>`).join('')}
+      <td style="text-align:center;font-weight:800;color:${rok?'var(--gdim)':'var(--red)'}">${rp}%</td>
+      <td style="text-align:center"><span class="bdg ${rok?'bg':'br'}">${rok?'APROBADO':'REFUERZO'}</span></td>
+    </tr>`;
+  }).join('');
+
+  // ── Secciones promedio ──
+  const promSecs=SECS.map((sec,si)=>({...sec,cumProm:res.rutas.reduce((a,r)=>a+(r.secs[si]?.cum||0),0)/res.rutas.length}));
+  document.getElementById('rsecs').innerHTML=promSecs.map(s=>{
+    const p=(s.cumProm*100).toFixed(1), ok2=s.cumProm>=0.7;
+    return `<div class="scard">
+      <div class="scdhdr"><div class="scdname">${s.nom}</div><div class="scdpct${ok2?'':' r'}">${p}%</div></div>
+      <div class="btrk"><div class="bfil${ok2?'':' r'}" style="width:${Math.min(100,parseFloat(p))}%"></div></div>
+      <div class="scdmeta"><span>Peso: ${+(s.peso*100).toFixed(2)}%</span><span class="bdg ${ok2?'bg':'br'}">${ok2?'APROBADO':'REFUERZO'}</span></div>
+    </div>`;
+  }).join('');
+
+  // ── Cuadros semáforo + aviso de destiempo ──
+  const rsem=document.getElementById('rsemaforo');
+  if(rsem) rsem.innerHTML=buildCuadrosSemaforo(res);
+  const rdest=document.getElementById('rdest');
+  if(rdest) rdest.innerHTML=buildDestiempoHTML(res);
+
+  // ── REPORTE GERENCIAL ──
+  const f=fmtF(res.fecha);
+  const palLabel=res.tipo==='obrero'?'Rutas evaluadas':'Áreas evaluadas';
+  const palDetalle=res.tipo==='obrero'?'RUTA':'ÁREA';
+  const supData3 = SUPERVISORES.find(sv=>sv.nom===res.sup);
+  const esRemp3  = supData3?.reemplazante;
+  const supLinea = esRemp3
+    ? `${res.sup} (Reemplazante — cubre: ${res.sector})`
+    : res.sup;
+  let rpt=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Sistema ETI – Evaluación de Conocimiento
+de Buenas Prácticas Sociales y Laborales
+Reporte de Evaluación ETI
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Fecha             : ${f}
+Empresa           : ${res.emp}
+Supervisor        : ${supLinea}
+Sector            : ${res.sector||'—'}
+Tipo de personal  : ${tR}
+${palLabel.padEnd(18)}: ${res.rutas.length}
+Total evaluaciones: ${totalEval} personas
+${res.destiempo?`
+────────────────────────────────────────────────
+CONTROL DE DESTIEMPO
+────────────────────────────────────────────────
+Fecha(s) programada(s) : ${res.destiempo.fechasProg.map(fmtF).join(' · ')}
+Fecha de ejecución real: ${fmtF(res.fecha)}
+Tipo                   : ${res.destiempo.tipo}
+Motivo                 : ${res.destiempo.motivo}
+Reportado a coordinador: ${res.destiempo.reportado==='SI'?'SÍ':'NO'}
+`:''}
+────────────────────────────────────────────────
+PROMEDIO POR TEMA (todos los grupos)
+────────────────────────────────────────────────`;
+  promSecs.forEach(s=>{
+    const sp=(s.cumProm*100).toFixed(1), ok2=s.cumProm>=0.7;
+    rpt+=`\n  ${ok2?'✓':'✗'} ${s.nom.padEnd(36)} ${sp.padStart(5)}%   ${ok2?'APROBADO':'REFUERZO'}`;
+  });
+
+  rpt+=`\n\n────────────────────────────────────────────────
+DETALLE POR ${palDetalle}
+────────────────────────────────────────────────`;
+  res.rutas.forEach(r=>{
+    const rp=(r.resGrupo*100).toFixed(1), est=r.resGrupo>=0.7?'✅ APROBADO':'⚠️ REFUERZO';
+    rpt+=`\n\n[${r.cod||'—'}] ${r.nom}  (${r.ne} evaluado${r.ne>1?'s':''})\n${'─'.repeat(52)}`;
+    r.secs.forEach(s=>{
+      const sp=(s.cum*100).toFixed(1), ponPct=(s.pond*100).toFixed(2);
+      rpt+=`\n  ${s.cum>=0.7?'✓':'✗'} ${s.nom.padEnd(34)} ${s.promSec.toFixed(2).padStart(5)} pts  ${sp.padStart(5)}%  Pond:${ponPct}%`;
+    });
+    rpt+=`\n  ${'─'.repeat(48)}\n  RESULTADO : ${rp.padStart(6)}%   ${est}`;
+  });
+
+  rpt+=`\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RESULTADO GENERAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Promedio general   : ${pg}%
+Estado             : ${ok?'✅ APROBADO – Cumple estándar ETI':'⚠️ REQUIERE REFUERZO – Planificar capacitación'}
+${palabraR} aprobadas : ${res.rutas.filter(r=>r.resGrupo>=0.7).length} / ${res.rutas.length}
+${palabraR} en refuerzo: ${res.rutas.filter(r=>r.resGrupo<0.7).length} / ${res.rutas.length}
+
+SEMAFORO: ROJO (0-69%)  |  VERDE (70-100%)
+
+Generado por Sistema ETI · ${res.emp}
+Sistema – Departamento de Gestión Humana – Área de Relaciones Laborales
+${new Date().toLocaleString('es-PE')}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+  document.getElementById('rrpt').textContent=rpt;
+  window._rpt=rpt;
+  // Persistir texto del reporte
+  try{
+    const rKey='eti_last_rpt_'+(SESSION?.user||'anon');
+    localStorage.setItem(rKey, rpt);
+  }catch(e){}
+}
+
+// ══════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════
+function irDash(){renderDash();go('sdash');}
+function renderDash(){
+  // _HIST_ROL_V1: filtro por año + subtítulo + botón Limpiar solo para admin
+  const selA=document.getElementById('dfiltro-anio');
+  if(selA){
+    const act=selA.value;
+    const anios=[...new Set(hist.map(r=>String(r.fecha||'').slice(0,4)).filter(a=>/^\d{4}$/.test(a)))].sort().reverse();
+    selA.innerHTML='<option value="">Todos los años</option>'+anios.map(a=>`<option value="${a}" ${a===act?'selected':''}>${a}</option>`).join('');
+  }
+  const fAn=selA?.value||'';
+  const h=fAn?hist.filter(r=>String(r.fecha||'').slice(0,4)===fAn):hist;
+  const bl=document.getElementById('btn-limpH'); if(bl) bl.style.display=(SESSION&&SESSION.rol==='admin')?'':'none';
+  const sb=document.getElementById('dsub'); if(sb) sb.textContent='Ranking de las evaluaciones registradas por ti · '+(fAn?'año '+fAn:'todos los años');
+  document.getElementById('dkpis').innerHTML=`
+    <div class="kcard"><div class="klbl">Rutas Registradas</div><div class="kval">${h.length}</div><div class="ksub">acumulado</div></div>
+    <div class="kcard kg"><div class="klbl">Promedio</div><div class="kval">${h.length?((h.reduce((a,x)=>a+x.resGrupo,0)/h.length)*100).toFixed(1)+'%':'—'}</div><div class="ksub">todas las rutas</div></div>
+    <div class="kcard kr"><div class="klbl">En Refuerzo</div><div class="kval" style="color:var(--red)">${h.filter(x=>x.resGrupo<0.7).length}</div><div class="ksub">< 70%</div></div>`;
+  if(!h.length){document.getElementById('dlist').innerHTML='<div class="demp"><div style="font-size:3rem;margin-bottom:1rem">📊</div>Sin datos. Calcule una evaluación primero.</div>';const bx=document.getElementById('dchart-box');if(bx)bx.style.display='none';return;}
+  renderDashChart(h);
+  document.getElementById('dlist').innerHTML=[...h].sort((a,b)=>b.resGrupo-a.resGrupo).map(r=>{
+    const p=(r.resGrupo*100).toFixed(1),ok=r.resGrupo>=0.7;
+    return `<div class="grow">
+      <div><div class="gname">${r.nom||'—'}</div><div style="font-size:.7rem;color:var(--text2)">${r.tipo==='obrero'?'👷':'💼'} ${r.emp||''} · ${r.sup||''}</div></div>
+      <div class="gtrk"><div class="gfil ${ok?'':'r'}" style="width:${Math.min(100,parseFloat(p))}%"></div></div>
+      <div class="gpct ${ok?'gn':'rd'}">${p}%</div>
+      <div><span class="bdg ${ok?'bg':'br'}">${ok?'APROBADO':'REFUERZO'}</span></div>
+    </div>`;
+  }).join('');
+}
+// ── GRÁFICO: Evolución de resultados (Dashboard) ──
+let _dChart=null;
+function fmtFCorta(iso){const d=new Date(iso+'T12:00:00');return d.toLocaleDateString('es-PE',{day:'2-digit',month:'short'});}
+function renderDashChart(hh){
+  const src=hh||hist;   // _HIST_ROL_V1: respeta el filtro de año
+  const box=document.getElementById('dchart-box');
+  const cv=document.getElementById('dchart');
+  if(!box||!cv||typeof Chart==='undefined') return;
+  // Agrupar por fecha → promedio del día
+  const porFecha={};
+  src.forEach(r=>{ if(!r.fecha) return; (porFecha[r.fecha]=porFecha[r.fecha]||[]).push(r.resGrupo*100); });
+  const fechas=Object.keys(porFecha).sort();
+  if(fechas.length<2){ box.style.display='none'; return; }
+  box.style.display='block';
+  const data=fechas.map(f=>+(porFecha[f].reduce((a,b)=>a+b,0)/porFecha[f].length).toFixed(1));
+  if(_dChart) _dChart.destroy();
+  _dChart=new Chart(cv,{
+    type:'line',
+    data:{labels:fechas.map(fmtFCorta),datasets:[
+      {label:'Promedio del día (%)',data,borderColor:'#003DA5',backgroundColor:'rgba(0,61,165,.08)',
+       fill:true,tension:.3,pointRadius:4,
+       pointBackgroundColor:data.map(v=>v>=70?'#007A3D':'#C8102E')},
+      {label:'Meta 70%',data:fechas.map(()=>70),borderColor:'#C8102E',borderDash:[6,5],pointRadius:0,fill:false}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%'}}},
+      plugins:{legend:{labels:{boxWidth:14,font:{size:10}}}}}
+  });
+}
+
+function limpH(){confMod('¿Limpiar historial?','Se eliminarán todos los registros.',()=>{hist=[];const key=SESSION?.rol==='admin'?'eti_v4':'eti_v4_'+(SESSION?.user||'anon');localStorage.removeItem(key);renderDash();toast('Historial eliminado','i');});}
+
+function exportDashTxt(){
+  if(!hist.length){toast('No hay registros para exportar','e');return;}
+  const h=[...hist].sort((a,b)=>b.resGrupo-a.resGrupo);
+  const prom=h.reduce((a,x)=>a+x.resGrupo,0)/h.length;
+  const aprobadas=h.filter(x=>x.resGrupo>=0.7).length;
+  const refuerzo=h.filter(x=>x.resGrupo<0.7).length;
+  let txt=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DASHBOARD ETI – ESTADÍSTICAS DE EVALUACIÓN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Exportado     : ${new Date().toLocaleString('es-PE')}
+Total rutas   : ${h.length}
+Promedio gral : ${(prom*100).toFixed(1)}%
+Aprobadas     : ${aprobadas}  |  En refuerzo: ${refuerzo}
+
+SEMÁFORO: ROJO (0–69%)  |  VERDE (70–100%)
+
+────────────────────────────────────────────────
+RANKING DE RUTAS (mayor a menor resultado)
+────────────────────────────────────────────────
+N   Codigo   Ruta                           Tipo           Supervisor              Empresa      Fecha        Resultado  Estado
+`;
+  h.forEach((r,i)=>{
+    const p=(r.resGrupo*100).toFixed(1), ok=r.resGrupo>=0.7;
+    const tipo=r.tipo==='obrero'?'Obrero  ':'Empleado';
+    txt+=`${String(i+1).padStart(2,'0')}  ${(r.cod||'-').padEnd(8)} ${(r.nom||'-').padEnd(30)} ${tipo} ${(r.sup||'-').padEnd(22)} ${(r.emp||'-').padEnd(11)} ${(r.fecha||'-').padEnd(12)} ${p.padStart(6)}%   ${ok?'APROBADO':'REFUERZO'}\n`;
+  });
+  txt+=`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Sistema – Departamento de Gestión Humana – Área de Relaciones Laborales
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+  descargar(txt, `dashboard-eti-${hoy()}.txt`, 'text/plain');
+  toast('Dashboard exportado en .txt','s');
+}
+
+function exportDashCsv(){
+  if(!hist.length){toast('No hay registros para exportar','e');return;}
+  const h=[...hist].sort((a,b)=>b.resGrupo-a.resGrupo);
+  const enc=v=>'"'+(String(v||'').replace(/"/g,'""'))+'"';
+  let csv='N,Codigo,Ruta / Grupo,Tipo Personal,Supervisor,Empresa,Fecha,Resultado (%),Estado\n';
+  h.forEach((r,i)=>{
+    const p=(r.resGrupo*100).toFixed(1), ok=r.resGrupo>=0.7;
+    const tipo=r.tipo==='obrero'?'Obrero':'Empleado';
+    csv+=`${i+1},${enc(r.cod)},${enc(r.nom)},${enc(tipo)},${enc(r.sup)},${enc(r.emp)},${enc(r.fecha)},${p},${ok?'APROBADO':'REFUERZO'}\n`;
+  });
+  descargar('\uFEFF'+csv, `dashboard-eti-${hoy()}.csv`, 'text/csv');
+  toast('Dashboard exportado en .csv (Excel)','s');
+}
+
+// ══════════════════════════════════════════
+// ACCIONES
+// ══════════════════════════════════════════
+function restaurarUltReporte(){
+  if(window._res && window._rpt) return true; // ya está en memoria
+  if(!SESSION) return false;
+  try{
+    const rKey='eti_last_res_'+SESSION.user;
+    const tKey='eti_last_rpt_'+SESSION.user;
+    const savedRes=localStorage.getItem(rKey);
+    const savedRpt=localStorage.getItem(tKey);
+    if(savedRes) window._res=JSON.parse(savedRes);
+    if(savedRpt) window._rpt=savedRpt;
+    return !!(window._res && window._rpt);
+  }catch(e){ return false; }
+}
+
+function verUlt(){
+  if(!restaurarUltReporte()){
+    toast('No hay reporte guardado aún. Registra una evaluación primero.','i');
+    return;
+  }
+  renderRes(window._res);
+  go('sres');
+}
+
+function copiar(){
+  if(!restaurarUltReporte()){toast('Sin reporte aún','i');return;}
+  navigator.clipboard.writeText(window._rpt).then(()=>toast('Reporte copiado al portapapeles','s'));
+}
+
+function copiarDirecto(){
+  if(!restaurarUltReporte()){toast('Sin reporte aún','i');return;}
+  navigator.clipboard.writeText(window._rpt).then(()=>toast('Reporte copiado al portapapeles','s'));
+}
+
+// Enviar correo desde el menú directamente
+function enviarCorreoDirecto(){
+  if(!restaurarUltReporte()){toast('Sin reporte calculado aún','i');return;}
+  enviarCorreo();
+}
+
+// Actualizar panel del menú con el último reporte
+function updMenuReporte(){
+  // Intentar restaurar desde localStorage
+  restaurarUltReporte();
+
+  const panel   = document.getElementById('menu-reporte-panel');
+  const meta    = document.getElementById('menu-rpt-meta');
+  const preview = document.getElementById('menu-rpt-preview');
+  if(!panel) return;
+  if(!window._res || !window._rpt){
+    panel.style.display='none';
+    return;
+  }
+  panel.style.display='block';
+  const res=window._res;
+  const pg=(res.resGen*100).toFixed(1), ok=res.resGen>=0.7;
+  const sup3=SUPERVISORES.find(sv=>sv.nom===res.sup);
+  const esR3=sup3?.reemplazante;
+  const supLabel=esR3?`${res.sup} (Reemplaz.)`:`${res.sup}`;
+  meta.innerHTML=`<span style="color:${ok?'#3ecf8e':'#FF7080'};font-size:1.05rem;font-weight:800;">${pg}%</span>
+    &nbsp;${ok?'✅ APROBADO':'⚠️ REFUERZO'}
+    &nbsp;·&nbsp; ${res.emp} &nbsp;·&nbsp; ${supLabel}
+    &nbsp;·&nbsp; 📍${res.sector||'—'}
+    &nbsp;·&nbsp; ${fmtF(res.fecha)}`;
+  const lineas=window._rpt.split('\n').slice(0,18).join('\n');
+  preview.textContent=lineas+'...';
+  // Actualizar panel admin si está activo
+  updAdminUltReporte();
+}
+
+function enviarCorreo(){
+  if(!restaurarUltReporte()){toast('Sin reporte calculado aún','e');return;}
+  const res=window._res;
+  if(!res){return;}
+  const pct=(res.resGen*100).toFixed(1);
+  const ok=res.resGen>=0.7;
+  const tl=res.tipo==='obrero'?'Obrero':'Empleado';
+  const palabra=res.tipo==='obrero'?'rutas':'áreas';
+  const sup3=SUPERVISORES.find(sv=>sv.nom===res.sup);
+  const esRemp=sup3?.reemplazante;
+  const supLabel=esRemp?`${res.sup} (Reemplazante — cubre: ${res.sector})`:res.sup;
+
+  // Saludo según hora
+  const hora=new Date().getHours();
+  const saludo=hora<12?'Buenos días':hora<18?'Buenas tardes':'Buenas noches';
+
+  // Fecha de emisión del reporte
+  const fechaEmision=new Date().toLocaleDateString('es-PE',{
+    weekday:'long', year:'numeric', month:'long', day:'numeric'
+  });
+  const horaEmision=new Date().toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'});
+
+  // Usuario que ejecuta
+  const usuarioEjecutor=SESSION?.nom||res.sup||'—';
+
+  // ── Asunto ──
+  const asunto=encodeURIComponent(
+    `Reporte ETI – ${res.emp} – Sector ${res.sector||'—'} – ${fmtF(res.fecha)} – Resultado: ${pct}%`
+  );
+
+  // ── Cuerpo formal ──
+  const promSecs=SECS.map((sec,si)=>({
+    nom:sec.nom,
+    prom:res.rutas.reduce((a,r)=>a+(r.secs[si]?.cum||0),0)/res.rutas.length
+  }));
+
+  let cuerpo='';
+  cuerpo+=`Estimados,\n\n`;
+  cuerpo+=`${saludo}.\n\n`;
+  cuerpo+=`El presente correo es para comunicarles que se adjunta el archivo del resumen de las Evaluaciones ETI (Evaluación de Conocimiento) correspondiente a la siguiente evaluación:\n\n`;
+  cuerpo+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  cuerpo+=`DATOS DE LA EVALUACIÓN\n`;
+  cuerpo+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  cuerpo+=`Empresa          : ${res.emp}\n`;
+  cuerpo+=`Sector           : ${res.sector||'—'}\n`;
+  cuerpo+=`Supervisor       : ${supLabel}\n`;
+  cuerpo+=`Tipo de personal : ${tl}\n`;
+  cuerpo+=`Fecha evaluación : ${fmtF(res.fecha)}\n`;
+  cuerpo+=`${palabra.charAt(0).toUpperCase()+palabra.slice(1)} evaluadas: ${res.rutas.length}\n\n`;
+  cuerpo+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  cuerpo+=`RESULTADO GENERAL: ${pct}%  —  ${ok?'✓ APROBADO':'✗ REQUIERE REFUERZO'}\n`;
+  cuerpo+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+  cuerpo+=`PROMEDIO POR TEMA:\n`;
+  cuerpo+=`─────────────────────────────────────\n`;
+  promSecs.forEach(s=>{
+    const p=(s.prom*100).toFixed(1);
+    cuerpo+=`  ${s.nom.padEnd(36)} ${p.padStart(5)}%   ${s.prom>=0.7?'APROBADO':'REFUERZO'}\n`;
+  });
+  cuerpo+=`\nRESULTADO POR ${palabra.toUpperCase()}:\n`;
+  cuerpo+=`─────────────────────────────────────\n`;
+  res.rutas.forEach(r=>{
+    const rp=(r.resGrupo*100).toFixed(1);
+    cuerpo+=`  [${r.cod||'—'}] ${(r.nom||'—').padEnd(26)} ${rp.padStart(5)}%   ${r.resGrupo>=0.7?'APROBADO':'REFUERZO'}   (${r.ne} eval.)\n`;
+  });
+  cuerpo+=`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  cuerpo+=`INFORMACIÓN DE EMISIÓN\n`;
+  cuerpo+=`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+  cuerpo+=`Fecha de emisión : ${fechaEmision}\n`;
+  cuerpo+=`Hora de emisión  : ${horaEmision} hrs\n`;
+  cuerpo+=`Ejecutado por    : ${usuarioEjecutor}\n\n`;
+  cuerpo+=`Nota: El archivo PDF del reporte detallado se adjunta por separado.\n`;
+  cuerpo+=`Si tiene alguna duda sobre los resultados, por favor no dude en comunicarse.\n\n`;
+  cuerpo+=`Atentamente,\n\n`;
+  cuerpo+=`Sistema – Departamento de Gestión Humana – Área de Relaciones Laborales\n`;
+  cuerpo+=`VERFRUT S.A.C / RAPEL S.A.C - UNIFRUTTI GROUP\n\n`;
+  cuerpo+=`─────────────────────────────────────\n`;
+  cuerpo+=`Sistema ETI – Evaluación de Conocimiento de Buenas Prácticas Sociales y Laborales`;
+
+  const mailto=`mailto:?subject=${asunto}&body=${encodeURIComponent(cuerpo)}`;
+  window.location.href=mailto;
+
+  toast('✅ Abriendo Outlook con el correo formal preparado','s');
+  setTimeout(()=>{
+    toast('💡 Recuerda adjuntar el PDF descargado antes de enviar','i');
+  },2500);
+}
+
+function descargar(contenido, nombre, tipo){
+  const blob=new Blob([contenido],{type:tipo+';charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=nombre;
+  a.style.display='none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(url); document.body.removeChild(a); }, 500);
+}
+
+function exportar(){
+  if(!restaurarUltReporte()){toast('Sin reporte calculado aún','e');return;}
+  descargar(window._rpt, `reporte-eti-${S.fecha||window._res?.fecha||'hoy'}.txt`, 'text/plain');
+  toast('Reporte .txt descargado','s');
+}
+
+// ══════════════════════════════════════════
+// EXPORTAR EXCEL — REPORTE ACTUAL
+// ══════════════════════════════════════════
+function exportarExcel(){
+  if(!restaurarUltReporte()){toast('Sin resultados calculados aún','e');return;}
+  if(typeof XLSX==='undefined'){toast('Librería Excel cargando, intenta de nuevo','e');return;}
+
+  const res=window._res;
+  const wb=XLSX.utils.book_new();
+  const AZ='003DA5', RJ='C8102E', VD='007A3D', AM='FFC000';
+
+  // ── HOJA 1: RESUMEN GENERAL ──
+  const tR=res.tipo==='obrero'?'Obrero':'Empleado';
+  const palabra=res.tipo==='obrero'?'Rutas':'Áreas';
+  const pg=(res.resGen*100).toFixed(1);
+  const ok=res.resGen>=0.7;
+  const sup3=SUPERVISORES.find(sv=>sv.nom===res.sup);
+  const supLabel=sup3?.reemplazante
+    ?`${res.sup} (Reemplazante - cubre: ${res.sector})`
+    :res.sup;
+
+  const resumen=[
+    ['SISTEMA ETI - EVALUACION DE CONOCIMIENTO DE BUENAS PRACTICAS SOCIALES Y LABORALES','','','',''],
+    ['Reporte de Evaluacion ETI','','','',''],
+    ['Sistema - Departamento de Gestion Humana - Area de Relaciones Laborales','','','',''],
+    [''],
+    ['DATOS GENERALES'],
+    ['Fecha',             fmtF(res.fecha)],
+    ['Empresa',           res.emp],
+    ['Supervisor',        supLabel],
+    ['Sector',            res.sector||'—'],
+    ['Tipo de personal',  tR],
+    [palabra+' evaluadas',res.rutas.length],
+    ['Total evaluados',   res.rutas.reduce((a,r)=>a+r.ne,0)+' personas'],
+    [''],
+    ['RESULTADO GENERAL'],
+    ['Resultado',         pg+'%'],
+    ['Estado',            ok?'APROBADO':'REQUIERE REFUERZO'],
+    [palabra+' aprobadas',res.rutas.filter(r=>r.resGrupo>=0.7).length+' / '+res.rutas.length],
+    [palabra+' en refuerzo',res.rutas.filter(r=>r.resGrupo<0.7).length+' / '+res.rutas.length],
+    [''],
+    ['PROMEDIO POR TEMA'],
+    ['Tema','% Cumplimiento','Estado','Peso','Máximo (% del total)'],
+  ];
+
+  const promSecs=SECS.map((sec,si)=>({
+    nom:sec.nom, peso:sec.peso, maxSec:sec.maxSec,
+    pct:res.rutas.reduce((a,r)=>a+(r.secs[si]?.cum||0),0)/res.rutas.length
+  }));
+
+  promSecs.forEach(s=>{
+    resumen.push([
+      s.nom,
+      parseFloat((s.pct*100).toFixed(1)),
+      s.pct>=0.7?'APROBADO':'REQUIERE REFUERZO',
+      +(s.peso*100).toFixed(2)+'%',
+      +(+s.maxSec).toFixed(2)+'%'
+    ]);
+  });
+
+  const ws1=XLSX.utils.aoa_to_sheet(resumen);
+
+  // Anchos columnas hoja 1
+  ws1['!cols']=[{wch:38},{wch:22},{wch:22},{wch:10},{wch:12}];
+
+  // Estilos hoja 1 — título
+  ['A1','A2','A3'].forEach(cell=>{
+    if(ws1[cell]) ws1[cell].s={
+      font:{bold:true,color:{rgb:cell==='A1'?AZ:'555555'},sz:cell==='A1'?13:10},
+      fill:{fgColor:{rgb:'F5F7FA'}}
+    };
+  });
+
+  XLSX.utils.book_append_sheet(wb, ws1, 'Resumen General');
+
+  // ── HOJA 2: DETALLE POR RUTA/ÁREA ──
+  const cabecera=[
+    'Codigo',
+    res.tipo==='obrero'?'Ruta':'Area',
+    'Tipo Personal',
+    'Empresa',
+    'Supervisor',
+    'Sector',
+    'Fecha',
+    'N Evaluados',
+    ...SECS.map(s=>s.nom+' (%)'),
+    'Resultado (%)',
+    'Estado'
+  ];
+
+  const filas=[cabecera];
+  res.rutas.forEach(r=>{
+    filas.push([
+      r.cod||'—',
+      r.nom,
+      tR,
+      res.emp,
+      supLabel,
+      res.sector||'—',
+      res.fecha,
+      r.ne,
+      ...r.secs.map(s=>parseFloat((s.cum*100).toFixed(1))),
+      parseFloat((r.resGrupo*100).toFixed(1)),
+      r.resGrupo>=0.7?'APROBADO':'REQUIERE REFUERZO'
+    ]);
+  });
+
+  // Fila de promedios al final
+  filas.push([]);
+  const promedioFila=[
+    '','PROMEDIO GENERAL','','','','','','',
+    ...promSecs.map(s=>parseFloat((s.pct*100).toFixed(1))),
+    parseFloat(pg),
+    ok?'APROBADO':'REQUIERE REFUERZO'
+  ];
+  filas.push(promedioFila);
+
+  const ws2=XLSX.utils.aoa_to_sheet(filas);
+  ws2['!cols']=[
+    {wch:8},{wch:28},{wch:16},{wch:12},{wch:30},{wch:14},{wch:12},{wch:10},
+    ...SECS.map(()=>({wch:16})),
+    {wch:14},{wch:16}
+  ];
+
+  // Estilo encabezado
+  cabecera.forEach((_,ci)=>{
+    const addr=XLSX.utils.encode_cell({r:0,c:ci});
+    if(ws2[addr]) ws2[addr].s={
+      font:{bold:true,color:{rgb:'FFFFFF'},sz:10},
+      fill:{fgColor:{rgb:AZ}},
+      alignment:{horizontal:'center',vertical:'center'},
+      border:{bottom:{style:'thin',color:{rgb:'CCCCCC'}}}
+    };
+  });
+
+  // Estilo filas de datos — verde/rojo según estado
+  res.rutas.forEach((_,ri)=>{
+    const row=ri+1;
+    const rok=res.rutas[ri].resGrupo>=0.7;
+    const totalCols=cabecera.length;
+    for(let ci=0;ci<totalCols;ci++){
+      const addr=XLSX.utils.encode_cell({r:row,c:ci});
+      if(ws2[addr]){
+        ws2[addr].s={
+          fill:{fgColor:{rgb:ri%2===0?'F5F7FA':'FFFFFF'}},
+          font:{sz:10,
+            color:ci>=8&&ci<8+SECS.length?{rgb:res.rutas[ri].secs[ci-8]?.cum>=0.7?VD:RJ}:{rgb:'1A2340'},
+            bold:ci===8+SECS.length||ci===8+SECS.length+1
+          },
+          alignment:{horizontal:ci>=7?'center':'left'}
+        };
+        // Celda Estado con color
+        if(ci===8+SECS.length+1){
+          ws2[addr].s.font.color={rgb:rok?VD:RJ};
+          ws2[addr].s.font.bold=true;
+        }
+      }
+    }
+  });
+
+  XLSX.utils.book_append_sheet(wb, ws2, 'Detalle por '+palabra);
+
+  // ── HOJA 3: DASHBOARD (historial) ──
+  if(hist.length>0){
+    const hCab=['N','Codigo','Nombre','Tipo Personal','Empresa','Supervisor','Sector','Fecha','Resultado (%)','Estado'];
+    const hFilas=[hCab];
+    const hSort=[...hist].sort((a,b)=>new Date(b.fecha||b.ts)-new Date(a.fecha||a.ts));
+    hSort.forEach((r,i)=>{
+      const rok=r.resGrupo>=0.7;
+      hFilas.push([
+        i+1,
+        r.cod||'—',
+        r.nom||'—',
+        r.tipo==='obrero'?'Obrero':'Empleado',
+        r.emp||'—',
+        r.sup||'—',
+        r.sector||'—',
+        r.fecha||'—',
+        parseFloat((r.resGrupo*100).toFixed(1)),
+        rok?'APROBADO':'REQUIERE REFUERZO'
+      ]);
+    });
+
+    // Fila resumen al final
+    hFilas.push([]);
+    const prom=hist.reduce((a,r)=>a+r.resGrupo,0)/hist.length;
+    const aprobH=hist.filter(r=>r.resGrupo>=0.7).length;
+    hFilas.push(['','','RESUMEN DASHBOARD','','',
+      'Total registros: '+hist.length,
+      'Aprobados: '+aprobH,
+      'Refuerzo: '+(hist.length-aprobH),
+      parseFloat((prom*100).toFixed(1)),
+      prom>=0.7?'PROMEDIO APROBADO':'PROMEDIO EN REFUERZO'
+    ]);
+
+    const ws3=XLSX.utils.aoa_to_sheet(hFilas);
+    ws3['!cols']=[{wch:5},{wch:8},{wch:28},{wch:16},{wch:12},{wch:28},{wch:16},{wch:12},{wch:14},{wch:20}];
+
+    // Estilo encabezado dashboard
+    hCab.forEach((_,ci)=>{
+      const addr=XLSX.utils.encode_cell({r:0,c:ci});
+      if(ws3[addr]) ws3[addr].s={
+        font:{bold:true,color:{rgb:'FFFFFF'},sz:10},
+        fill:{fgColor:{rgb:'C8102E'}},
+        alignment:{horizontal:'center'}
+      };
+    });
+
+    XLSX.utils.book_append_sheet(wb, ws3, 'Dashboard Historico');
+  }
+
+  // Descargar
+  const fecha=res.fecha||hoy();
+  const nombre=`Reporte-ETI-${res.emp}-${res.sector||'sector'}-${fecha}.xlsx`
+    .replace(/\s+/g,'-').replace(/[^\w\-\.]/g,'');
+
+  XLSX.writeFile(wb, nombre);
+  toast('Excel exportado correctamente con '+(hist.length>0?'3':'2')+' hojas','s');
+}
+
+// ══════════════════════════════════════════
+// EXPORTAR EXCEL COMPLETO — DESDE DASHBOARD
+// ══════════════════════════════════════════
+function exportarExcelCompleto(){
+  if(!hist.length){toast('No hay registros en el dashboard','e');return;}
+  if(typeof XLSX==='undefined'){toast('Librería Excel cargando, intenta de nuevo','e');return;}
+
+  const wb=XLSX.utils.book_new();
+  const AZ='003DA5', RJ='C8102E', VD='007A3D';
+
+  // Ordenar historial por fecha descendente
+  const hSort=[...hist].sort((a,b)=>new Date(b.fecha||0)-new Date(a.fecha||0));
+  const prom=hSort.reduce((a,r)=>a+r.resGrupo,0)/hSort.length;
+  const aprobH=hSort.filter(r=>r.resGrupo>=0.7).length;
+
+  // ── HOJA 1: DASHBOARD COMPLETO ──
+  const rows=[
+    ['SISTEMA ETI - DASHBOARD HISTORICO DE EVALUACIONES'],
+    ['Reporte de Evaluacion ETI'],
+    ['Sistema - Departamento de Gestion Humana - Area de Relaciones Laborales'],
+    ['Exportado: '+new Date().toLocaleString('es-PE')],
+    [''],
+    ['RESUMEN GENERAL'],
+    ['Total de registros',    hSort.length],
+    ['Promedio general',      parseFloat((prom*100).toFixed(1))+'%'],
+    ['Total aprobados',       aprobH],
+    ['Total en refuerzo',     hSort.length-aprobH],
+    ['% Aprobacion',          parseFloat(((aprobH/hSort.length)*100).toFixed(1))+'%'],
+    [''],
+    ['N','Codigo','Nombre Ruta/Area','Tipo','Empresa','Supervisor','Sector','Fecha','Resultado (%)','Estado']
+  ];
+
+  hSort.forEach((r,i)=>{
+    rows.push([
+      i+1,
+      r.cod||'—',
+      r.nom||'—',
+      r.tipo==='obrero'?'Obrero':'Empleado',
+      r.emp||'—',
+      r.sup||'—',
+      r.sector||'—',
+      r.fecha||'—',
+      parseFloat((r.resGrupo*100).toFixed(1)),
+      r.resGrupo>=0.7?'APROBADO':'REQUIERE REFUERZO'
+    ]);
+  });
+
+  const ws1=XLSX.utils.aoa_to_sheet(rows);
+  ws1['!cols']=[{wch:5},{wch:9},{wch:30},{wch:16},{wch:12},{wch:28},{wch:16},{wch:12},{wch:14},{wch:20}];
+
+  // Estilo título
+  if(ws1['A1']) ws1['A1'].s={font:{bold:true,sz:13,color:{rgb:AZ}},fill:{fgColor:{rgb:'F5F7FA'}}};
+
+  // Estilo encabezado tabla (fila 13 = índice 12)
+  ['N','Codigo','Nombre Ruta/Area','Tipo','Empresa','Supervisor','Sector','Fecha','Resultado (%)','Estado']
+    .forEach((_,ci)=>{
+      const addr=XLSX.utils.encode_cell({r:12,c:ci});
+      if(ws1[addr]) ws1[addr].s={
+        font:{bold:true,color:{rgb:'FFFFFF'},sz:10},
+        fill:{fgColor:{rgb:AZ}},
+        alignment:{horizontal:'center'}
+      };
+    });
+
+  // Filas de datos con colores
+  hSort.forEach((r,ri)=>{
+    const row=13+ri;
+    const rok=r.resGrupo>=0.7;
+    for(let ci=0;ci<10;ci++){
+      const addr=XLSX.utils.encode_cell({r:row,c:ci});
+      if(ws1[addr]){
+        ws1[addr].s={
+          fill:{fgColor:{rgb:ri%2===0?'F5F7FA':'FFFFFF'}},
+          font:{sz:10, color:{rgb:ci===9?(rok?VD:RJ):'0A1F5C'}, bold:ci===8||ci===9},
+          alignment:{horizontal:ci>=7?'center':'left'}
+        };
+      }
+    }
+  });
+
+  XLSX.utils.book_append_sheet(wb, ws1, 'Dashboard Completo');
+
+  // ── HOJA 2: RANKING (ordenado por resultado) ──
+  const ranking=[...hSort].sort((a,b)=>b.resGrupo-a.resGrupo);
+  const rowsRank=[
+    ['RANKING POR RESULTADO - MAYOR A MENOR'],
+    [''],
+    ['Posicion','Codigo','Nombre','Tipo','Empresa','Sector','Fecha','Resultado (%)','Estado']
+  ];
+  ranking.forEach((r,i)=>{
+    rowsRank.push([
+      i+1,
+      r.cod||'—',
+      r.nom||'—',
+      r.tipo==='obrero'?'Obrero':'Empleado',
+      r.emp||'—',
+      r.sector||'—',
+      r.fecha||'—',
+      parseFloat((r.resGrupo*100).toFixed(1)),
+      r.resGrupo>=0.7?'APROBADO':'REQUIERE REFUERZO'
+    ]);
+  });
+
+  const ws2=XLSX.utils.aoa_to_sheet(rowsRank);
+  ws2['!cols']=[{wch:9},{wch:9},{wch:30},{wch:16},{wch:12},{wch:16},{wch:12},{wch:14},{wch:20}];
+  if(ws2['A1']) ws2['A1'].s={font:{bold:true,sz:12,color:{rgb:RJ}}};
+
+  ['Posicion','Codigo','Nombre','Tipo','Empresa','Sector','Fecha','Resultado (%)','Estado']
+    .forEach((_,ci)=>{
+      const addr=XLSX.utils.encode_cell({r:2,c:ci});
+      if(ws2[addr]) ws2[addr].s={
+        font:{bold:true,color:{rgb:'FFFFFF'},sz:10},
+        fill:{fgColor:{rgb:RJ}},
+        alignment:{horizontal:'center'}
+      };
+    });
+
+  ranking.forEach((r,ri)=>{
+    const row=3+ri;
+    const rok=r.resGrupo>=0.7;
+    for(let ci=0;ci<9;ci++){
+      const addr=XLSX.utils.encode_cell({r:row,c:ci});
+      if(ws2[addr]) ws2[addr].s={
+        fill:{fgColor:{rgb:ri%2===0?'FCEDEF':'FFFFFF'}},
+        font:{sz:10,color:{rgb:ci===8?(rok?VD:RJ):'0A1F5C'},bold:ci===7||ci===8},
+        alignment:{horizontal:ci>=6?'center':'left'}
+      };
+    }
+  });
+
+  XLSX.utils.book_append_sheet(wb, ws2, 'Ranking');
+
+  // Descargar
+  const nombre=`Dashboard-ETI-${hoy()}.xlsx`;
+  XLSX.writeFile(wb, nombre);
+  toast('Excel con Dashboard exportado: 2 hojas','s');
+}
+
+function exportarPDF(){
+  if(!restaurarUltReporte()){toast('Sin resultados calculados aún','e');return;}
+  const res=window._res;
+  const pg=(res.resGen*100).toFixed(1), ok=res.resGen>=0.7;
+  const tR=res.tipo==='obrero'?'Obrero':'Empleado';
+  const palabra=res.tipo==='obrero'?'Rutas':'Áreas';
+  const sup3=SUPERVISORES.find(sv=>sv.nom===res.sup);
+  const esR3=sup3?.reemplazante;
+  const supLabel=esR3?`${res.sup} (Reemplazante — cubre: ${res.sector})`:res.sup;
+  const AZ='#003DA5', RJ='#C8102E', VD='#007a3d';
+
+  const promSecs=SECS.map((sec,si)=>({
+    nom:sec.nom,
+    pct:res.rutas.reduce((a,r)=>a+(r.secs[si]?.cum||0),0)/res.rutas.length
+  }));
+
+  const contenido=`
+    <div style="font-family:Tahoma,Arial,sans-serif;font-size:10pt;color:#1A2340;max-width:900px;margin:0 auto;">
+
+      <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#003DA5;padding:22px 28px;margin-bottom:0;position:relative;">
+        <div class="logo-uni" role="img" aria-label="Unifrutti" style="position:absolute;top:15px;right:20px;height:50px;"></div>
+        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:14px;padding-right:120px;">
+          <div>
+            <div style="color:#FF99A8;font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px;">VERFRUT S.A.C / RAPEL S.A.C - UNIFRUTTI GROUP</div>
+            <div style="color:#fff;font-size:18px;font-weight:800;line-height:1.2;">Sistema ETI – Evaluación de Conocimiento de Buenas Prácticas Sociales y Laborales</div>
+            <div style="color:#FF99A8;font-size:13px;font-weight:700;margin-top:4px;">Reporte de Evaluación ETI</div>
+          </div>
+          <div style="text-align:center;background:${ok?VD:RJ};padding:10px 18px;border-radius:8px;min-width:120px;">
+            <div style="color:#fff;font-size:26px;font-weight:800;line-height:1;">${pg}%</div>
+            <div style="color:rgba(255,255,255,.9);font-size:9px;font-weight:700;margin-top:3px;">${ok?'APROBADO':'REQUIERE REFUERZO'}</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#F5F7FA;padding:14px 28px;border-bottom:2px solid #C0CEEA;">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+          ${[
+            ['Fecha', fmtF(res.fecha)],
+            ['Empresa', res.emp],
+            ['Sector', res.sector||'—'],
+            ['Supervisor', supLabel],
+            ['Tipo Personal', tR],
+            [palabra+' Evaluadas', res.rutas.length]
+          ].map(([l,v])=>`<div>
+            <div style="font-size:8px;font-weight:700;color:#4A5A80;text-transform:uppercase;letter-spacing:.06em;">${l}</div>
+            <div style="font-size:12px;font-weight:700;color:#1A2340;margin-top:2px;">${v}</div>
+          </div>`).join('')}
+        </div>
+      </div>
+
+      <div style="padding:18px 28px 0;">
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;">
+          ${[
+            ['Resultado General', pg+'%', ok?VD:RJ, ok?'APROBADO':'REFUERZO'],
+            [palabra+' Aprobadas', res.rutas.filter(r=>r.resGrupo>=0.7).length+' / '+res.rutas.length, VD, '≥ 70%'],
+            ['En Refuerzo', res.rutas.filter(r=>r.resGrupo<0.7).length+' / '+res.rutas.length, RJ, '< 70%'],
+            ['Total Evaluados', res.rutas.reduce((a,r)=>a+r.ne,0)+' personas', AZ, res.rutas.length+' grupos']
+          ].map(([l,v,c,s])=>`
+            <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#fff;border:2px solid ${c};border-radius:8px;padding:10px;text-align:center;">
+              <div style="font-size:8px;font-weight:700;color:#4A5A80;text-transform:uppercase;">${l}</div>
+              <div style="font-size:18px;font-weight:800;color:${c};margin:3px 0;">${v}</div>
+              <div style="font-size:8px;color:${c};font-weight:600;">${s}</div>
+            </div>`).join('')}
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:11px;font-weight:800;color:#fff;background:#003DA5;padding:6px 10px;border-radius:4px 4px 0 0;text-transform:uppercase;letter-spacing:.06em;">Promedio por Tema</div>
+          <div style="border:1px solid #C0CEEA;border-top:none;padding:12px;border-radius:0 0 6px 6px;">
+            ${promSecs.map(s=>{
+              const pct=(s.pct*100).toFixed(1);
+              const ok2=s.pct>=0.7;
+              const w=Math.min(100,parseFloat(pct));
+              return `<div style="margin-bottom:9px;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+                  <span style="font-size:11px;font-weight:700;color:#1A2340;">${s.nom}</span>
+                  <span style="font-size:11px;font-weight:800;color:${ok2?VD:RJ};">${pct}% &nbsp;${ok2?'✓ APROBADO':'✗ REFUERZO'}</span>
+                </div>
+                <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#E8EEF8;border-radius:20px;height:16px;overflow:hidden;">
+                  <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;width:${w}%;height:16px;background:${ok2?VD:RJ};border-radius:20px;display:flex;align-items:center;padding:0 8px;">
+                    <span style="font-size:9px;color:#fff;font-weight:700;">${pct}%</span>
+                  </div>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+
+        <div style="margin-bottom:20px;page-break-inside:avoid;">
+          <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:11px;font-weight:800;color:#fff;background:#003DA5;padding:6px 10px;border-radius:4px 4px 0 0;text-transform:uppercase;letter-spacing:.06em;">Resultado por ${palabra}</div>
+          <table style="width:100%;border-collapse:collapse;font-size:9px;border:1px solid #C0CEEA;border-top:none;">
+            <thead>
+              <tr style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#E8EEF8;">
+                <th style="padding:6px 8px;text-align:left;border-bottom:1px solid #C0CEEA;">Cód.</th>
+                <th style="padding:6px 8px;text-align:left;border-bottom:1px solid #C0CEEA;">${res.tipo==='obrero'?'Ruta':'Área'}</th>
+                <th style="padding:6px 8px;text-align:center;border-bottom:1px solid #C0CEEA;">Eval.</th>
+                ${SECS.map(s=>`<th style="padding:6px 4px;text-align:center;border-bottom:1px solid #C0CEEA;">${s.nom.split(' ')[0]}</th>`).join('')}
+                <th style="padding:6px 8px;text-align:center;border-bottom:1px solid #C0CEEA;font-weight:800;">Total</th>
+                <th style="padding:6px 8px;text-align:center;border-bottom:1px solid #C0CEEA;">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${res.rutas.map((r,i)=>{
+                const rp=(r.resGrupo*100).toFixed(1), rok=r.resGrupo>=0.7;
+                const bg=i%2===0?'#F5F7FA':'#ffffff';
+                return `<tr style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:${bg};">
+                  <td style="padding:5px 8px;font-weight:700;color:${AZ};border-bottom:1px solid #e8eef8;">${r.cod||'—'}</td>
+                  <td style="padding:5px 8px;font-weight:600;border-bottom:1px solid #e8eef8;">${r.nom}</td>
+                  <td style="padding:5px 8px;text-align:center;border-bottom:1px solid #e8eef8;">${r.ne}</td>
+                  ${r.secs.map(s=>`<td style="padding:5px 4px;text-align:center;font-weight:700;color:${s.cum>=0.7?VD:RJ};border-bottom:1px solid #e8eef8;">${(s.cum*100).toFixed(0)}%</td>`).join('')}
+                  <td style="padding:5px 8px;text-align:center;font-weight:800;color:${rok?VD:RJ};border-bottom:1px solid #e8eef8;">${rp}%</td>
+                  <td style="padding:5px 8px;text-align:center;border-bottom:1px solid #e8eef8;">
+                    <span style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:${rok?'#e0f2e9':'#FCE4E7'};color:${rok?VD:RJ};padding:2px 6px;border-radius:8px;font-size:8px;font-weight:700;">${rok?'APROBADO':'REFUERZO'}</span>
+                  </td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        ${res.destiempo?`<div style="margin-bottom:16px;">${buildDestiempoHTML(res)}</div>`:''}
+
+        <div style="margin-bottom:20px;page-break-inside:avoid;">
+          <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:11px;font-weight:800;color:#fff;background:#003DA5;padding:6px 10px;border-radius:4px 4px 0 0;text-transform:uppercase;letter-spacing:.06em;">Detalle de Resultados — Semáforo por Sección</div>
+          <div style="border:1px solid #C0CEEA;border-top:none;padding:12px;border-radius:0 0 6px 6px;">
+            ${buildCuadrosSemaforo(res)}
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:11px;font-weight:800;color:#fff;background:#003DA5;padding:6px 10px;border-radius:4px 4px 0 0;text-transform:uppercase;letter-spacing:.06em;">Resultado por ${palabra} (Gráfico)</div>
+          <div style="border:1px solid #C0CEEA;border-top:none;padding:12px;border-radius:0 0 6px 6px;">
+            ${res.rutas.map(r=>{
+              const rp=(r.resGrupo*100).toFixed(1), rok=r.resGrupo>=0.7;
+              const w=Math.min(100,parseFloat(rp));
+              return `<div style="margin-bottom:8px;display:flex;align-items:center;gap:10px;">
+                <div style="font-size:10px;font-weight:700;color:#1A2340;min-width:150px;overflow:hidden;">${r.nom||'—'}</div>
+                <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;flex:1;background:#E8EEF8;border-radius:20px;height:18px;overflow:hidden;">
+                  <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;width:${w}%;height:18px;background:${rok?VD:RJ};border-radius:20px;display:flex;align-items:center;padding:0 8px;">
+                    <span style="font-size:9px;color:#fff;font-weight:700;">${rp}%</span>
+                  </div>
+                </div>
+                <span style="font-size:10px;font-weight:800;color:${rok?VD:RJ};min-width:40px;text-align:right;">${rp}%</span>
+              </div>`;
+            }).join('')}
+            <div style="margin-top:8px;font-size:9px;color:#4A5A80;">Meta minima aprobacion: 70% &nbsp;|&nbsp; Verde = Aprobado &nbsp;|&nbsp; Rojo = Requiere refuerzo</div>
+          </div>
+        </div>
+
+        <div style="-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#C8102E;border-radius:6px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <div>
+            <div style="font-size:9px;color:#fff;font-weight:700;">Sistema – Departamento de Gestión Humana – Área de Relaciones Laborales</div>
+          </div>
+          <div style="font-size:9px;color:rgba(255,255,255,.85);text-align:right;">Generado: ${new Date().toLocaleString('es-PE')}</div>
+        </div>
+
+      </div>
+    </div>`;
+
+  // ── DESCARGAR PDF usando ventana de impresión con instrucción clara ──
+  const nombrePDF = `Reporte-ETI-${(res.emp||'').replace(/\s+/g,'-')}-${res.fecha||'hoy'}.pdf`;
+
+  const win = window.open('','_blank');
+  if(!win){
+    toast('Activa los pop-ups para este sitio y vuelve a intentar','e');
+    return;
+  }
+
+  win.document.write(`<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>${nombrePDF}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:Tahoma,Arial,sans-serif;font-size:10pt;background:#fff;}
+  @media screen{
+    .instruccion{
+      position:fixed;top:0;left:0;right:0;z-index:9999;
+      background:#003DA5;color:#fff;
+      padding:12px 20px;
+      display:flex;align-items:center;justify-content:space-between;
+      font-size:14px;font-family:Tahoma,Arial,sans-serif;
+      box-shadow:0 2px 10px rgba(0,0,0,.3);
+      flex-wrap:wrap;gap:8px;
+    }
+    .instruccion strong{font-size:15px;}
+    .instruccion .pasos{font-size:12px;opacity:.85;margin-top:2px;}
+    .btn-imprimir{
+      background:#C8102E;color:#fff;border:none;
+      padding:8px 20px;border-radius:6px;font-size:14px;
+      font-weight:700;cursor:pointer;font-family:Tahoma,Arial,sans-serif;
+      white-space:nowrap;
+    }
+    .btn-imprimir:hover{background:#A00D24;}
+    body{padding-top:70px;}
+  }
+  @media print{
+    .instruccion{display:none !important;}
+    body{padding-top:0 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    @page{margin:10mm;size:A4 portrait;}
+  }
+</style>
+</head>
+<body>
+<div class="instruccion">
+  <div>
+    <strong>📄 Guardar como PDF</strong>
+    <div class="pasos">
+      1. Haz clic en "Guardar como PDF" &nbsp;→&nbsp;
+      2. En el diálogo: <strong>Destino = "Guardar como PDF"</strong> &nbsp;→&nbsp;
+      3. Clic en <strong>Guardar</strong>
+    </div>
+  </div>
+  <button class="btn-imprimir" onclick="window.print()">🖨️ Guardar como PDF</button>
+</div>
+${contenido}
+</body>
+</html>`);
+
+  win.document.close();
+  toast('✅ Se abrió el reporte — sigue las instrucciones para guardar el PDF','s');
+}
+
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+// ══════════════════════════════════════════
+// PROGRAMACIÓN DE EVALUACIONES (admin)
+// ══════════════════════════════════════════
+function getProgs(){
+  let base;
+  if(_progsNube!==null) base=_progsNube; // fuente: Firestore (compartido)
+  else { try{base=JSON.parse(localStorage.getItem('eti_prog_evals')||'[]');}catch(e){base=[];} }
+  // Unión con las programaciones de CHECKLIST registradas desde Capacitaciones
+  return base.concat(_progsEtiChk||[]);
+}
+// Colección correcta según el origen de la programación
+function _progColeccion(id){
+  const p=getProgs().find(x=>x.id===id);
+  return (p&&p._col)||COL_PROG_EV;
+}
+function saveProgs(l){ localStorage.setItem('eti_prog_evals',JSON.stringify(l)); }
+function progPendienteDe(sup){
+  return getProgs()
+    .filter(p=>_cumCoincide(p.sup,sup) && p.estado!=='ejecutada' && Array.isArray(p.fechas) && p.fechas.length)
+    .slice()
+    .sort((a,b)=>a.fechas[0].localeCompare(b.fechas[0]))[0]||null;
+}
+// Marca UNA fecha como ejecutada; la programación queda 'ejecutada' solo cuando no quedan fechas pendientes
+function marcarProgEjecutada(id, fechaEjec){
+  const p=getProgs().find(x=>x.id===id); if(!p) return;
+  const ejec=[...new Set([...(p.fechasEjecutadas||[]), fechaEjec||hoy()])];
+  const pend=p.fechas.filter(f=>!ejec.includes(f));
+  const cambios={fechasEjecutadas:ejec, estado:pend.length?'pendiente':'ejecutada'};
+  if(!pend.length) cambios.ejecutadaEn=new Date().toISOString();
+  if(fbdb && _progsNube!==null){
+    const _sil=(window.RLProgreso&&RLProgreso.silencio)||(f=>f());   /* _PROGRESO_ETI_V1: marca de 2do plano, sin circulo */
+    _sil(()=>fbdb.collection(_progColeccion(id)).doc(id).update(cambios)).catch(e=>console.error('Nube:',e));
+    return;
+  }
+  const l=getProgs().slice(); const pl=l.find(x=>x.id===id);
+  if(pl){ Object.assign(pl,cambios); saveProgs(l); }
+}
+
+// Fechas pendientes (no ejecutadas) de una programación
+function fechasPendientes(p){
+  const ejec=p.fechasEjecutadas||[];
+  return p.fechas.filter(f=>!ejec.includes(f));
+}
+
+let _pgFechas=[];
+function renderProgEval(){
+  const sel=document.getElementById('pg-sup');
+  if(sel && sel.options.length<2) sel.innerHTML=renderSupSelect();
+  const ss=document.getElementById('pg-sector'); if(ss && ss.options.length<2) ss.innerHTML='<option value="">— Sin sector —</option>'+SECTORES_TODOS.map(x=>`<option>${x}</option>`).join('');   /* _ATRIBUCION_V1 */
+  renderPgFechas(); renderPgLista();
+}
+/* _ATRIBUCION_V1 (15-oct-2026): publica en config_eti/atribucion la lista supervisor→usuario→sector(es)
+   para que evaluar.html atribuya cada evaluación QR al supervisor PROGRAMADO en ese sector/fecha. */
+async function guardarAtribucion(){
+  if(!fbdb||!SESSION||SESSION.rol!=='admin') return;
+  try{
+    const us=(typeof getUsuarios==='function'?getUsuarios(true):[]);
+    const sups=SUPERVISORES.filter(s=>s.rol!=='Administrador').map(s=>{const u=us.find(x=>x.rol!=='admin'&&_cumCoincide(x.nom,s.nom));
+      return {nom:s.nom,user:u?u.user:'',sector:s.sector||'',sectores:s.sectores||[],reemplazante:!!s.reemplazante};});
+    await fbdb.collection('config_eti').doc('atribucion').set({sups,regla:'programacion',por:SESSION.user,en:new Date().toISOString()});
+  }catch(e){console.warn('atribucion:',e&&e.message);}
+}
+function pgAddFecha(){
+  const f=document.getElementById('pg-fecha').value;
+  if(!f){toast('Elige una fecha para agregar','e');return;}
+  if(_pgFechas.includes(f)){toast('Esa fecha ya está agregada','e');return;}
+  _pgFechas.push(f); _pgFechas.sort();
+  document.getElementById('pg-fecha').value='';
+  renderPgFechas();
+}
+function pgDelFecha(i){ _pgFechas.splice(i,1); renderPgFechas(); }
+function renderPgFechas(){
+  const div=document.getElementById('pg-fechas'); if(!div)return;
+  div.innerHTML=_pgFechas.length
+    ? _pgFechas.map((f,i)=>`<span style="background:rgba(0,61,165,.08);border:1px solid rgba(0,61,165,.25);border-radius:20px;padding:.3rem .7rem;font-size:.78rem;font-weight:700;color:#003DA5;">📅 ${fmtF(f)} <a onclick="pgDelFecha(${i})" style="color:#C8102E;cursor:pointer;font-weight:800;margin-left:.3rem;">✕</a></span>`).join('')
+    : '<span style="font-size:.78rem;color:var(--text2);">Agrega una o varias fechas programadas…</span>';
+}
+function pgGuardar(){
+  const sup=document.getElementById('pg-sup').value;
+  const obs=document.getElementById('pg-obs').value.trim();
+  if(!sup){toast('Selecciona el supervisor','e');return;}
+  if(!_pgFechas.length){toast('Agrega al menos una fecha programada','e');return;}
+  const sector=(document.getElementById('pg-sector')||{}).value||'';   /* _ATRIBUCION_V1: las evaluaciones QR de ese sector/fecha se atribuyen a este supervisor */
+  const prog={sup, sector, fechas:[..._pgFechas], obs, estado:'pendiente',
+              creadoPor:SESSION?.nom||'—', creadoEn:new Date().toISOString()};
+  if(fbdb){
+    fbdb.collection(COL_PROG_EV).add(prog)
+      .then(()=>{ toast('📅 Programación guardada en la nube','s'); renderPgLista(); guardarAtribucion(); })
+      .catch(e=>{ console.error(e); toast('Error al guardar en la nube','e'); });
+  } else {
+    const l=getProgs().slice();
+    l.push({id:String(Date.now()), ...prog});
+    saveProgs(l);
+    toast('📅 Programación guardada (local)','s');
+    renderPgLista();
+  }
+  _pgFechas=[]; document.getElementById('pg-obs').value='';
+  renderPgFechas();
+}
+function pgEliminar(id){
+  confMod('¿Eliminar programación?','Se eliminará esta programación de evaluación.',()=>{
+    if(fbdb && _progsNube!==null){
+      fbdb.collection(_progColeccion(id)).doc(id).delete()
+        .then(()=>toast('Programación eliminada','i'))
+        .catch(e=>{ console.error(e); toast('Error al eliminar','e'); });
+    } else {
+      saveProgs(getProgs().filter(p=>p.id!==id)); renderPgLista(); toast('Programación eliminada','i');
+    }
+  });
+}
+function pgEstado(p){
+  const pend=fechasPendientes(p);
+  const ejecN=(p.fechasEjecutadas||[]).length, totN=p.fechas.length;
+  const parcial=ejecN&&pend.length?` (${ejecN}/${totN})`:'';
+  if(p.estado==='ejecutada'||!pend.length) return {t:'✅ Ejecutada',bg:'#e0f2e9',c:'#007a3d'};
+  const h=hoy(), ult=pend[pend.length-1];
+  if(h>ult) return {t:'🚨 Vencida'+parcial,bg:'#FCE4E7',c:'#C8102E'};
+  if(pend.includes(h)) return {t:'📍 Para HOY'+parcial,bg:'#fff3cd',c:'#8a6d00'};
+  if(ejecN) return {t:'🟠 Parcial'+parcial,bg:'#fff3cd',c:'#8a6d00'};
+  return {t:'🔵 Próxima',bg:'rgba(0,61,165,.08)',c:'#003DA5'};
+}
+// ── REPROGRAMACIÓN DE EVALUACIONES ──
+let _reprProg=null, _reprFechas=[];
+function pgReprogramar(id){
+  const p=getProgs().find(x=>x.id===id); if(!p) return;
+  _reprProg=p;
+  _reprFechas=fechasPendientes(p).slice();
+  const ejec=p.fechasEjecutadas||[];
+  document.getElementById('mrepr-info').innerHTML=
+    `<strong>${p.sup}</strong><br>Fechas actuales: `+
+    p.fechas.map(f=>ejec.includes(f)?`<span style="color:#007a3d;font-weight:700;">${fmtF(f)} ✅</span>`:fmtF(f)).join(' · ')+
+    (p.vecesReprogramada?`<br>🔄 Ya fue reprogramada ${p.vecesReprogramada} vez/veces`:'');
+  document.getElementById('mrepr-motivo').value='';
+  document.getElementById('mrepr-det').value='';
+  document.getElementById('mrepr-nueva').value='';
+  reprRenderFechas();
+  document.getElementById('mrepr').classList.add('open');
+}
+function reprRenderFechas(){
+  const div=document.getElementById('mrepr-fechas'); if(!div)return;
+  div.innerHTML=_reprFechas.length
+    ? _reprFechas.map((f,i)=>`<span style="background:rgba(0,61,165,.08);border:1px solid rgba(0,61,165,.25);border-radius:20px;padding:.3rem .7rem;font-size:.78rem;font-weight:700;color:#003DA5;">📅 ${fmtF(f)} <a onclick="reprDelFecha(${i})" style="color:#C8102E;cursor:pointer;font-weight:800;margin-left:.3rem;">✕</a></span>`).join('')
+    : '<span style="font-size:.78rem;color:#4A5A80;">Sin fechas pendientes — agrega las nuevas fechas</span>';
+}
+function reprDelFecha(i){ _reprFechas.splice(i,1); reprRenderFechas(); }
+function reprAddFecha(){
+  const f=document.getElementById('mrepr-nueva').value;
+  if(!f){toast('Elige una fecha para agregar','e');return;}
+  if(_reprFechas.includes(f)){toast('Esa fecha ya está en la lista','e');return;}
+  _reprFechas.push(f); _reprFechas.sort();
+  document.getElementById('mrepr-nueva').value='';
+  reprRenderFechas();
+}
+function mreprCerrar(){document.getElementById('mrepr').classList.remove('open');_reprProg=null;}
+function mreprGuardar(){
+  if(!_reprProg)return;
+  const motivo=document.getElementById('mrepr-motivo').value;
+  const det=document.getElementById('mrepr-det').value.trim();
+  if(!_reprFechas.length){toast('Agrega al menos una fecha nueva','e');return;}
+  if(!motivo){toast('Indica el motivo de la reprogramación','e');return;}
+  const ejec=_reprProg.fechasEjecutadas||[];
+  const nuevasFechas=[...new Set([...ejec,..._reprFechas])].sort();
+  const registro={fechasAntes:[..._reprProg.fechas], fechasDespues:nuevasFechas,
+    motivo:motivo+(det?' — '+det:''), reprogramadoPor:SESSION?.nom||'—', fecha:new Date().toISOString()};
+  const cambios={fechas:nuevasFechas, estado:'pendiente',
+    vecesReprogramada:(_reprProg.vecesReprogramada||0)+1,
+    reprogramaciones:[...(_reprProg.reprogramaciones||[]),registro]};
+  if((_reprProg.solicitudesReprog||[]).length && window.etiSolicitudesAtendidas) cambios.solicitudesReprog=window.etiSolicitudesAtendidas(_reprProg.solicitudesReprog, SESSION?.nom||'');   /* _SOLREPROG_V1 */
+  if(fbdb && _progsNube!==null){
+    fbdb.collection(_progColeccion(_reprProg.id)).doc(_reprProg.id).update(cambios)
+      .then(()=>toast('🔄 Evaluación reprogramada correctamente','s'))
+      .catch(e=>{console.error(e);toast('Error al reprogramar','e');});
+  } else {
+    const l=getProgs().slice(); const pl=l.find(x=>x.id===_reprProg.id);
+    if(pl){Object.assign(pl,cambios);saveProgs(l);renderPgLista();toast('🔄 Evaluación reprogramada','s');}
+  }
+  mreprCerrar();
+}
+
+// Enviar una fila de prueba a Google Sheets para verificar la conexión
+function pgTestSheets(){
+  if(!SHEETS_WEBHOOK_URL){toast('⚠️ Falta configurar la URL de Google Sheets en el sistema','e');return;}
+  const test={emp:'PRUEBA', sup:'PRUEBA DE CONEXIÓN', sector:'TEST', tipo:'obrero', fecha:hoy(),
+    resGen:0.85, usuario:SESSION?.user||'—', nomUsuario:SESSION?.nom||'—', destiempo:null,
+    rutas:[{nom:'RUTA DE PRUEBA', cod:'000', ne:1, resGrupo:0.85,
+      secs:[{nom:'Legislación Laboral',pct:0.9,pond:0.162,promSec:0},
+            {nom:'Bienestar Social',pct:0.85,pond:0.272,promSec:0},
+            {nom:'Sustentabilidad',pct:0.8,pond:0.128,promSec:0},
+            {nom:'Ética Empresarial',pct:0.9,pond:0.054,promSec:0},
+            {nom:'Seguridad y Salud en el Trabajo',pct:0.95,pond:0.114,promSec:0},
+            {nom:'Compromiso Medioambiental',pct:0.8,pond:0.128,promSec:0}]}],
+    creadoEn:new Date().toISOString(), ts:Date.now()};
+  enviarASheets(test);
+  toast('🧪 Fila de prueba enviada — revisa la pestaña "Evaluaciones" de tu hoja en ~10 segundos','s');
+}
+
+function renderPgLista(){
+  // KPIs de programación
+  const kdiv=document.getElementById('pg-kpis');
+  if(kdiv){
+    const todas=getProgs().map(p=>({p, e:pgEstado(p)}));
+    const n=k=>todas.filter(x=>x.e.t.includes(k)).length;
+    kdiv.innerHTML=`
+      <div class="kcard"><div class="klbl">Programadas</div><div class="kval">${todas.length}</div><div class="ksub">total</div></div>
+      <div class="kcard"><div class="klbl">🔵 Próximas</div><div class="kval">${n('Próxima')}</div><div class="ksub">por ejecutar</div></div>
+      <div class="kcard"><div class="klbl">📍 Para hoy</div><div class="kval">${n('HOY')}</div><div class="ksub">en fecha</div></div>
+      <div class="kcard kr"><div class="klbl">🚨 Vencidas</div><div class="kval">${n('Vencida')}</div><div class="ksub">requieren destiempo</div></div>
+      <div class="kcard kg"><div class="klbl">✅ Ejecutadas</div><div class="kval">${n('Ejecutada')}</div><div class="ksub">completadas</div></div>`;
+  }
+  const div=document.getElementById('pg-lista'); if(!div)return;
+  const l=getProgs().filter(p=>Array.isArray(p.fechas)&&p.fechas.length).slice().sort((a,b)=>a.fechas[0].localeCompare(b.fechas[0]));
+  if(!l.length){div.innerHTML='<div style="font-size:.82rem;color:var(--text2);background:#fff;border:1px solid var(--bdr);border-radius:10px;padding:1rem;">Sin evaluaciones programadas aún.</div>';return;}
+  div.innerHTML=`<div style="background:#fff;border:1px solid var(--bdr);border-radius:10px;overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:.8rem;">
+    <thead><tr style="background:#E8EEF8;">
+      <th style="padding:.55rem .8rem;text-align:left;">Supervisor</th>
+      <th style="padding:.55rem .8rem;text-align:left;">Fechas programadas</th>
+      <th style="padding:.55rem .8rem;text-align:center;">Estado</th>
+      <th style="padding:.55rem .8rem;text-align:left;">Obs.</th>
+      <th style="padding:.55rem .8rem;"></th>
+    </tr></thead><tbody>
+    ${l.map(p=>{const e=pgEstado(p);const ejec=p.fechasEjecutadas||[];
+      const fechasHtml=p.fechas.map(f=>ejec.includes(f)?`<span style="color:#007a3d;font-weight:700;">${fmtF(f)} ✅</span>`:fmtF(f)).join(' · ');
+      const reprHtml=p.vecesReprogramada?` <span title="${(p.reprogramaciones||[]).map(r=>r.motivo).join(' | ').replace(/"/g,'&quot;')}" style="background:#fff3cd;color:#8a6d00;padding:.1rem .45rem;border-radius:8px;font-size:.68rem;font-weight:800;">🔄×${p.vecesReprogramada}</span>`:'';
+      const _sp=window.etiSolicitudPendiente?window.etiSolicitudPendiente(p):null;   /* _SOLREPROG_V1 */
+      const solHtml=_sp?` <span title="${String((_sp.nombre||'')+': '+(_sp.motivo||'')+' — '+(_sp.detalle||'')).replace(/"/g,'&quot;')}" style="background:#fee2e2;color:#991b1b;padding:.1rem .45rem;border-radius:8px;font-size:.68rem;font-weight:800;">📝 Pide reprogramar: ${String(_sp.motivo||'').replace(/</g,'&lt;')}</span>`:'';
+      return `<tr style="border-top:1px solid var(--bdr);">
+      <td style="padding:.5rem .8rem;font-weight:700;">${p.sup}${p.sector?`<br><span style="font-size:.72rem;color:#003DA5;font-weight:700">📍 ${p.sector}</span>`:''}</td>
+      <td style="padding:.5rem .8rem;">${fechasHtml}${reprHtml}${solHtml}</td>
+      <td style="padding:.5rem .8rem;text-align:center;"><span style="background:${e.bg};color:${e.c};padding:.2rem .6rem;border-radius:10px;font-weight:700;font-size:.72rem;white-space:nowrap;">${e.t}</span></td>
+      <td style="padding:.5rem .8rem;font-size:.75rem;color:var(--text2);">${p.obs||'—'}</td>
+      <td style="padding:.5rem .8rem;text-align:right;white-space:nowrap;">
+        ${p.estado!=='ejecutada'?`<button class="btn bout bsm" onclick="pgReprogramar('${p.id}')" title="Reprogramar fechas">🔄</button>`:''}
+        <button class="btn bout bsm" onclick="pgEliminar('${p.id}')" title="Eliminar">🗑</button>
+      </td>
+    </tr>`;}).join('')}
+    </tbody></table></div>`;
+}
+
+// ══════════════════════════════════════════
+// MODAL CONTROL DE DESTIEMPO
+// ══════════════════════════════════════════
+let _mdestProg=null;
+function mdestAbrir(prog){
+  _mdestProg=prog;
+  const pend=fechasPendientes(prog);
+  const ejec=prog.fechasEjecutadas||[];
+  document.getElementById('mdest-msg').innerHTML=
+    `<strong>⚠️ Estás registrando A DESTIEMPO.</strong><br>`+
+    `La fecha de registro de tus evaluaciones estaba programada para el: <strong>${(pend.length?pend:prog.fechas).map(fmtF).join(' · ')}</strong>`+
+    ` (Supervisor: <strong>${prog.sup}</strong>).`+
+    (ejec.length?`<br>Ya ejecutaste: ${ejec.map(fmtF).join(' · ')}.`:'')+
+    `<br>Para continuar, registra la fecha en la cual ejecutaste las evaluaciones.`;
+  document.getElementById('mdest-fecha').value=S.fecha||hoy();
+  document.getElementById('mdest-motivo').value='';
+  document.getElementById('mdest-det').value='';
+  document.querySelectorAll('input[name="mdest-rep"]').forEach(r=>r.checked=false);
+  mdestTipo();
+  document.getElementById('mdest').classList.add('open');
+}
+function mdestTipo(){
+  const div=document.getElementById('mdest-tipo');
+  const f=document.getElementById('mdest-fecha').value;
+  if(!f||!_mdestProg){if(div)div.style.display='none';return;}
+  const misma=_mdestProg.fechas.includes(f);
+  div.style.display='block';
+  div.innerHTML=misma
+    ?'📌 Ejecutaste en la <strong>misma fecha programada</strong>, pero el registro es tardío. Indica <strong>por qué el destiempo</strong> en el registro.'
+    :'🔄 Ejecutaste en una <strong>fecha distinta a la programada</strong>. Indica el <strong>motivo del retraso o cambio de fecha</strong>.';
+  document.getElementById('mdest-motlbl').textContent=misma
+    ?'Motivo del destiempo (registro tardío) *'
+    :'Motivo del retraso / cambio de fecha *';
+}
+function mdestCerrar(){document.getElementById('mdest').classList.remove('open');_mdestProg=null;}
+function mdestConfirmar(){
+  if(!_mdestProg)return;
+  const f=document.getElementById('mdest-fecha').value;
+  const motivo=document.getElementById('mdest-motivo').value;
+  const det=document.getElementById('mdest-det').value.trim();
+  const rep=document.querySelector('input[name="mdest-rep"]:checked');
+  if(!f){toast('Registra la fecha en la cual ejecutaste las evaluaciones','e');return;}
+  const misma=_mdestProg.fechas.includes(f);
+  if(!motivo){toast(misma?'Indica por qué el destiempo en el registro':'Indica el motivo del retraso o cambio de fecha','e');return;}
+  if(!rep){toast('Marca SÍ o NO: ¿reportaste a tu coordinador?','e');return;}
+  S.fecha=f;
+  S.destiempo={
+    progId:_mdestProg.id,
+    fechasProg:[..._mdestProg.fechas],
+    tipo:misma?'REGISTRO TARDÍO (MISMA FECHA)':'CAMBIO DE FECHA',
+    motivo:motivo+(det?' — '+det:''),
+    reportado:rep.value
+  };
+  S.progId=_mdestProg.id;
+  const inp=document.getElementById('p1f'); if(inp) inp.value=f;
+  mdestCerrar();
+  p1continue();
+}
+
+// ══════════════════════════════════════════
+// CUADROS SEMÁFORO (detalle en puntos ponderados)
+// ══════════════════════════════════════════
+function buildCuadrosSemaforo(res){
+  const pca='-webkit-print-color-adjust:exact;print-color-adjust:exact;';
+  const th=`padding:6px 8px;border:1px solid #8a8a8a;font-size:10.5px;text-align:center;font-weight:800;${pca}`;
+  const td=`padding:5px 8px;border:1px solid #8a8a8a;font-size:10.5px;${pca}`;
+  const VF='#1F9D44',VC='#d6f5df',RF='#E00000',RC='#ffd9d9',GH='#d9d9d9',GF='#f2f2f2',GG='#c9c9c9',AM='#FFFF00';
+  const palabra=res.tipo==='obrero'?'RUTA':'ÁREA';
+  const r1=v=>Math.round(v*10)/10, r2=v=>Math.round(v*100)/100;
+  const proms=SECS.map((sec,si)=>({
+    nom:'DE '+sec.nom.toUpperCase(),
+    peso:r2(sec.peso*100),
+    val:r2(res.rutas.reduce((a,r)=>a+((r.secs[si]?.pond||0)*100),0)/res.rutas.length)
+  }));
+  const totalPct=r1(res.resGen*100);
+  let c1=`<table style="border-collapse:collapse;width:100%;margin-bottom:16px;">
+    <tr><th style="${th}background:${GH};">SECCIÓN</th><th style="${th}background:${GH};">RESULTADO</th>
+    <th style="${th}background:${RF};color:#fff;">ROJO</th><th style="${th}background:${VF};color:#fff;">VERDE</th>
+    <th style="${th}background:${AM};">%R</th></tr>`;
+  proms.forEach(s=>{
+    const lim=r2(s.peso*0.7), verde=s.val>=lim;
+    c1+=`<tr><td style="${td}background:${GF};font-weight:700;">${s.nom}</td>
+      <td style="${td}text-align:center;font-weight:800;background:${verde?VF:RF};color:#fff;">${s.val}</td>
+      <td style="${td}text-align:center;">0 - ${r2(lim-0.01)}%</td>
+      <td style="${td}text-align:center;">${lim} - ${s.peso}%</td>
+      <td style="${td}text-align:center;font-weight:800;">${s.peso}%</td></tr>`;
+  });
+  const tVerde=totalPct>=70;
+  c1+=`<tr><td style="${td}background:${GG};font-weight:800;">GENERAL DEL GRUPO</td>
+    <td style="${td}text-align:center;font-weight:800;background:${tVerde?VF:RF};color:#fff;">${totalPct}%</td>
+    <td style="${td}text-align:center;font-weight:700;background:${GG};">0 - 69.9%</td>
+    <td style="${td}text-align:center;font-weight:700;background:${GG};">70 - 100%</td>
+    <td style="${td}text-align:center;font-weight:800;background:${GG};">100%</td></tr></table>`;
+  let c2=`<table style="border-collapse:collapse;width:100%;">
+    <tr><th style="${th}background:${GH};min-width:130px;">${palabra}</th><th style="${th}background:${GH};">COD</th>`+
+    proms.map(s=>`<th style="${th}background:${GH};font-size:8.6px;">${s.nom}</th>`).join('')+`</tr>`;
+  res.rutas.forEach(r=>{
+    c2+=`<tr><td style="${td}font-weight:700;">${r.nom||'—'}</td>
+      <td style="${td}text-align:center;">${r.cod||'—'}</td>`+
+      SECS.map((sec,si)=>{
+        const v=r1((r.secs[si]?.pond||0)*100);
+        const verde=v>=r2(sec.peso*100*0.7);
+        return `<td style="${td}text-align:center;font-weight:800;background:${verde?VC:RC};color:${verde?'#1a8040':'#cc0000'};">${v}</td>`;
+      }).join('')+`</tr>`;
+  });
+  c2+=`<tr><td style="${td}background:${GG};font-weight:800;text-align:center;">GENERAL DEL GRUPO</td><td style="${td}background:${GG};"></td>`+
+    proms.map(s=>{
+      const verde=s.val>=r2(s.peso*0.7);
+      return `<td style="${td}text-align:center;font-weight:800;background:${verde?VF:RF};color:#fff;">${r1(s.val)}</td>`;
+    }).join('')+`</tr></table>`;
+  return `<div style="overflow-x:auto;">${c1}</div><div style="overflow-x:auto;">${c2}</div>
+    <div style="font-size:.72rem;color:#4A5A80;margin-top:.5rem;">Criterio: VERDE = resultado ≥ 70% del peso de la sección (%R) · ROJO = menor al 70% · Valores en puntos ponderados sobre 100.</div>`;
+}
+
+// Aviso de destiempo (pantalla y PDF)
+function buildDestiempoHTML(res){
+  if(!res.destiempo) return '';
+  const d=res.destiempo, pca='-webkit-print-color-adjust:exact;print-color-adjust:exact;';
+  return `<div style="${pca}background:#FCE4E7;border-left:5px solid #C8102E;border-radius:8px;padding:.8rem 1rem;font-size:.82rem;line-height:1.55;color:#1A2340;margin-bottom:1rem;">
+    <strong style="color:#C8102E;">⏰ EVALUACIÓN REGISTRADA A DESTIEMPO</strong><br>
+    Fecha(s) programada(s): <strong>${d.fechasProg.map(fmtF).join(' · ')}</strong> · Fecha de ejecución real: <strong>${fmtF(res.fecha)}</strong><br>
+    Tipo: <strong>${d.tipo}</strong> · Motivo: ${d.motivo}<br>
+    ¿Reportado al coordinador?: <strong style="color:${d.reportado==='SI'?'#007a3d':'#C8102E'};">${d.reportado==='SI'?'✅ SÍ':'❌ NO'}</strong>
+  </div>`;
+}
+
+// ══════════════════════════════════════════
+// PRESENCIA EN LÍNEA + MENSAJERÍA
+// Conectado al canal del Sistema RR.LL (Realtime Database, proyecto
+// sistema-rl-verfrut): rutas /presencia y /mensajes — las mismas que usan
+// presencia.js y el Monitor del administrador en RR.LL.
+// ══════════════════════════════════════════
+let _presTimer=null, _presOnline=[], _presPrevKeys=null, _presPollTimer=null, _presRef=null;
+let _msgPollTimer=null, _msgRef=null, _rlConectado=false;
+let _chatMsgs=[], _chatAbierto=false, _chatCon=null;
+let _chatNotif=new Set(), _chatPrimeraCarga=true;
+
+function rlUkey(u){ return String(u).toLowerCase().replace(/[.#$/\[\]]/g,'_'); }
+function soyAdminRL(){ return SESSION && RL_ADMINS.includes(String(SESSION.user).toLowerCase()); }
+function nombreSistemaPres(p){
+  return p.modulo===RL_MODULO_ETI
+    ? 'Sistema de Evaluaciones ETI'
+    : 'Sistema RR.LL'+(p.modulo?' · '+p.modulo:'');
+}
+function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── PRESENCIA (todos los usuarios de ETI) ──
+function presPayload(online){
+  return {usuario:SESSION.user, nombre:SESSION.nom, rol:SESSION.rol||'',
+          empresa:'', modulo:RL_MODULO_ETI, pagina:'evaluaciones-eti',
+          online:!!online, ultimo_ping:{'.sv':'timestamp'}};
+}
+function marcarPresencia(online){
+  if(!SESSION) return;
+  try{
+    fetch(RL_DB_URL+'/presencia/'+rlUkey(SESSION.user)+'.json',{
+      method:'PUT', body:JSON.stringify(presPayload(online))
+    }).catch(()=>{});
+  }catch(e){}
+}
+function iniciarPresencia(){
+  if(!SESSION) return;
+  marcarPresencia(!document.hidden);
+  clearInterval(_presTimer);
+  _presTimer=setInterval(()=>{ if(SESSION) marcarPresencia(!document.hidden); },20000);
+  // Historial de conexiones: 1 registro por sesión (igual que en RR.LL)
+  try{
+    if(!sessionStorage.getItem('_eti_hist_ok')){
+      sessionStorage.setItem('_eti_hist_ok','1');
+      fetch(RL_DB_URL+'/historial/'+rlUkey(SESSION.user)+'.json',{method:'POST',
+        body:JSON.stringify({ts:{'.sv':'timestamp'},evento:'ingreso',pagina:'evaluaciones-eti',modulo:RL_MODULO_ETI})
+      }).catch(()=>{});
+    }
+  }catch(e){}
+}
+function detenerPresencia(){
+  clearInterval(_presTimer); _presTimer=null;
+  if(!SESSION) return;
+  try{
+    fetch(RL_DB_URL+'/presencia/'+rlUkey(SESSION.user)+'.json',{
+      method:'PATCH', body:JSON.stringify({online:false}), keepalive:true
+    }).catch(()=>{});
+  }catch(e){}
+}
+window.addEventListener('beforeunload',()=>{ if(SESSION) detenerPresencia(); });
+document.addEventListener('visibilitychange',()=>{ if(SESSION) marcarPresencia(!document.hidden); });
+
+// Conectado = marcado en línea y con latido en los últimos 130 s
+function estaEnLinea(p){ return p.online && (Date.now()-Number(p.ultimo_ping||0))<130000; }
+
+// ── Solo ADMIN: ver quién está conectado (ETI o RR.LL) y avisar al ingresar ──
+function procesarPresencia(val){
+  if(!SESSION) return;
+  const yo=rlUkey(SESSION.user);
+  const arr=Object.keys(val||{}).map(k=>({k,...(val[k]||{})}));
+  _presOnline=arr.filter(p=>p.k!==yo && estaEnLinea(p));
+  const keys=new Set(_presOnline.map(p=>p.k));
+  if(_presPrevKeys===null){
+    if(_presOnline.length)
+      toast(`🟢 En línea ahora: ${_presOnline.map(p=>String(p.nombre||p.usuario||p.k).split(' ')[0]).join(', ')}`,'i');
+  }else{
+    _presOnline.forEach(p=>{
+      if(!_presPrevKeys.has(p.k))
+        toast(`🟢 ${p.nombre||p.usuario||p.k} ingresó — ${nombreSistemaPres(p)}`,'s');
+    });
+  }
+  _presPrevKeys=keys;
+  actualizarBadgeConectados();
+  const el=document.getElementById('admin-conectados');
+  if(el && el.style.display!=='none') renderConectados();
+  if(_chatAbierto && soyAdminRL() && !_chatCon) renderChat();
+}
+function iniciarPollPresencia(){
+  if(_presPollTimer) return;
+  const tick=()=>{ try{
+    fetch(RL_DB_URL+'/presencia.json?nc='+Date.now()).then(r=>r.json()).then(procesarPresencia).catch(()=>{});
+  }catch(e){} };
+  tick(); _presPollTimer=setInterval(tick,20000);
+}
+function escucharPresenciaAdmin(){
+  if(!soyAdminRL()) return;
+  if(rldb){
+    try{
+      _presRef=rldb.ref('presencia');
+      _presRef.on('value',s=>{
+        _rlConectado=true;
+        if(_presPollTimer){clearInterval(_presPollTimer);_presPollTimer=null;}
+        procesarPresencia(s.val());
+      },e=>{ console.warn('Presencia SDK:',e); iniciarPollPresencia(); });
+      setTimeout(()=>{ if(!_rlConectado) iniciarPollPresencia(); },6000);
+      return;
+    }catch(e){ console.warn('Presencia:',e); }
+  }
+  iniciarPollPresencia();
+}
+function actualizarBadgeConectados(){
+  const b=document.getElementById('pres-count');
+  if(b){ b.textContent=_presOnline.length; b.style.display=_presOnline.length?'':'none'; }
+}
+/* ══════════ 🎯 CUMPLIMIENTO DE EVALUACIONES POR SUPERVISOR ══════════ */
+/* _COBERTURAS_ETI_V1: nombre del reemplazo tal como figura en la lista de supervisores de este sistema */
+function nomETICob(n){try{const s=SUPERVISORES.find(x=>_cumCoincide(x.nom,n));return s?s.nom:(window.ETICob?ETICob.titulo(n):n);}catch(e){return n;}}
+function escCob(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+window.addEventListener('eti-coberturas',()=>{try{const el=document.getElementById('admin-cumplimiento');if(el&&el.style.display!=='none')renderCumplimiento();}catch(e){}});   /* _COBERTURAS_ETI_V1 */
+function renderCumplimiento(){
+  const kpis=document.getElementById('cum-kpis'), lista=document.getElementById('cum-lista');
+  if(!kpis||!lista) return;
+  /* _COBERTURAS_ETI_V1: reemplazos vigentes (registrados en el Sistema RR.LL.) */
+  try{let cb=document.getElementById('cum-cob');
+    if(!cb){cb=document.createElement('div');cb.id='cum-cob';kpis.parentNode.insertBefore(cb,kpis);}
+    const V=window.ETICob?ETICob.vigentes():[];
+    cb.innerHTML=V.length?`<div style="background:#EEF2FF;border:1px solid #C7D2FE;border-radius:12px;padding:.6rem .9rem;margin-bottom:.8rem;font-size:.82rem;line-height:1.6"><b style="color:#3730A3">🔄 Reemplazos vigentes</b> <span style="color:#64748b">(se registran en Sistema RR.LL. › Gestión de usuarios › Ausencia)</span><br>${V.map(c=>`• <b>${escCob(ETICob.titulo(c.reemplazo_nombre||c.reemplazo))}</b> ${escCob(ETICob.texto(c))}`).join('<br>')}</div>`:'';
+  }catch(e){}
+  const hoyIso=hoy();
+  const progs=getProgs().filter(p=>Array.isArray(p.fechas)&&p.fechas.length);
+  const evals=(_evalsNube||[]).filter(ev=>ev&&ev.fecha&&Array.isArray(ev.rutas)&&ev.rutas.length); // ignora registros basura
+  const grupos=[];
+  function grupoDe(nombre){
+    let g=grupos.find(x=>_cumCoincide(x.nombre,nombre));
+    if(!g){ g={nombre:nombre, sectores:new Set(), fechasProg:[], evals:[], destiempo:0}; grupos.push(g); }
+    return g;
+  }
+  progs.forEach(p=>{
+    if(!p.sup) return;
+    const g=grupoDe(p.sup);
+    if(p.sector) g.sectores.add(p.sector);
+    p.fechas.forEach(f=>{
+      const ej=(p.fechasEjecutadas||[]).indexOf(f)>=0;
+      /* _COBERTURAS_ETI_V1: si ese día el titular estaba ausente con reemplazo, la fecha la responde el reemplazo */
+      const c=(!ej&&window.ETICob)?ETICob.deTitular(p.sup,f):null;
+      if(c){ g.fechasProg.push({f:f, ejec:false, just:c});
+        const g2=grupoDe(nomETICob(c.reemplazo_nombre||c.reemplazo)); if(p.sector) g2.sectores.add(p.sector);
+        g2.fechasProg.push({f:f, ejec:false, cubre:c}); }
+      else g.fechasProg.push({f:f, ejec:ej});
+    });
+  });
+  evals.forEach(ev=>{
+    const nom=ev.sup||ev.nomUsuario||ev.usuario; if(!nom) return;
+    const g=grupoDe(nom);
+    g.evals.push(ev);
+    if(ev.destiempo&&ev.destiempo.tipo) g.destiempo++;
+  });
+  const filas=grupos.map(g=>{
+    const fechas=g.fechasProg.slice().sort((a,b)=>a.f.localeCompare(b.f));
+    let ejec=0,venc=0,prox=0;
+    fechas.forEach(x=>{
+      if(x.just){ x.hecha=false; return; }   /* _COBERTURAS_ETI_V1: justificada (la cubre el reemplazo) */
+      x.hecha=x.ejec||g.evals.some(ev=>ev.fecha===x.f);
+      if(x.hecha)ejec++; else if(x.f<hoyIso)venc++; else prox++;
+    });
+    const pasadas=ejec+venc;
+    const pct=pasadas?Math.round(ejec/pasadas*100):(fechas.length?100:0);
+    const evaluados=g.evals.reduce((a,ev)=>a+(ev.rutas?ev.rutas.length:0),0);
+    const ult=g.evals.map(ev=>ev.fecha).sort().pop()||'';
+    const estado=venc>0?'rojo':(fechas.length||g.evals.length?'verde':'gris');
+    return {g:g,fechas:fechas,ejec:ejec,venc:venc,prox:prox,pct:pct,evaluados:evaluados,ult:ult,estado:estado};
+  }).sort((a,b)=>(b.venc-a.venc)||(a.pct-b.pct)||a.g.nombre.localeCompare(b.g.nombre));
+
+  const tot=filas.length, alDia=filas.filter(f=>f.estado!=='rojo').length, atras=filas.filter(f=>f.estado==='rojo').length;
+  const vencTot=filas.reduce((a,f)=>a+f.venc,0), evalTot=evals.length;
+  const kpi=(n,l,c)=>`<div style="background:linear-gradient(135deg,${c}22,${c}0d);border:1px solid ${c}55;border-radius:14px;padding:.8rem;text-align:center;">
+    <div style="font-size:1.5rem;font-weight:800;color:${c};">${n}</div>
+    <div style="font-size:.66rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;">${l}</div></div>`;
+  kpis.innerHTML=kpi(tot,'Supervisores','#3b82f6')+kpi(alDia,'Al día','#22c55e')+kpi(atras,'Atrasados','#ef4444')+
+                 kpi(vencTot,'Fechas vencidas','#f59e0b')+kpi(evalTot,'Evaluaciones registradas','#8b5cf6');
+
+  if(!filas.length){ lista.innerHTML='<div style="text-align:center;color:var(--text2);padding:2rem;">Aún no hay programaciones ni evaluaciones registradas.</div>'; return; }
+  lista.innerHTML=filas.map(f=>{
+    const col=f.estado==='rojo'?'#ef4444':f.estado==='verde'?'#22c55e':'#94a3b8';
+    const etiqueta=f.estado==='rojo'?('🔴 ATRASADO — '+f.venc+' fecha(s) vencida(s)')
+                  :f.estado==='verde'?'🟢 AL DÍA':'⚪ SIN PROGRAMACIÓN';
+    const chips=f.fechas.map(x=>{
+      if(x.just) return `<span title="${escCob(window.ETICob?'Justificada: '+ETICob.tipoTxt(x.just.tipo)+' · la cubre '+ETICob.titulo(x.just.reemplazo_nombre||x.just.reemplazo):'')}" style="background:#EEF2FF;color:#4338CA;font-size:.68rem;font-weight:800;padding:.15rem .5rem;border-radius:999px;">⚕ ${x.f.slice(8,10)}/${x.f.slice(5,7)} justificada</span>`;
+      const c=x.hecha?['#16a34a','#dcfce7','✓']:(x.f<hoyIso?['#dc2626','#fee2e2','✗']:['#64748b','#f1f5f9','•']);
+      return `<span title="${x.f}${x.cubre&&window.ETICob?' · '+escCob(ETICob.texto(x.cubre)):''}" style="background:${c[1]};color:${c[0]};font-size:.68rem;font-weight:800;padding:.15rem .5rem;border-radius:999px;">${c[2]} ${x.f.slice(8,10)}/${x.f.slice(5,7)}</span>`;
+    }).join(' ');
+    return `<div style="border:1px solid var(--bd,#e2e8f0);border-left:5px solid ${col};border-radius:14px;padding:.9rem 1rem;margin-bottom:.7rem;background:var(--sf,#fff);box-shadow:0 2px 10px rgba(0,0,0,.05);">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.4rem;">
+        <div style="font-weight:800;font-size:.95rem;">${f.g.nombre}${f.g.sectores.size?` <span style="font-weight:400;color:var(--text2);font-size:.72rem;">· ${[...f.g.sectores].join(' · ')}</span>`:''}${(()=>{const cu=f.fechas.find(x=>x.cubre),ju=f.fechas.find(x=>x.just);return (cu?` <span style="font-size:.7rem;font-weight:800;background:#EEF2FF;color:#4338CA;border-radius:99px;padding:2px 8px">🔄 ${escCob(cu.cubre&&window.ETICob?ETICob.texto(cu.cubre):'')}</span>`:'')+(ju?` <span style="font-size:.7rem;font-weight:800;background:#FFF4E5;color:#9A5B00;border-radius:99px;padding:2px 8px">⚕ ausente: lo cubre ${escCob(window.ETICob?ETICob.titulo(ju.just.reemplazo_nombre||ju.just.reemplazo):'')}</span>`:'');})()}</div>
+        <span style="color:${col};font-weight:800;font-size:.72rem;">${etiqueta}</span>
+      </div>
+      <div style="height:8px;background:#f1f5f9;border-radius:999px;overflow:hidden;margin:.45rem 0;">
+        <div style="height:100%;width:${f.pct}%;background:linear-gradient(90deg,${col},${col}bb);border-radius:999px;transition:width .6s;"></div>
+      </div>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;font-size:.72rem;color:var(--text2);margin-bottom:.45rem;">
+        <span>Cumplimiento: <b style="color:${col}">${f.pct}%</b></span>
+        <span>✅ Ejecutadas: <b>${f.ejec}</b></span>
+        <span>❌ Vencidas: <b style="color:#dc2626">${f.venc}</b></span>
+        <span>📅 Próximas: <b>${f.prox}</b></span>
+        <span>👷 Evaluados: <b>${f.evaluados}</b></span>
+        <span>⏰ A destiempo: <b style="color:#b45309">${f.g.destiempo}</b></span>
+        <span>Última evaluación: <b>${f.ult||'—'}</b></span>
+      </div>
+      <div style="display:flex;gap:.3rem;flex-wrap:wrap;">${chips}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderConectados(){
+  const box=document.getElementById('admin-conectados-lista');
+  if(!box) return;
+  if(!_presOnline.length){
+    box.innerHTML='<div style="color:var(--text2);font-size:.85rem;padding:1rem;">Nadie más está conectado en este momento.</div>';
+    return;
+  }
+  box.innerHTML=[..._presOnline].sort((a,b)=>Number(b.ultimo_ping||0)-Number(a.ultimo_ping||0)).map(p=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:.8rem;padding:.7rem .9rem;border:1px solid var(--bdr);border-radius:10px;margin-bottom:.5rem;background:#fff;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:.6rem;">
+        <span style="width:10px;height:10px;border-radius:50%;background:#1DB954;display:inline-block;box-shadow:0 0 0 3px rgba(29,185,84,.2);"></span>
+        <div>
+          <div style="font-weight:700;font-size:.88rem;">${escHtml(p.nombre||p.usuario||p.k)}</div>
+          <div style="font-size:.72rem;color:var(--text2);">${escHtml(p.usuario||p.k)} · ${escHtml(nombreSistemaPres(p))} · visto hace ${Math.max(0,Math.round((Date.now()-Number(p.ultimo_ping||0))/1000))} s</div>
+        </div>
+      </div>
+      <button class="btn bpri bsm" onclick="abrirChatCon('${p.k}')">💬 Mensaje</button>
+    </div>`).join('');
+}
+
+// ── MENSAJERÍA ADMIN ↔ USUARIO (rutas /mensajes/{usuario} del RTDB RR.LL) ──
+// Mensajes del admin: de_usuario ∈ RL_ADMINS. Respuestas: de_usuario = el propio usuario.
+function esParaMi(m){ return SESSION && (soyAdminRL() ? m.de==='user' : m.de==='admin'); }
+
+function normalizarMsgs(val, soloUser){
+  const out=[];
+  const porConv=soloUser?{[soloUser]:(val||{})}:(val||{});
+  Object.keys(porConv).forEach(k=>{
+    const conv=porConv[k]||{};
+    Object.keys(conv).forEach(id=>{
+      const m=conv[id]||{};
+      if(!m||typeof m!=='object') return;
+      const deAdmin=RL_ADMINS.includes(String(m.de_usuario||'').toLowerCase());
+      out.push({id:k+'/'+id, user:k, de:deAdmin?'admin':'user',
+                deUser:m.de_usuario||'', deNom:m.de||'', texto:m.texto||'',
+                ts:Number(m.ts||0), leido:!!m.leido});
+    });
+  });
+  return out.sort((a,b)=>a.ts-b.ts);
+}
+
+function _procMsgs(val){
+  _chatMsgs=normalizarMsgs(val, soyAdminRL()?null:rlUkey(SESSION.user));
+  procesarMsgsNuevos();
+  actualizarChatBadge();
+  if(_chatAbierto){ renderChat(); marcarLeidos(); }
+}
+function iniciarPollChat(){
+  if(_msgPollTimer) return;
+  const path=soyAdminRL()?'mensajes':'mensajes/'+rlUkey(SESSION.user);
+  const tick=()=>{ try{
+    fetch(RL_DB_URL+'/'+path+'.json?nc='+Date.now()).then(r=>r.json()).then(_procMsgs).catch(()=>{});
+  }catch(e){} };
+  tick(); _msgPollTimer=setInterval(tick,15000);
+}
+function iniciarChat(){
+  if(!SESSION) return;
+  crearChatUI();
+  document.getElementById('chat-fab').style.display='flex';
+  _chatPrimeraCarga=true; _chatNotif=new Set();
+  if(rldb){
+    try{
+      const path=soyAdminRL()?'mensajes':'mensajes/'+rlUkey(SESSION.user);
+      _msgRef=rldb.ref(path);
+      _msgRef.on('value',s=>{
+        _rlConectado=true;
+        if(_msgPollTimer){clearInterval(_msgPollTimer);_msgPollTimer=null;}
+        _procMsgs(s.val());
+      },e=>{ console.warn('Chat SDK:',e); iniciarPollChat(); });
+      setTimeout(()=>{ if(!_rlConectado) iniciarPollChat(); },6000);
+      return;
+    }catch(e){ console.warn('Chat:',e); }
+  }
+  iniciarPollChat();
+}
+function detenerChat(){
+  try{ if(_msgRef) _msgRef.off(); }catch(e){}
+  try{ if(_presRef) _presRef.off(); }catch(e){}
+  _msgRef=null; _presRef=null;
+  clearInterval(_msgPollTimer); _msgPollTimer=null;
+  clearInterval(_presPollTimer); _presPollTimer=null;
+  _chatMsgs=[]; _chatAbierto=false; _chatCon=null;
+  _chatNotif=new Set(); _chatPrimeraCarga=true;
+  _presOnline=[]; _presPrevKeys=null; _rlConectado=false;
+  const f=document.getElementById('chat-fab'); if(f) f.style.display='none';
+  const p=document.getElementById('chat-panel'); if(p) p.style.display='none';
+}
+
+function procesarMsgsNuevos(){
+  const noLeidos=_chatMsgs.filter(m=>esParaMi(m)&&!m.leido);
+  if(_chatPrimeraCarga){
+    noLeidos.forEach(m=>_chatNotif.add(m.id));
+    if(noLeidos.length) toast(`💬 Tienes ${noLeidos.length} mensaje(s) sin leer`,'i');
+    _chatPrimeraCarga=false;
+    return;
+  }
+  noLeidos.forEach(m=>{
+    if(!_chatNotif.has(m.id)){
+      _chatNotif.add(m.id);
+      toast(`💬 ${m.deNom||m.deUser||'Mensaje'}: "${(m.texto||'').slice(0,70)}"`,'i');
+    }
+  });
+}
+
+function actualizarChatBadge(){
+  const b=document.getElementById('chat-badge');
+  if(!b) return;
+  const n=_chatMsgs.filter(m=>esParaMi(m)&&!m.leido).length;
+  b.textContent=n>99?'99+':n;
+  b.style.display=n?'':'none';
+}
+
+function marcarLeidos(){
+  if(!SESSION||!_chatAbierto) return;
+  _chatMsgs
+    .filter(m=>esParaMi(m)&&!m.leido&&(!soyAdminRL()||m.user===_chatCon))
+    .forEach(m=>{
+      m.leido=true;
+      try{
+        fetch(RL_DB_URL+'/mensajes/'+m.id+'.json',{
+          method:'PATCH', body:JSON.stringify({leido:true,leido_ts:{'.sv':'timestamp'}})
+        }).catch(()=>{});
+      }catch(e){}
+    });
+  actualizarChatBadge();
+}
+
+function nombreDeUsuario(key){
+  const u=getUsuarios().find(x=>rlUkey(x.user)===key);
+  if(u) return u.nom;
+  const p=_presOnline.find(p=>p.k===key);
+  if(p&&(p.nombre||p.usuario)) return p.nombre||p.usuario;
+  const m=[..._chatMsgs].reverse().find(m=>m.user===key&&m.de==='user'&&m.deNom);
+  return (m&&m.deNom)||key;
+}
+
+function toggleChat(){
+  const p=document.getElementById('chat-panel');
+  if(!p) return;
+  _chatAbierto=p.style.display!=='flex';
+  p.style.display=_chatAbierto?'flex':'none';
+  if(_chatAbierto){
+    if(!soyAdminRL()) _chatCon=rlUkey(SESSION.user);
+    renderChat(); marcarLeidos();
+  }
+}
+
+function abrirChatCon(key){
+  _chatCon=key;
+  const p=document.getElementById('chat-panel');
+  if(p && p.style.display!=='flex'){ p.style.display='flex'; _chatAbierto=true; }
+  renderChat(); marcarLeidos();
+}
+
+function chatVolverLista(){ _chatCon=null; renderChat(); }
+
+function fmtHoraMsg(ts){
+  if(!ts) return '';
+  const d=new Date(ts), hoy=new Date();
+  const hora=d.toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'});
+  return d.toDateString()===hoy.toDateString()?hora:d.toLocaleDateString('es-PE',{day:'2-digit',month:'short'})+' '+hora;
+}
+
+function renderChat(){
+  const body=document.getElementById('chat-body');
+  const title=document.getElementById('chat-title');
+  const back=document.getElementById('chat-back');
+  const inputrow=document.getElementById('chat-inputrow');
+  if(!body) return;
+  const esAdmin=soyAdminRL();
+
+  // ADMIN sin conversación elegida → lista de conversaciones
+  if(esAdmin && !_chatCon){
+    back.style.display='none';
+    inputrow.style.display='none';
+    title.textContent='💬 Mensajes por usuario';
+    const porUser={};
+    _chatMsgs.forEach(m=>{ if(m.user) (porUser[m.user]=porUser[m.user]||[]).push(m); });
+    getUsuarios().filter(u=>u.rol!=='admin').forEach(u=>{ const k=rlUkey(u.user); porUser[k]=porUser[k]||[]; });
+    _presOnline.forEach(p=>{ porUser[p.k]=porUser[p.k]||[]; });
+    const items=Object.keys(porUser).map(u=>{
+      const ms=porUser[u], ult=ms[ms.length-1];
+      const noLe=ms.filter(m=>m.de==='user'&&!m.leido).length;
+      const online=_presOnline.some(p=>p.k===u);
+      return {u, ult, noLe, online, ts:ult?ult.ts:0};
+    }).sort((a,b)=>(b.noLe-a.noLe)||(b.ts-a.ts)||((b.online?1:0)-(a.online?1:0)));
+    body.innerHTML=items.map(it=>`
+      <div class="chat-conv" onclick="abrirChatCon('${it.u}')">
+        <div style="min-width:0;">
+          <div style="font-weight:700;font-size:.8rem;">${it.online?'🟢 ':''}${escHtml(nombreDeUsuario(it.u))}</div>
+          <div style="font-size:.7rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;">${it.ult?escHtml((it.ult.de==='admin'?'Tú: ':'')+it.ult.texto):'Sin mensajes'}</div>
+        </div>
+        ${it.noLe?`<span style="background:#C8102E;color:#fff;border-radius:999px;font-size:.65rem;font-weight:800;padding:.15rem .45rem;">${it.noLe}</span>`:''}
+      </div>`).join('')||'<div style="color:var(--text2);font-size:.8rem;padding:1rem;">Sin conversaciones.</div>';
+    return;
+  }
+
+  // Conversación abierta
+  const conv=_chatMsgs.filter(m=>m.user===_chatCon);
+  back.style.display=esAdmin?'':'none';
+  inputrow.style.display='flex';
+  title.textContent=esAdmin?'💬 '+nombreDeUsuario(_chatCon):'💬 Coordinación RR.LL (Joel Timoteo)';
+  body.innerHTML=conv.length?conv.map(m=>{
+    const mio=esAdmin?m.de==='admin':m.de==='user';
+    return `<div class="msg-b ${mio?'msg-mio':'msg-otro'}">
+      ${escHtml(m.texto)}
+      <div class="msg-meta">${escHtml(mio?'Tú':(m.deNom||m.deUser||''))} · ${fmtHoraMsg(m.ts)}</div>
+    </div>`;
+  }).join(''):'<div style="color:var(--text2);font-size:.8rem;padding:1rem;text-align:center;">Aún no hay mensajes.<br>Escribe el primero 👇</div>';
+  body.scrollTop=body.scrollHeight;
+}
+
+function enviarChatMsg(){
+  const inp=document.getElementById('chat-input');
+  const texto=(inp.value||'').trim();
+  if(!texto||!SESSION) return;
+  const destino=soyAdminRL()?_chatCon:rlUkey(SESSION.user);
+  if(!destino){ toast('Selecciona un usuario primero','e'); return; }
+  const cuerpo={texto:texto.slice(0,990), de:SESSION.nom, de_usuario:SESSION.user,
+                ts:{'.sv':'timestamp'}, leido:false};
+  try{
+    fetch(RL_DB_URL+'/mensajes/'+destino+'.json',{method:'POST',body:JSON.stringify(cuerpo)})
+      .then(r=>{ if(!r||!r.ok) throw new Error('REST'); })
+      .catch(e=>{ console.error('Chat:',e); toast('No se pudo enviar el mensaje','e'); });
+  }catch(e){ toast('No se pudo enviar el mensaje','e'); return; }
+  // Eco local inmediato (el listener/poll lo reemplaza con el dato real)
+  _chatMsgs.push({id:'local_'+Math.random().toString(36).slice(2), user:destino,
+                  de:soyAdminRL()?'admin':'user', deUser:SESSION.user, deNom:SESSION.nom,
+                  texto:texto, ts:Date.now(), leido:false});
+  inp.value='';
+  renderChat();
+}
+
+function crearChatUI(){
+  if(document.getElementById('chat-fab')) return;
+  const st=document.createElement('style');
+  st.textContent=`
+    #chat-fab{position:fixed;bottom:18px;right:18px;z-index:900;width:56px;height:56px;border-radius:50%;border:none;background:var(--navy);color:#fff;font-size:1.45rem;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.3);display:none;align-items:center;justify-content:center;}
+    #chat-fab:hover{background:var(--navy3);}
+    #chat-badge{position:absolute;top:-4px;right:-4px;background:#C8102E;color:#fff;border-radius:999px;font-size:.66rem;font-weight:800;padding:.15rem .4rem;min-width:20px;display:none;}
+    #chat-panel{position:fixed;bottom:84px;right:18px;z-index:901;width:335px;max-width:calc(100vw - 24px);height:450px;max-height:calc(100vh - 110px);background:#fff;border:1px solid var(--bdr);border-radius:14px;box-shadow:var(--shlg);display:none;flex-direction:column;overflow:hidden;}
+    .chat-head{background:var(--navy);color:#fff;padding:.6rem .8rem;display:flex;align-items:center;gap:.5rem;font-weight:700;font-size:.85rem;}
+    .chat-head button{background:none;border:none;color:#fff;font-size:1rem;cursor:pointer;padding:0 .2rem;}
+    #chat-title{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    #chat-body{flex:1;overflow-y:auto;padding:.7rem;background:var(--surf);display:flex;flex-direction:column;}
+    .chat-inputrow{display:flex;gap:.4rem;padding:.55rem;border-top:1px solid var(--bdr);background:#fff;}
+    .chat-inputrow input{flex:1;border:1px solid var(--bdr);border-radius:8px;padding:.45rem .6rem;font-size:.82rem;font-family:inherit;outline:none;}
+    .chat-inputrow input:focus{border-color:var(--navy);}
+    .msg-b{max-width:82%;margin-bottom:.45rem;padding:.45rem .6rem;border-radius:10px;font-size:.8rem;line-height:1.35;white-space:pre-wrap;word-break:break-word;}
+    .msg-mio{align-self:flex-end;background:var(--navy);color:#fff;border-bottom-right-radius:3px;}
+    .msg-otro{align-self:flex-start;background:#fff;color:var(--text);border:1px solid var(--bdr);border-bottom-left-radius:3px;}
+    .msg-meta{font-size:.6rem;opacity:.65;margin-top:.2rem;}
+    .chat-conv{display:flex;justify-content:space-between;align-items:center;gap:.5rem;padding:.55rem .6rem;border:1px solid var(--bdr);border-radius:10px;margin-bottom:.45rem;background:#fff;cursor:pointer;}
+    .chat-conv:hover{border-color:var(--navy);}`;
+  document.head.appendChild(st);
+
+  const fab=document.createElement('button');
+  fab.id='chat-fab';
+  fab.title='Mensajes';
+  fab.innerHTML='💬<span id="chat-badge">0</span>';
+  fab.onclick=toggleChat;
+  document.body.appendChild(fab);
+
+  const panel=document.createElement('div');
+  panel.id='chat-panel';
+  panel.innerHTML=`
+    <div class="chat-head">
+      <button id="chat-back" style="display:none;" onclick="chatVolverLista()" title="Volver">←</button>
+      <div id="chat-title">Mensajes</div>
+      <button onclick="toggleChat()" title="Cerrar">✕</button>
+    </div>
+    <div id="chat-body"></div>
+    <div class="chat-inputrow" id="chat-inputrow" style="display:none;">
+      <input id="chat-input" placeholder="Escribe un mensaje..." maxlength="500" onkeydown="if(event.key==='Enter')enviarChatMsg()">
+      <button class="btn bpri bsm" onclick="enviarChatMsg()">Enviar</button>
+    </div>`;
+  document.body.appendChild(panel);
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// ALERTA GLOBAL DE PENDIENTES — seguimiento de gestión
+// Junta pendientes de los 3 sistemas: RR.LL (informes de visitas y casos
+// sin cerrar, vía GAS), Capacitaciones ETI (programaciones_eti) y
+// Evaluaciones ETI (programaciones_eval) del Firestore sistema-eti-verfrut.
+// Tarjeta flotante persistente: solo se minimiza; desaparece al cumplir.
+// ══════════════════════════════════════════════════════════════
+(function(){
+  'use strict';
+  var GAS='https://script.google.com/macros/s/AKfycbxZP3UGad-XwRl7sCYmTxeex57b1hEfmqslhe5x0IOzzvpbEbM4VYFR2d52b_YMB1lyyA/exec';
+  var FS='https://firestore.googleapis.com/v1/projects/sistema-eti-verfrut/databases/(default)/documents/';
+  var KEY='AIzaSyAv-1VcbT8VCerClNAeVtVXzOxhSffeDpc';
+  var REFRESCO=10*60*1000, REABRIR=30*60*1000;
+  var _min=false,_reT=null,_tenia=false,_ultFetch=0,_activo=false;
+
+  function getU(){ 
+    try{
+      if(!SESSION||!SESSION.user)return null;
+      if(String(SESSION.user).toLowerCase()==='jtimoteo')return null;
+      return {usuario:SESSION.user,nombre:SESSION.nom||SESSION.user};
+    }catch(e){return null;}
+ }
+
+  function norm(s){return String(s||'').toUpperCase().replace(/\s+/g,' ').trim();}
+  function coincide(a,b){
+    a=norm(a);b=norm(b);
+    if(!a||!b)return false;
+    if(a===b)return true;
+    var A=a.split(' ').filter(function(w){return w.length>2;});
+    var B=b.split(' ').filter(function(w){return w.length>2;});
+    var ig=function(x,y){return x===y||(x.length>=4&&y.length>=4&&(x.indexOf(y)===0||y.indexOf(x)===0));};
+    var c=A.filter(function(w){return B.some(function(v){return ig(w,v);});}).length;
+    return c>=3||(c>=2&&(A.length<=2||B.length<=2));
+  }
+  function escA(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function fsVal(v){
+    if(!v)return null;
+    if(v.stringValue!==undefined)return v.stringValue;
+    if(v.integerValue!==undefined)return Number(v.integerValue);
+    if(v.doubleValue!==undefined)return v.doubleValue;
+    if(v.booleanValue!==undefined)return v.booleanValue;
+    if(v.arrayValue)return (v.arrayValue.values||[]).map(fsVal);
+    if(v.mapValue){var o={},f=v.mapValue.fields||{};Object.keys(f).forEach(function(k){o[k]=fsVal(f[k]);});return o;}
+    return null;
+  }
+  function fsDocs(j){return (j&&j.documents||[]).map(function(d){var o={},f=d.fields||{};Object.keys(f).forEach(function(k){o[k]=fsVal(f[k]);});return o;});}
+  function fsGet(col){return fetch(FS+col+'?pageSize=300&key='+KEY).then(function(r){return r.json();}).then(fsDocs);}
+  function hoyISO(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+  function fmtD(iso){try{return new Date(iso+'T12:00:00').toLocaleDateString('es-PE',{day:'2-digit',month:'short'});}catch(e){return iso||'';}}
+
+  function cargarCaps(u){
+    return Promise.all([fsGet('usuarios_eti')['catch'](function(){return[];}),fsGet('programaciones_eti')['catch'](function(){return[];})])
+      .then(function(res){
+        var cuentas=res[0],progs=res[1],hoy=hoyISO(),lista=[];
+        var cta=cuentas.find(function(c){return String(c.usuario||'').toLowerCase()===String(u.usuario).toLowerCase();});
+        var nSup=(cta&&cta.supervisorNombre)||u.nombre;
+        progs.forEach(function(p){
+          if(p.estado==='ejecutada')return;
+          if(!coincide(p.supervisor||'',nSup)&&!coincide(p.supervisor||'',u.nombre))return;
+          var fechas=(p.fechas&&p.fechas.length?p.fechas.slice().sort():[p.fechaProgramada,p.fechaFin||p.fechaProgramada].filter(Boolean).sort());
+          if(!fechas.length)return;
+          var ini=fechas[0],fin=fechas[fechas.length-1],estado,dias,venc=false;
+          if(hoy>fin){dias=Math.round((new Date(hoy)-new Date(fin))/86400000);estado='VENCIDA — '+dias+' día(s) de atraso';venc=true;}
+          else if(hoy>=ini){estado=(ini===fin)?'programada para HOY':'EN CURSO';}
+          else{dias=Math.round((new Date(ini)-new Date(hoy))/86400000);if(dias>7)return;estado='próxima — en '+dias+' día(s)';}
+          lista.push({tema:p.tema||'Capacitación ETI',sector:p.sector||'',
+                      fechasTxt:ini===fin?fmtD(ini):fmtD(ini)+' al '+fmtD(fin),estado:estado,vencida:venc});
+        });
+        return lista;
+      });
+  }
+  function cargarEvals(u){
+    return fsGet('programaciones_eval')['catch'](function(){return[];}).then(function(progs){
+      var hoy=hoyISO(),lista=[];
+      progs.forEach(function(p){
+        if(p.estado==='ejecutada')return;
+        if(!coincide(p.sup||'',u.nombre))return;
+        var ejec=p.fechasEjecutadas||[];
+        var pend=(p.fechas||[]).filter(function(f){return ejec.indexOf(f)<0;}).sort();
+        if(!pend.length)return;
+        var venc=pend.filter(function(f){return f<hoy;});
+        var prox=pend.filter(function(f){return f>=hoy;});
+        if(!venc.length){
+          if(!prox.length)return;
+          var d=Math.round((new Date(prox[0])-new Date(hoy))/86400000);
+          if(d>7)return;
+          lista.push({fechasTxt:pend.map(fmtD).join(' · '),vencida:false,
+                      estado:d===0?'programada para HOY':'próxima — en '+d+' día(s)'});
+        }else{
+          lista.push({fechasTxt:pend.map(fmtD).join(' · '),vencida:true,
+                      estado:'VENCIDA — la fecha programada ya pasó y aún no registras'});
+        }
+      });
+      return lista;
+    });
+  }
+  function cargarRRLL(u){
+    return fetch(GAS+'?'+new URLSearchParams({action:'getCumplimiento',usuario:u.usuario||''}))
+      .then(function(r){return r.json();})
+      .then(function(res){
+        if(!res||!res.success)return{visitas:[],casos:0};
+        var visitas=(res.pendientesVisitas||[]).filter(function(p){return coincide(p.nombre,u.nombre);}).map(function(p){return p.estado||'vencido';});
+        var casos=(res.casosPendientes||[]).filter(function(p){return coincide(p.nombre_mostrar,u.nombre);}).length;
+        return{visitas:visitas,casos:casos};
+      })['catch'](function(){return{visitas:[],casos:0};});
+  }
+
+  function pila(u){var n=String(u.nombre||u.usuario||'').trim().split(' ')[0]||'colega';return n.charAt(0).toUpperCase()+n.slice(1).toLowerCase();}
+  function quitarUI(){['_apEvCard','_apEvPill'].forEach(function(id){var el=document.getElementById(id);if(el&&el.parentNode)el.parentNode.removeChild(el);});}
+
+  function renderPill(u,total){
+    quitarUI();
+    var pill=document.createElement('button');
+    pill.id='_apEvPill';pill.type='button';
+    pill.innerHTML='⏰ '+total+' pendiente(s)';
+    pill.style.cssText='position:fixed;bottom:20px;left:20px;z-index:2147482000;background:#f59e0b;color:#451a03;border:none;border-radius:999px;padding:9px 16px;font-weight:800;font-size:12.5px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.45);animation:_apEvPulso 1.6s infinite;font-family:inherit;';
+    pill.title='Ver mis pendientes';
+    pill.addEventListener('click',function(){_min=false;actualizar();});
+    document.body.appendChild(pill);
+    if(!document.getElementById('_apEvKf')){
+      var st=document.createElement('style');st.id='_apEvKf';
+      st.textContent='@keyframes _apEvPulso{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}';
+      document.head.appendChild(st);
+    }
+    clearTimeout(_reT);
+    _reT=setTimeout(function(){_min=false;actualizar();},REABRIR);
+  }
+
+  function renderCard(u,caps,evals,rrll){
+    quitarUI();
+    var items='';
+    caps.forEach(function(c){
+      items+='<div style="background:rgba(56,189,248,.10);border:1px solid rgba(56,189,248,.35);border-radius:10px;padding:9px 11px;margin-top:8px;">'+
+        '🎓 <b>Capacitación de Ética Social programada:</b> '+escA(c.tema)+(c.sector?' · '+escA(c.sector):'')+
+        '<br>Fechas designadas: <b>'+escA(c.fechasTxt)+'</b> — <b style="color:'+(c.vencida?'#f87171':'#7dd3fc')+'">'+escA(c.estado)+'</b>'+
+        '<br><span style="opacity:.85">'+(c.vencida?'Aún no la registras en el módulo de Capacitaciones ETI y la fecha programada ya venció. ':'')+
+        'Recuerda realizarla y registrarla según el correo enviado por el coordinador Joel Timoteo.</span></div>';
+    });
+    evals.forEach(function(ev){
+      items+='<div style="background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.35);border-radius:10px;padding:9px 11px;margin-top:8px;">'+
+        '⭐ <b>Evaluación de Ética Social programada:</b> fechas <b>'+escA(ev.fechasTxt)+'</b> — <b style="color:'+(ev.vencida?'#f87171':'#fde047')+'">'+escA(ev.estado)+'</b>'+
+        '<br><span style="opacity:.85">'+(ev.vencida?'Todavía no registras tus evaluaciones en el Sistema de Evaluaciones ETI. Por favor regístralas o coordina tu reprogramación. ':'Recuerda registrar tus evaluaciones en el Sistema de Evaluaciones ETI en las fechas programadas.')+'</span></div>';
+    });
+    rrll.visitas.forEach(function(est){
+      items+='<div style="background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.35);border-radius:10px;padding:9px 11px;margin-top:8px;">'+
+        '📋 <b>Informe de visitas '+(est==='plazo_hoy'?'(el plazo vence HOY)':'(VENCIDO)')+':</b> '+
+        (est==='plazo_hoy'?'recuerda que hoy vence el plazo para subir tu informe de visitas.':'tienes vencido el informe de visitas de la semana pasada. Por favor regularízalo hoy.')+'</div>';
+    });
+    if(rrll.casos){
+      items+='<div style="background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.35);border-radius:10px;padding:9px 11px;margin-top:8px;">'+
+        '📁 <b>'+rrll.casos+' caso(s) con informe de investigación sin cerrar:</b> registrados sin informe ni reporte subido en Registro de Casos del Sistema RR.LL. Por favor ciérralos antes de que venzan.</div>';
+    }
+    var card=document.createElement('div');
+    card.id='_apEvCard';
+    card.style.cssText='position:fixed;bottom:20px;left:20px;z-index:2147482000;width:340px;max-width:calc(100vw - 40px);max-height:calc(100vh - 190px);overflow-y:auto;background:#0f172a;color:#f1f5f9;border-left:4px solid #f59e0b;border-radius:14px;padding:14px 16px;box-shadow:0 14px 40px rgba(0,0,0,.5);font-size:13px;line-height:1.5;font-family:inherit;';
+    card.innerHTML=
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">'+
+      '<div style="font-weight:800;color:#fbbf24;">⏰ Seguimiento de tu gestión</div>'+
+      '<button type="button" id="_apEvMin" title="Minimizar (la alerta seguirá activa)" style="background:#334155;color:#f1f5f9;border:none;border-radius:8px;padding:3px 10px;font-weight:800;cursor:pointer;">—</button></div>'+
+      '<div>Hola, <b>'+escA(pila(u))+'</b> 👋 — tienes pendientes que requieren tu atención:</div>'+items+
+      '<div style="margin-top:10px;font-size:12px;opacity:.85;border-top:1px solid #334155;padding-top:8px;">'+
+      'Esta alerta es parte del <b>seguimiento de tu gestión</b> y se cerrará automáticamente cuando registres tus pendientes. '+
+      'Si no podrás cumplir en las fechas programadas, comunícate con el coordinador <b>Joel Timoteo</b> para reprogramar y ponerte al día en los tiempos prudentes dispuestos por tu jefatura.</div>';
+    document.body.appendChild(card);
+    card.querySelector('#_apEvMin').addEventListener('click',function(){
+      _min=true;
+      renderPill(u,caps.length+evals.length+rrll.visitas.length+(rrll.casos?1:0));
+    });
+  }
+
+  function actualizar(){
+    var u=getU();
+    if(!u){quitarUI();_tenia=false;return;}
+    Promise.all([cargarCaps(u)['catch'](function(){return[];}),
+                 cargarEvals(u)['catch'](function(){return[];}),
+                 cargarRRLL(u)])
+      .then(function(res){
+        if(!getU()){quitarUI();return;}
+        var caps=res[0]||[],evals=res[1]||[],rrll=res[2]||{visitas:[],casos:0};
+        var total=caps.length+evals.length+rrll.visitas.length+(rrll.casos?1:0);
+        if(!total){
+          quitarUI();
+          if(_tenia){_tenia=false;
+            var ok=document.createElement('div');
+            ok.style.cssText='position:fixed;top:16px;right:16px;z-index:2147482100;background:#0f172a;color:#f1f5f9;border-left:4px solid #22c55e;border-radius:12px;padding:12px 14px;box-shadow:0 12px 34px rgba(0,0,0,.35);font-size:13px;line-height:1.5;max-width:320px;font-family:inherit;';
+            ok.innerHTML='<b style="color:#4ade80">✅ ¡Ya estás al día, '+escA(pila(u))+'!</b><br>Gracias por cumplir con lo programado.';
+            document.body.appendChild(ok);
+            setTimeout(function(){if(ok.parentNode)ok.parentNode.removeChild(ok);},10000);
+          }
+          return;
+        }
+        _tenia=true;
+        if(_min)renderPill(u,total);else renderCard(u,caps,evals,rrll);
+      })['catch'](function(){});
+  }
+
+  // Vigilar sesión: cuando el usuario inicia sesión, activar; al salir, limpiar.
+  setInterval(function(){
+    var u=getU();
+    if(u&&!_activo){_activo=true;_ultFetch=Date.now();actualizar();}
+    else if(u&&_activo&&Date.now()-_ultFetch>=REFRESCO){_ultFetch=Date.now();actualizar();}
+    else if(!u&&_activo){_activo=false;_tenia=false;quitarUI();}
+  },5000);
+})();
+
+
+// ══════════════════════════════════════════════════════════════
+// CIERRE AUTOMÁTICO DE SESIÓN POR HORARIO — Sistema de Evaluaciones ETI
+// Misma regla del portal RR.LL: supervisores de 05:30 a 17:00,
+// L-V (temporada baja) / L-Sáb (alta, desde 27-jun). Fuera de horario:
+// cuenta regresiva de 5 min y cierre forzado, registrado en /historial
+// (visible para el administrador en el Monitor). Respeta accesos
+// temporales otorgados vía GAS. No aplica al administrador.
+// ══════════════════════════════════════════════════════════════
+(function(){
+  'use strict';
+  var AC_GAS='https://script.google.com/macros/s/AKfycbxZP3UGad-XwRl7sCYmTxeex57b1hEfmqslhe5x0IOzzvpbEbM4VYFR2d52b_YMB1lyyA/exec';
+  var AC_DB='https://sistema-rl-verfrut-default-rtdb.firebaseio.com';
+  var _acCard=null,_acT=null,_acExt=false,_acCerrando=false,_acPospon=0;
+
+  function acUser(){ 
+    try{
+      if(!SESSION||!SESSION.user)return null;
+      return {usuario:SESSION.user,nombre:SESSION.nom,rol:SESSION.rol};
+    }catch(e){return null;}
+ }
+  function acUkey(u){return String(u).toLowerCase().replace(/[.#$/\[\]]/g,'_');}
+  function acEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+  function acFuera(u){
+    if(!u)return false;
+    if(String(u.rol||'').toLowerCase()!=='supervisor')return false;
+    var a=new Date(),mes=a.getMonth()+1,dia=a.getDate(),dow=a.getDay(),h=a.getHours()+a.getMinutes()/60;
+    var alta=mes>6||(mes===6&&dia>=27);
+    if(!alta){ if(dow===0||dow===6)return true; } else { if(dow===0)return true; }
+    return (h<5.5||h>=17);
+  }
+
+  function acQuitar(){clearInterval(_acT);_acT=null;if(_acCard&&_acCard.parentNode)_acCard.parentNode.removeChild(_acCard);_acCard=null;}
+
+  function acCerrar(u){
+    if(_acCerrando)return;
+    _acCerrando=true;
+    try{fetch(AC_DB+'/historial/'+acUkey(u.usuario)+'.json',{method:'POST',keepalive:true,
+      body:JSON.stringify({ts:{'.sv':'timestamp'},evento:'cierre_automatico',pagina:'evaluaciones-eti',modulo:'Evaluaciones ETI'})})['catch'](function(){});}catch(e){}
+    try{fetch(AC_DB+'/presencia/'+acUkey(u.usuario)+'.json',{method:'PATCH',keepalive:true,
+      body:JSON.stringify({online:false})})['catch'](function(){});}catch(e){}
+    setTimeout(function(){
+      acQuitar();
+      _acCerrando=false;
+      try{ doLogout(); }catch(e){}
+    },500);
+  }
+
+  function acMostrar(u){
+    if(_acCard||_acCerrando)return;
+    var seg=300;
+    _acCard=document.createElement('div');
+    _acCard.style.cssText='position:fixed;top:16px;right:16px;z-index:2147483647;max-width:360px;background:#0f172a;color:#f1f5f9;border-left:4px solid #ef4444;border-radius:12px;padding:14px 16px;box-shadow:0 12px 34px rgba(0,0,0,.45);font-size:13.5px;line-height:1.55;font-family:inherit;';
+    var nom=String(u.nombre||u.usuario||'').trim().split(' ')[0]||'colega';
+    nom=nom.charAt(0).toUpperCase()+nom.slice(1).toLowerCase();
+    _acCard.innerHTML=
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-weight:800;color:#f87171;">'+
+      '<span style="font-size:16px;">🔒</span><span>Fin de jornada — cierre automático</span></div>'+
+      '<div style="margin-bottom:10px;">Estimado(a) <b>'+acEsc(nom)+'</b>: tu horario permitido en el Sistema de Evaluaciones ETI ya finalizó '+
+      '(<b>05:30 a 17:00</b>). Por seguridad, el sistema cerrará tu sesión automáticamente en '+
+      '<b id="_acCuentaEti" style="color:#fbbf24;font-size:15px;">5:00</b> y el cierre quedará registrado para Coordinación.<br>'+
+      '<span style="opacity:.85">Guarda lo que estés haciendo. Si necesitas trabajar fuera de horario, solicita un acceso temporal al coordinador Joel Timoteo.</span></div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;">'+
+      '<button type="button" data-acc="cerrar" style="background:#ef4444;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-weight:800;font-size:12.5px;cursor:pointer;">🚪 Guardar y cerrar ahora</button>'+
+      (!_acExt?'<button type="button" data-acc="ext" style="background:#334155;color:#f1f5f9;border:none;border-radius:8px;padding:6px 14px;font-weight:800;font-size:12.5px;cursor:pointer;">🕒 Necesito 10 min más (única vez)</button>':'')+
+      '</div>';
+    document.body.appendChild(_acCard);
+    _acCard.querySelector('[data-acc="cerrar"]').addEventListener('click',function(){acCerrar(u);});
+    var ext=_acCard.querySelector('[data-acc="ext"]');
+    if(ext)ext.addEventListener('click',function(){_acExt=true;_acPospon=Date.now()+10*60*1000;acQuitar();});
+    _acT=setInterval(function(){
+      seg--;
+      var el=document.getElementById('_acCuentaEti');
+      if(el)el.textContent=Math.floor(seg/60)+':'+String(seg%60).padStart(2,'0');
+      if(seg<=0){acQuitar();acCerrar(u);}
+    },1000);
+  }
+
+  function acVerificar(){
+    var u=acUser();
+    if(!u||_acCerrando){if(!u)acQuitar();return;}
+    if(_acCard){ if(!acFuera(u))acQuitar(); return; }
+    if(Date.now()<_acPospon)return;
+    if(!acFuera(u))return;
+    fetch(AC_GAS,{method:'POST',headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({action:'verificarAccesoTemporal',usuario:u.usuario})})
+      .then(function(r){return r.json();})['catch'](function(){return null;})
+      .then(function(d){
+        if(d&&d.success&&d.tieneAcceso){_acPospon=Date.now()+30*60*1000;return;}
+        var u2=acUser();
+        if(u2&&acFuera(u2))acMostrar(u2);
+      });
+  }
+  setTimeout(acVerificar,15000);
+  setInterval(acVerificar,60000);
+})();
+
+// ── Volver al Sistema RR.LL sin duplicar pestañas ──
+const RRLL_URL='https://joeltimoteog-bot.github.io/sistema-rl-verfrut/frontend/pages/dashboard.html';
+function volverRRLL(){
+  // Caso 1: esta pestaña fue abierta desde el Sistema RR.LL → cerrarla y volver a la original
+  if(window.opener && !window.opener.closed){ window.close(); return; }
+  // Caso 2: se llegó navegando desde RR.LL en la misma pestaña → regresar en el historial
+  if(document.referrer.indexOf('sistema-rl-verfrut')>-1 && history.length>1){ history.back(); return; }
+  // Caso 3: intentar cerrar; si el navegador lo bloquea, navegar en esta misma pestaña
+  window.close();
+  setTimeout(()=>{ location.href=RRLL_URL; },250);
+}
+
+function fmtF(iso){if(!iso)return'—';const d=new Date(iso+'T12:00:00');return d.toLocaleDateString('es-PE',{weekday:'short',year:'numeric',month:'short',day:'numeric'});}
+function toast(msg,t='i'){
+  const d=document.createElement('div');
+  d.className=`tst ${t}`;
+  d.textContent=msg;
+  document.getElementById('tc').appendChild(d);
+  // Mensajes largos (>60 chars) duran 8 segundos
+  const dur=msg.length>60?8000:4000;
+  setTimeout(()=>d.remove(),dur);
+}
+let _cb=null;
+function confMod(t,b,cb){document.getElementById('mtit').textContent=t;document.getElementById('mbdy').textContent=b;_cb=cb;document.getElementById('mov').classList.add('open');}
+document.getElementById('mbtn').addEventListener('click',()=>{if(_cb)_cb();closeMod();});
+function closeMod(){document.getElementById('mov').classList.remove('open');_cb=null;}
+document.getElementById('mdate').textContent=new Date().toLocaleDateString('es-PE',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
