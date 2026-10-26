@@ -1,0 +1,255 @@
+{
+  "communities": {
+    "0": [
+      "solreprog",
+      "solreprog_cargar",
+      "solreprog_css",
+      "solreprog_dm",
+      "solreprog_enc",
+      "solreprog_enviar",
+      "solreprog_esc",
+      "solreprog_hoy",
+      "solreprog_norm",
+      "solreprog_pintar",
+      "solreprog_refrescarboton",
+      "solreprog_todos",
+      "solreprog_u",
+      "solreprog_val"
+    ],
+    "1": [
+      "lib_eti_informe_checklist",
+      "lib_eti_informe_checklist_clonar",
+      "lib_eti_informe_checklist_conclusionauto",
+      "lib_eti_informe_checklist_dmy",
+      "lib_eti_informe_checklist_etiinformechecklist",
+      "lib_eti_informe_checklist_flarga",
+      "lib_eti_informe_checklist_razon",
+      "lib_eti_informe_checklist_rep",
+      "lib_eti_informe_checklist_semanaiso"
+    ],
+    "2": [
+      "respuestas_auditoria_cargar_pasa",
+      "respuestas_auditoria_cargarexceljs",
+      "respuestas_auditoria_coincide",
+      "respuestas_auditoria_grupos",
+      "respuestas_auditoria_grupos_g",
+      "respuestas_auditoria_grupos_gs",
+      "respuestas_auditoria_norm",
+      "respuestas_auditoria_subconjunto",
+      "respuestas_auditoria_subconjunto_ok"
+    ],
+    "3": [
+      "lib_qrcode",
+      "lib_qrcode_qrpolynomial",
+      "lib_qrcode_qrpolynomial_this",
+      "lib_qrcode_qrpolynomial_this_getat",
+      "lib_qrcode_qrpolynomial_this_getlength",
+      "lib_qrcode_qrpolynomial_this_mod",
+      "lib_qrcode_qrpolynomial_this_multiply",
+      "lib_qrcode_toutf8array"
+    ],
+    "4": [
+      "respuestas_auditoria_cargar",
+      "respuestas_auditoria_cargar_correctassesion",
+      "respuestas_auditoria_cargar_orden",
+      "respuestas_auditoria_cmp",
+      "respuestas_auditoria_fs",
+      "respuestas_auditoria_sectxt",
+      "respuestas_auditoria_sha",
+      "respuestas_auditoria_suptxt"
+    ],
+    "5": [
+      "respuestas_auditoria_esc",
+      "respuestas_auditoria_hojas",
+      "respuestas_auditoria_hojas_tablagrupos",
+      "respuestas_auditoria_hora",
+      "respuestas_auditoria_nombrearchivo",
+      "respuestas_auditoria_razonsocial",
+      "respuestas_auditoria_titulosup"
+    ],
+    "6": [
+      "respuestas_auditoria_estilo",
+      "respuestas_auditoria_excel",
+      "respuestas_auditoria_excel_cabecera",
+      "respuestas_auditoria_excel_encabezados",
+      "respuestas_auditoria_excel_pctcelda",
+      "respuestas_auditoria_fill",
+      "respuestas_auditoria_modtxt"
+    ],
+    "7": [
+      "eti_alerta_ruta",
+      "eti_alerta_ruta_esc",
+      "eti_alerta_ruta_mostrar",
+      "eti_alerta_ruta_pct",
+      "eti_alerta_ruta_usuario"
+    ],
+    "8": [
+      "respuestas_auditoria",
+      "respuestas_auditoria_esadm",
+      "respuestas_auditoria_filtrospantalla",
+      "respuestas_auditoria_poner",
+      "respuestas_auditoria_ses"
+    ],
+    "9": [
+      "respuestas_auditoria_abrir",
+      "respuestas_auditoria_aviso",
+      "respuestas_auditoria_excelsimple",
+      "respuestas_auditoria_ff",
+      "respuestas_auditoria_pc"
+    ],
+    "10": [
+      "lib_eti_informe_gh04",
+      "lib_eti_informe_gh04_b64bytes",
+      "lib_eti_informe_gh04_build",
+      "lib_eti_informe_gh04_etiinformegh04"
+    ],
+    "11": [
+      "lib"
+    ]
+  },
+  "cohesion": {
+    "0": 0.2857142857142857,
+    "1": 0.4166666666666667,
+    "2": 0.25,
+    "3": 0.4642857142857143,
+    "4": 0.35714285714285715,
+    "5": 0.42857142857142855,
+    "6": 0.42857142857142855,
+    "7": 0.6,
+    "8": 0.6,
+    "9": 0.6,
+    "10": 0.8333333333333334,
+    "11": 1.0
+  },
+  "gods": [
+    {
+      "id": "respuestas_auditoria_excel",
+      "label": "excel()",
+      "degree": 19
+    },
+    {
+      "id": "respuestas_auditoria_hojas",
+      "label": "hojas()",
+      "degree": 13
+    },
+    {
+      "id": "respuestas_auditoria_abrir",
+      "label": "abrir()",
+      "degree": 13
+    },
+    {
+      "id": "respuestas_auditoria_cargar",
+      "label": "cargar()",
+      "degree": 9
+    },
+    {
+      "id": "lib_eti_informe_checklist_etiinformechecklist",
+      "label": "etiInformeChecklist()",
+      "degree": 8
+    },
+    {
+      "id": "respuestas_auditoria_titulosup",
+      "label": "tituloSup()",
+      "degree": 8
+    },
+    {
+      "id": "respuestas_auditoria_excelsimple",
+      "label": "excelSimple()",
+      "degree": 8
+    },
+    {
+      "id": "respuestas_auditoria_grupos",
+      "label": "grupos()",
+      "degree": 7
+    },
+    {
+      "id": "respuestas_auditoria_norm",
+      "label": "norm()",
+      "degree": 7
+    },
+    {
+      "id": "solreprog_cargar",
+      "label": "cargar()",
+      "degree": 6
+    }
+  ],
+  "surprises": [
+    {
+      "source": "cargar()",
+      "target": "pasa()",
+      "source_files": [
+        "respuestas-auditoria.js",
+        "respuestas-auditoria.js"
+      ],
+      "confidence": "INFERRED",
+      "relation": "indirect_call",
+      "note": "Bridges community 2 → community 4"
+    },
+    {
+      "source": "excel()",
+      "target": "cargarExcelJS()",
+      "source_files": [
+        "respuestas-auditoria.js",
+        "respuestas-auditoria.js"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "note": "Bridges community 2 → community 6"
+    },
+    {
+      "source": "abrir()",
+      "target": "grupos()",
+      "source_files": [
+        "respuestas-auditoria.js",
+        "respuestas-auditoria.js"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "note": "Bridges community 2 → community 9"
+    },
+    {
+      "source": "hojas()",
+      "target": "grupos()",
+      "source_files": [
+        "respuestas-auditoria.js",
+        "respuestas-auditoria.js"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "note": "Bridges community 2 → community 5"
+    },
+    {
+      "source": "abrir()",
+      "target": "cargar()",
+      "source_files": [
+        "respuestas-auditoria.js",
+        "respuestas-auditoria.js"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "note": "Bridges community 4 → community 9"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `excel()` connect `excel` to `respuestas-auditoria.js`, `abrir`, `grupos`, `hojas`?",
+      "why": "High betweenness centrality (0.044) - this node is a cross-community bridge."
+    },
+    {
+      "type": "verify_inferred",
+      "question": "Are the 3 inferred relationships involving `cargar()` (e.g. with `respuestas-auditoria.js` and `orden()`) actually correct?",
+      "why": "`cargar()` has 3 INFERRED edges - model-reasoned connections that need verification."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `cargar()` connect `cargar` to `respuestas-auditoria.js`, `abrir`, `grupos`?",
+      "why": "High betweenness centrality (0.019) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `norm()` connect `grupos` to `respuestas-auditoria.js`, `hojas`, `excel`?",
+      "why": "High betweenness centrality (0.017) - this node is a cross-community bridge."
+    }
+  ]
+}

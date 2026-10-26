@@ -1,0 +1,12 @@
+# Graphify: excluir librerias de terceros y respaldos (no son codigo del sistema)
+lib/chart.umd.js
+lib/docx.iife.js
+lib/firebase-*.js
+lib/*.min.js
+node_modules/
+_to_delete/
+_bak_*/
+*.bak
+*.bak*
+*.bak-*
+graphify-out/
