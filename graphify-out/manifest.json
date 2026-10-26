@@ -34,5 +34,119 @@
     "seen": 1792976709.1734433,
     "ast_hash": "574f428bb3bf3e98659562eeb8b7e965",
     "semantic_hash": "574f428bb3bf3e98659562eeb8b7e965"
+  },
+  "js/01-nucleo-evaluaciones.js": {
+    "mtime": 1793016589.823277,
+    "seen": 1793016755.7294486,
+    "ast_hash": "8be411700a4f2690c74ec771d36da531",
+    "semantic_hash": ""
+  },
+  "js/02-login-particulas.js": {
+    "mtime": 1793016589.836275,
+    "seen": 1793016755.7294486,
+    "ast_hash": "74c38f400b08f682e3fdff3d5956a2a2",
+    "semantic_hash": ""
+  },
+  "js/03-guia.js": {
+    "mtime": 1793016589.8478336,
+    "seen": 1793016755.7294486,
+    "ast_hash": "7da0e1e596e7f2cc8427ce59606eac0a",
+    "semantic_hash": ""
+  },
+  "js/04-trafico-emisor.js": {
+    "mtime": 1793016589.889021,
+    "seen": 1793016755.7294486,
+    "ast_hash": "790b8d367a622957648f0a1889fa1f46",
+    "semantic_hash": ""
+  },
+  "js/05-banco-respuestas.js": {
+    "mtime": 1793016589.9254851,
+    "seen": 1793016755.7294486,
+    "ast_hash": "0caabe305c35a60be017f39de640c884",
+    "semantic_hash": ""
+  },
+  "js/06-indicadores.js": {
+    "mtime": 1793016589.9437902,
+    "seen": 1793016755.7294486,
+    "ast_hash": "a7f58dade13d1838807d833c1e840fde",
+    "semantic_hash": ""
+  },
+  "js/07-shell-rl.js": {
+    "mtime": 1793016589.9545186,
+    "seen": 1793016755.7294486,
+    "ast_hash": "9b1b9fc9245d668be111cb46305f4b7d",
+    "semantic_hash": ""
+  },
+  "js/08-solreprog-usuario.js": {
+    "mtime": 1793016589.963369,
+    "seen": 1793016755.7294486,
+    "ast_hash": "e0056cebecb33e72fdb55a0a885d5e82",
+    "semantic_hash": ""
+  },
+  "js/09-trafico-vivo.js": {
+    "mtime": 1793016589.9815784,
+    "seen": 1793016755.7294486,
+    "ast_hash": "f99c45b5c07a0a431f768b82f834c0e6",
+    "semantic_hash": ""
+  },
+  "js/10-mis-evaluaciones.js": {
+    "mtime": 1793016590.0029924,
+    "seen": 1793016755.7294486,
+    "ast_hash": "e11cc0d1099a7e9cdafdeb6094b28d29",
+    "semantic_hash": ""
+  },
+  "GOOGLE_SHEETS_INSTRUCCIONES.md": {
+    "mtime": 1783837174.6521823,
+    "seen": 1793016755.7294486,
+    "ast_hash": "77fd65cbe335af0cf17a84a5d38fa041",
+    "semantic_hash": ""
+  },
+  "PASOS_PRODUCCION_03oct.md": {
+    "mtime": 1791065929.1690161,
+    "seen": 1793016755.7294486,
+    "ast_hash": "c6dbffa302242b800ac8c38b2315d3bb",
+    "semantic_hash": ""
+  },
+  "Revision_Banco_ETI_2026.html": {
+    "mtime": 1791070508.0127182,
+    "seen": 1793016755.7294486,
+    "ast_hash": "b44589cd3a83a09bc419c3ac3c7c4685",
+    "semantic_hash": ""
+  },
+  "evaluar.html": {
+    "mtime": 1792895490.1879296,
+    "seen": 1793016755.7294486,
+    "ast_hash": "338245ed7c785c03a1379cd4d85286b8",
+    "semantic_hash": ""
+  },
+  "index.html": {
+    "mtime": 1793016590.0305462,
+    "seen": 1793016755.7294486,
+    "ast_hash": "44e89e9686eaac875e9d256eec3b0bab",
+    "semantic_hash": ""
+  },
+  "index_ANTERIOR_06set.html": {
+    "mtime": 1788702055.682755,
+    "seen": 1793016755.7294486,
+    "ast_hash": "f6000d56b19b3ab2c95d62784b416d4c",
+    "semantic_hash": ""
+  },
+  "index_login_servidor_06set.html": {
+    "mtime": 1792895490.536922,
+    "seen": 1793016755.7294486,
+    "ast_hash": "ebc01477dbca6dfe49a9f150dcfbef0d",
+    "semantic_hash": ""
+  },
+  "index_nuevo_06set.html": {
+    "mtime": 1788702055.682755,
+    "seen": 1793016755.7294486,
+    "ast_hash": "f6000d56b19b3ab2c95d62784b416d4c",
+    "semantic_hash": ""
+  },
+  "js/README.md": {
+    "mtime": 1793016590.0399578,
+    "seen": 1793016755.7294486,
+    "ast_hash": "af7ff776efdfbcf3d051a28f80948c9f",
+    "semantic_hash": ""
   }
 }
