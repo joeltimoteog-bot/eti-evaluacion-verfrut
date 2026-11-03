@@ -75,7 +75,7 @@ function render(){
       <div class="m-mut" style="font-size:.82rem">${TD?'Vista general: QR (cada trabajador) y manuales de todos los supervisores en el rango elegido.'+(M.cargando?' <b>Cargando…</b>':''):esc(M.nom||'—')+' · Evaluaciones por <b>QR</b> (cada trabajador) y <b>manuales</b>, apenas se registran.'}</div></div>
     <div style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center">
       ${adm?`<select class="fc" style="width:auto" onchange="ETIMIS.sup(this.value)"><option value="*" ${TD?'selected':''}>👥 Todos los supervisores</option>${sups.map(n=>`<option ${!TD&&coincide(n,M.nom)?'selected':''}>${esc(n)}</option>`).join('')}</select>`:''}
-      ${pre('Hoy',iso(h),iso(h))}${pre('Últimos 7 días',iso(d7),iso(h))}${pre('Este mes',iso(m1),iso(h))}
+      ${pre('Hoy',iso(h),iso(h))}${pre('Últimos 7 días',iso(d7),iso(h))}${pre('Este mes',iso(m1),iso(h))}${pre('Año '+h.getFullYear(),h.getFullYear()+'-01-01',iso(h))}
       <input type="date" class="fc" style="width:auto" value="${esc(M.desde)}" onchange="ETIMIS.rango(this.value,null)"><input type="date" class="fc" style="width:auto" value="${esc(M.hasta)}" onchange="ETIMIS.rango(null,this.value)">
     </div></div>
   ${adm?`<div style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;margin:-.3rem 0 .8rem">
