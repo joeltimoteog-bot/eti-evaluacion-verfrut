@@ -7,6 +7,7 @@
    Así el informe y el reporte de auditoría tienen exactamente la misma estructura que los de hoy.
    Además, por cada supervisor y sector: Respuestas para auditoría (Excel y hojas PDF del módulo oficial
    ETIRespuestas, mismo formato) y Hojas por ruta (mismo estilo, con el % por tema de los registros manuales).
+   Histórico semanal: matriz sector × semana con lo realizado (evaluados y %) y lo programado sin registro.
    Solo lee Firebase. No guarda nada.
    ═════════════════════════════════════════════════════════════════════════ */
 (function () {
@@ -130,6 +131,51 @@
     if (sector) M.rptSector(sector);
   }
 
+
+  /* ── Histórico semanal de Check List: sector × semana (realizado / programado) ── */
+  function semISO(iso) { var d = new Date(iso + 'T12:00:00'); var t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); var n = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - n); var y = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil(((t - y) / 864e5 + 1) / 7); }
+  function lunesDe(anio, sem) { var s = new Date(Date.UTC(anio, 0, 4)); var d = s.getUTCDay() || 7; s.setUTCDate(s.getUTCDate() - d + 1 + (sem - 1) * 7); return s; }
+  var isoD = function (d) { return d.toISOString().slice(0, 10); };
+  var normSec = function (s) { return String(s || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/^SECTOR\s+/, '').replace(/\s+/g, ' ').trim(); };
+  async function historico(o) {
+    var f = fbdb, M = new Map(), anio = +o.desde.slice(0, 4);
+    var bonito = function (s) { return normSec(s).toLowerCase().replace(/(^|\s)\S/g, function (m) { return m.toUpperCase(); }); };
+    var celda = function (sec, prog) { var k = normSec(sec); if (!M.has(k)) M.set(k, { sector: prog ? bonito(sec) : String(sec).replace(/^SECTOR\s+/i, ''), w: {} }); return M.get(k); };
+    var w0 = function (c, w) { return c.w[w] || (c.w[w] = { n: 0, sr: 0, sups: {}, prog: false, mods: {} }); };
+    var qm = await f.collection(COL_EVAL).where('fecha', '>=', o.desde).where('fecha', '<=', o.hasta).get();
+    qm.docs.forEach(function (d) { var x = d.data(); if (x.modalidad === 'QR' || (o.emp && x.emp !== o.emp)) return; var c = celda(x.sector || '—'), z = w0(c, semISO(x.fecha));
+      (x.rutas || []).forEach(function (r) { var ne = +r.ne || 1; z.n += ne; z.sr += (+r.resGrupo || 0) * ne; }); z.sups[x.sup || '—'] = 1; z.mods.Manual = 1; });
+    var qq = await f.collection('respuestas_qr').where('fecha', '>=', o.desde).where('fecha', '<=', o.hasta).get();
+    qq.docs.forEach(function (d) { var x = d.data(); if (o.emp && x.emp !== o.emp) return; if (/GESTI[OÓ]N HUMANA/i.test(x.ruta || '')) return;   /* respuestas de prueba del área */
+      var c = celda(x.sector || '—'), z = w0(c, semISO(x.fecha)); z.n++; z.sr += (+x.resultado || 0); z.sups[x.sup || '—'] = 1; z.mods.QR = 1; });
+    try {
+      var pq = await f.collection('programaciones_eti').get();
+      pq.docs.forEach(function (d) { var x = d.data(); if (!/CHECK/i.test(x.tema || '')) return; if (o.emp && x.empresa && o.emp.indexOf(String(x.empresa).toUpperCase()) < 0) return;
+        var ws = (x.semanas && x.semanas.length) ? x.semanas : (x.fechas || []).filter(function (fe) { return fe >= o.desde && fe <= o.hasta; }).map(semISO);
+        if (x.anio && +x.anio !== anio) return;
+        var c = celda(x.sector || '—', true); ws.forEach(function (w) { var z = w0(c, +w); z.prog = true; z.progSup = x.supervisor || ''; z.progEst = x.estado || ''; }); });
+    } catch (e) { console.warn('[_HISTORICO_SEMANAL] programación:', e.message); }
+    return { filas: [...M.values()].sort(function (a, b) { return a.sector.localeCompare(b.sector, 'es'); }), anio: anio, w1: semISO(o.desde), w2: semISO(o.hasta) };
+  }
+  function pintarHistorico(L, o, H) {
+    var ws = []; for (var w = H.w1; w <= H.w2; w++) ws.push(w);
+    var th = 'background:#E6EBF2;color:#3D4C63;font-size:10px;padding:5px 3px;border:1px solid #D6DEE9;text-align:center;min-width:30px';
+    var head = '<tr><th style="' + th + ';text-align:left;min-width:150px;position:sticky;left:0;z-index:2">Sector</th>' + ws.map(function (w) { var l = lunesDe(H.anio, w); return '<th style="' + th + '" title="' + fF(isoD(l)) + ' al ' + fF(isoD(new Date(l.getTime() + 6 * 864e5))) + '">S' + w + '</th>'; }).join('') + '</tr>';
+    var nOk = 0, nPend = 0;
+    var body = H.filas.map(function (c, ci) { return '<tr><td style="padding:5px 8px;border:1px solid #D6DEE9;font-size:12px;font-weight:600;background:#fff;position:sticky;left:0;z-index:1">' + esc(c.sector) + '</td>' + ws.map(function (w) { var z = c.w[w];
+      if (!z) return '<td style="border:1px solid #EEF1F5"></td>';
+      if (z.n) { nOk++; var p = z.sr / z.n * 100, sups = Object.keys(z.sups).join(', ');
+        return '<td data-c="' + ci + '" data-w="' + w + '" style="border:1px solid #D6DEE9;background:' + (p >= 70 ? '#E4F4EA' : '#FEE2E2') + ';text-align:center;font-size:10.5px;font-weight:700;color:' + (p >= 70 ? '#0F6B3A' : '#991B1B') + ';cursor:pointer" title="Semana ' + w + ' · ' + esc(sups) + ' · ' + z.n + ' evaluados · ' + p.toFixed(1) + ' % · ' + Object.keys(z.mods).join(' + ') + (z.prog ? ' · programado' : '') + ' — clic: abrir reporte">' + z.n + '</td>'; }
+      nPend++; return '<td style="border:1px solid #D6DEE9;background:#FFF1DE;text-align:center;font-size:10px;color:#9A4A00" title="Semana ' + w + ' · programado (' + esc(z.progSup) + ') · sin evaluaciones registradas">P</td>'; }).join('') + '</tr>'; }).join('');
+    L.innerHTML = '<div style="font-size:12.5px;color:#1F2A3C;margin:4px 0 8px"><b>Histórico semanal de Check List</b> · ' + esc(o.emp || 'Todas las empresas') + ' · semanas ' + H.w1 + ' a ' + H.w2 + ' · ' + nOk + ' semana(s) realizadas · ' + nPend + ' programada(s) sin registro</div>' +
+      '<div style="font-size:11.5px;color:#5B6B82;margin-bottom:6px"><span style="background:#E4F4EA;color:#0F6B3A;padding:1px 6px;border-radius:3px;font-weight:700">N</span> realizado (N evaluados, ≥ 70 %) · <span style="background:#FEE2E2;color:#991B1B;padding:1px 6px;border-radius:3px;font-weight:700">N</span> realizado con resultado &lt; 70 % · <span style="background:#FFF1DE;color:#9A4A00;padding:1px 6px;border-radius:3px">P</span> programado sin registro · vacío: sin actividad. Clic en una semana realizada: abre el reporte.</div>' +
+      '<div style="overflow:auto;max-height:52vh;border:1px solid #D6DEE9;border-radius:6px"><table style="border-collapse:collapse;width:max-content">' + head + body + '</table></div>';
+    L.querySelectorAll('td[data-c]').forEach(function (td) { td.onclick = async function () {
+      var c = H.filas[+td.getAttribute('data-c')], w = +td.getAttribute('data-w'), z = c.w[w], l = lunesDe(H.anio, w);
+      var oo = { emp: o.emp, desde: isoD(l), hasta: isoD(new Date(l.getTime() + 6 * 864e5)), qr: true }, sup = Object.keys(z.sups)[0];
+      var ov = $('iaOv'); if (ov) ov.remove(); aviso('Abriendo el reporte de ' + c.sector + ' · semana ' + w + '…', 'i');
+      try { await abrirReporte(oo, sup, c.sector); } catch (e) { aviso('No se pudo abrir el reporte: ' + e.message, 'e'); } }; });
+  }
   function abrir() {
     if (!esAdmin()) { aviso('Solo el administrador emite el informe para auditoría', 'e'); return; }
     var ov = $('iaOv'); if (ov) ov.remove();
@@ -142,7 +188,7 @@
       '<div style="flex:2;min-width:200px"><label style="' + fl + '">Empresa</label><select id="iaEmp" class="fc" style="width:100%"><option value="RAPEL S.A.C.">RAPEL S.A.C.</option><option value="VERFRUT S.A.C.">VERFRUT S.A.C.</option></select></div>' +
       '<div style="flex:1;min-width:130px"><label style="' + fl + '">Desde</label><input id="iaDes" type="date" class="fc" style="width:100%" value="2026-06-19"></div>' +
       '<div style="flex:1;min-width:130px"><label style="' + fl + '">Hasta</label><input id="iaHas" type="date" class="fc" style="width:100%" value="' + hoyI() + '"></div>' +
-      '<button class="btn bpri" id="iaBus" style="height:38px">Buscar</button></div>' +
+      '<button class="btn bpri" id="iaBus" style="height:38px">Buscar</button><button class="btn bout" id="iaHis" style="height:38px" title="Sector × semana: qué semanas tienen Check List realizado o programado">Histórico semanal</button></div>' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:13px;color:#1F2A3C"><input id="iaQr" type="checkbox"> Incluir evaluaciones por QR</label>' +
       '<div style="font-size:12px;color:#5B6B82;margin-top:8px">Se abre el Reporte del sistema del supervisor y sector elegidos. Desde él se emiten, con sus botones de siempre, el Informe INF-SC-GH-04 (Word), el Excel y la impresión, con la misma estructura de hoy.</div></div>' +
       '<div id="iaLista" style="overflow:auto;padding:0 20px 12px;flex:1"></div>' +
@@ -150,6 +196,11 @@
     document.body.appendChild(ov);
     $('iaCan').onclick = function () { ov.remove(); };
     var opc = function () { return { emp: $('iaEmp').value, desde: $('iaDes').value, hasta: $('iaHas').value, qr: $('iaQr').checked }; };
+    $('iaHis').onclick = async function () {
+      var o = opc(), L = $('iaLista'); if (o.desde.slice(0, 4) !== o.hasta.slice(0, 4)) { L.innerHTML = '<p style="color:#B42318">El histórico se muestra por año: elige fechas del mismo año.</p>'; return; }
+      L.innerHTML = '<p style="color:#5B6B82">Armando el histórico semanal…</p>';
+      try { pintarHistorico(L, o, await historico(o)); } catch (e) { console.error(e); L.innerHTML = '<p style="color:#B42318">No se pudo leer: ' + esc(e.message) + '</p>'; }
+    };
     $('iaBus').onclick = async function () {
       var o = opc(), L = $('iaLista');
       if (!o.desde || !o.hasta || o.desde > o.hasta) { L.innerHTML = '<p style="color:#B42318">Revisa el periodo.</p>'; return; }
