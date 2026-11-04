@@ -54,8 +54,10 @@
   window.etiHistorico2026 = async function (aplicar) {
     if (typeof fbdb === 'undefined' || !fbdb || !window.etiAzure) throw new Error('Abre esta consola dentro de Evaluaciones ETI (sin conexión a Firebase/Azure)');
     if (!sessionStorage.getItem('eti_token')) throw new Error('Inicia sesión como administrador en Evaluaciones ETI');
-    var quien = (window.SESSION && SESSION.user) || '';
-    if (quien !== 'jtimoteo') throw new Error('Solo el administrador (jtimoteo) puede ejecutar esta depuración');
+    var S_ = (typeof SESSION !== 'undefined' && SESSION) ? SESSION : {};
+    var quien = String(S_.user || '') || String(S_.nom || '');
+    var esJoel = S_.rol === 'admin' && (/jtimoteo/i.test(String(S_.user || '')) || /timoteo/i.test(String(S_.nom || '')));
+    if (!esJoel) throw new Error('Solo el administrador (Joel Timoteo) puede ejecutar esta depuración. Sesión actual: ' + JSON.stringify({ user: S_.user, nom: S_.nom, rol: S_.rol }));
     var C = fbdb.collection(COL_EVAL), plan = [], log = [];
     var snap = await C.where('fecha', '>=', '2026-06-01').where('fecha', '<', '2026-10-15').get();
     var docs = {}; snap.forEach(function (s) { docs[s.id] = s.data(); });
