@@ -319,7 +319,7 @@ window.ETIMIS={
     const f=db(); if(!f){toast('Sin conexión','e');return;}
     toast('⏳ Preparando '+F.length+' hoja(s)…','i');
     const secs=(typeof SECS!=='undefined'?SECS:[]); const preg={}; secs.forEach(s=>(s.pregs||[]).forEach(p=>{preg[p.n]={t:p.tq||p.t,ops:(p.ops||[]).map(x=>x.t),tema:s.nom};}));
-    const docs=[]; for(const r of F.slice(0,300)){try{const d=await f.collection('respuestas_qr').doc(r.key).get();if(d.exists)docs.push({id:d.id,...d.data()});}catch(e){}}
+    const docs=[]; const L=F.slice(0,300); for(let i=0;i<L.length;i+=25){const p=await Promise.all(L.slice(i,i+25).map(r=>f.collection('respuestas_qr').doc(r.key).get().catch(()=>null)));p.forEach(d=>{if(d&&d.exists)docs.push({id:d.id,...d.data()});});}   /* _HOJAS_QR_PAR_V1 (05-nov): de 25 en 25 en paralelo (antes uno por uno) */
     docs.sort((a,b)=>(a.ts||0)-(b.ts||0));
     const w=window.open('','_blank'); if(!w){toast('Activa los pop-ups para este sitio y vuelve a intentar','e');return;}
     const hojas=docs.map((d,i)=>{const resp=d.resp||{}, ns=Object.keys(resp).map(Number).sort((a,b)=>a-b);
