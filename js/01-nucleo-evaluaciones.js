@@ -1131,15 +1131,31 @@ function renderAdminChartSup(supList){
 }
 
 let _verElim=false;
+/* _ETI_ELIM_V1 (27-oct-2026): usuarios ELIMINADOS en Gestion de Usuarios del Sistema RR.LL. -> no se listan aqui
+   (ya no pueden entrar: el login y el SSO son los del RR.LL.). Si Azure no responde, la lista se ve como antes. */
+window._evElimRL=null; let _evElimPid=false;
+function _evCargarElimRL(){
+  if(_evElimPid||window._evElimRL) return;
+  let tk=''; try{ tk=sessionStorage.getItem('eti_token')||''; }catch(e){}
+  if(!tk) return;
+  _evElimPid=true;
+  fetch('https://rl-fn-verfrut.azurewebsites.net/api/usuarios/lista?incluirEliminados=1',{headers:{Authorization:'Bearer '+tk}})
+    .then(r=>r.ok?r.json():null)
+    .then(j=>{ if(j&&j.success){ const m={}; (j.data||[]).forEach(x=>{ if(x.eliminado) m[String(x.usuario||'').trim().toLowerCase()]=true; }); window._evElimRL=m; try{ renderAdminUsers(); }catch(e){} } })
+    .catch(()=>{}).finally(()=>{ _evElimPid=false; });
+}
 function renderAdminUsers(){
   if(window.etiSubirExtras) window.etiSubirExtras();
-  const usuarios=getUsuarios();
+  _evCargarElimRL();   /* _ETI_ELIM_V1 */
+  const _usTodos=getUsuarios();
+  const usuarios=window._evElimRL?_usTodos.filter(u=>!window._evElimRL[String(u.user).toLowerCase()]):_usTodos;
+  const _ocultosRL=_usTodos.length-usuarios.length;
   const acc=(window.etiAccData&&window.etiAccData().usuarios)||{};
   const est=u=>acc[String(u).toLowerCase()]||{};
   const elim=getUsuarios(true).filter(u=>est(u.user).eliminado);
   const _todosH=getAllHist();   // _HIST_ROL_V1: conteo real desde la nube
   const yo=String(SESSION&&SESSION.user||'').toLowerCase();
-  document.getElementById('admin-user-list').innerHTML=`
+  document.getElementById('admin-user-list').innerHTML=(_ocultosRL?`<div style="font-size:.8rem;color:var(--text2);margin-bottom:.5rem">🗑️ ${_ocultosRL} usuario(s) eliminado(s) en el Sistema RR.LL. no se muestran.</div>`:'')+`
     <table class="rtbl">
       <thead><tr><th>#</th><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th>Registros</th><th>Acción</th></tr></thead>
       <tbody>
