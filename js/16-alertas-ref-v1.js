@@ -96,6 +96,35 @@
     return { rutas: rutas, alertas: A };
   }
 
+  /* ── _ALERTAS_PROG_V1 (06-nov): enlace con la Programacion ETI (programaciones_eti, tema REFORZAMIENTO) ──
+     · Al registrar un reforzamiento se marca ESA fecha en la programacion de reforzamiento del sector
+       (misma regla que Capacitaciones y Evaluacion ETI: fechasEjecutadas; ejecutada cuando estan todas).
+     · Joel / Lucia / admin pueden PROGRAMAR el reforzamiento desde la alerta: crea la programacion con el
+       mismo formato que Programacion ETI del Sistema RR.LL. (llega a Capacitaciones ETI y al Mi Panel). */
+  var SECN = function (s) { var x = U(s).replace(/^SECTOR\s+/, ''); return ({ 'PAPAYO': 'EL PAPAYO', 'OLIVARES APROA': 'APROA', 'PLANTA': 'PLANTA RAPEL', 'SANTA ROSA I': 'SANTA ROSA', 'SANTA ROSA II': 'SANTA ROSA', 'SANTA ROSA 1': 'SANTA ROSA', 'SANTA ROSA 2': 'SANTA ROSA' })[x] || x; };
+  var fsdb = function () { try { return typeof fbdb !== 'undefined' && fbdb ? fbdb : null; } catch (e) { return null; } };
+  var PROGS_REF = [];
+  async function cargarProgsRef() {
+    var db = fsdb(); if (!db) { PROGS_REF = []; return; }
+    try { var q = await db.collection('programaciones_eti').where('tema', '==', 'REFORZAMIENTO').get();
+      PROGS_REF = q.docs.map(function (d) { var x = d.data(); x.id = d.id; x.fechas = (Array.isArray(x.fechas) && x.fechas.length ? x.fechas.slice() : [x.fechaProgramada, x.fechaFin || x.fechaProgramada].filter(Boolean)).sort(); return x; });
+    } catch (e) { PROGS_REF = []; }
+  }
+  function progRefDe(sector, desde, hasta) {
+    var n = SECN(sector);
+    return PROGS_REF.filter(function (p) { return SECN(p.sector) === n && p.fechas.some(function (f) { return f >= desde && f <= hasta; }); })
+      .sort(function (a, b) { return a.fechas[0].localeCompare(b.fechas[0]); });
+  }
+  async function marcarProgRef(sector, fecha, c) {
+    var db = fsdb(); if (!db) return null;
+    var L = progRefDe(sector, c.desde, c.hasta).filter(function (p) { return p.estado !== 'ejecutada'; }); if (!L.length) return null;
+    var p = L.find(function (x) { return x.fechas.indexOf(fecha) >= 0; }) || L[0];
+    var ej = (p.fechasEjecutadas || []).filter(function (f) { return p.fechas.indexOf(f) >= 0; }), pend = p.fechas.filter(function (f) { return ej.indexOf(f) < 0; });
+    if (ej.indexOf(fecha) < 0) ej.push(p.fechas.indexOf(fecha) >= 0 ? fecha : (pend[0] || fecha));
+    var falta = p.fechas.filter(function (f) { return ej.indexOf(f) < 0; }), cambios = { fechasEjecutadas: ej.sort(), estado: falta.length ? 'pendiente' : 'ejecutada', ejecutadoDesde: 'Alertas de reforzamiento (Evaluación ETI)' };
+    if (!falta.length) cambios.ejecutadaEn = new Date().toISOString();
+    await db.collection('programaciones_eti').doc(p.id).update(cambios); Object.assign(p, cambios); return p.id;
+  }
   /* ── estilos y ventana ── */
   function css() {
     if ($('alr-css')) return;
@@ -154,7 +183,7 @@
   }
   async function cargar() {
     var c = ciclos().find(function (x) { return x.id === $('alr-ci').value; }); $('alr-out').innerHTML = '<p>⏳ Calculando ' + esc(c.nom) + '…</p>';
-    try { EST_DATOS = await datosCiclo(c); EST_DATOS.ciclo = c; }
+    try { var q2 = await Promise.all([datosCiclo(c), cargarProgsRef()]); EST_DATOS = q2[0]; EST_DATOS.ciclo = c; }
     catch (e) { $('alr-out').innerHTML = '<div class="alr-vacio">No se pudo calcular: ' + esc(e.message) + '</div>'; return; }
     if ($('alr-sup')) { var v = $('alr-sup').value, o = {}; EST_DATOS.alertas.forEach(function (a) { o[a.sup] = 1; });
       $('alr-sup').innerHTML = '<option value="">Todos</option>' + Object.keys(o).sort().map(function (x) { return '<option' + (x === v ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join(''); }
@@ -181,12 +210,43 @@
           '<td><span class="alr-pill" style="background:' + c[0] + ';color:' + c[1] + '">' + P(a.pct) + '</span></td><td>' + a.n + (a.chica ? ' <span title="Menos de ' + MUESTRA + ' evaluados: tómalo con cuidado" style="color:#B45309">⚠️ muestra pequeña</span>' : '') + '</td>' +
           (esEditor() ? '<td>' + esc(a.sup) + '</td>' : '') +
           '<td><span class="alr-pill" style="background:' + es[1] + ';color:' + es[2] + '">' + es[0] + '</span>' + (a.seg ? '<br><small style="color:#64748B">Reforzado ' + esc(fF(a.seg.fechaRef)) + ' · ' + esc(a.seg.modalidad || '') + '</small>' : '') + (a.post ? '<br><small style="color:#64748B">Re-evaluación: ' + P(a.post.pct) + ' (' + a.post.n + ')</small>' : '') + '</td>' +
-          '<td>' + (a.estado === 'superada' ? '' : '<button class="alr-b' + (a.estado === 'pendiente' ? ' p' : '') + '" data-i="' + i + '">' + (a.seg ? '✏️ Editar' : '✍️ Registrar reforzamiento') + '</button>') + '</td></tr><tr id="alr-f' + i + '" style="display:none"><td colspan="8"></td></tr>';
+          '<td>' + (a.estado === 'superada' ? '' : '<button class="alr-b' + (a.estado === 'pendiente' ? ' p' : '') + '" data-i="' + i + '">' + (a.seg ? '✏️ Editar' : '✍️ Registrar reforzamiento') + '</button>') + progTxt(a, i) + '</td></tr><tr id="alr-f' + i + '" style="display:none"><td colspan="8"></td></tr>';
       }).join('') + '</tbody></table></div>';
     h += '<p style="font-size:.78rem;color:#64748B;margin-top:.8rem">Cómo se calcula: % promedio de la ruta en el tema (QR por persona + manual por ruta, ponderado por evaluados). 🔴 menos de 70 % · 🟡 70–79 % · 🟢 80 % o más. Una alerta queda <b>superada</b> cuando las evaluaciones de esa ruta y tema posteriores al reforzamiento llegan a 70 %.</p>';
     out.innerHTML = h;
     Array.prototype.forEach.call(out.querySelectorAll('[data-i]'), function (b) { b.onclick = function () { formulario(A[+b.getAttribute('data-i')], +b.getAttribute('data-i')); }; });
+    Array.prototype.forEach.call(out.querySelectorAll('[data-pg]'), function (b) { b.onclick = function () { programar(A[+b.getAttribute('data-pg')], +b.getAttribute('data-pg')); }; });
     Array.prototype.forEach.call(out.querySelectorAll('[data-sec]'), function (td) { td.onclick = function () { if ($('alr-est')) $('alr-est').value = ''; pintarFiltroSector(td.getAttribute('data-sec'), td.getAttribute('data-tema')); }; });
+  }
+  function progTxt(a, i) {
+    var c = EST_DATOS.ciclo, L = progRefDe(a.sector, c.desde, c.hasta);
+    if (L.length) { var p = L[0], pend = p.fechas.filter(function (f) { return (p.fechasEjecutadas || []).indexOf(f) < 0 && p.estado !== 'ejecutada'; });
+      return '<br><small style="color:#0E2A5C">📅 Reforzamiento programado: ' + p.fechas.map(fF).join(', ') + (pend.length ? '' : ' ✅') + '</small>'; }
+    return a.estado === 'pendiente' && esEditor() && fsdb() ? '<br><button class="alr-b" style="margin-top:.3rem;min-height:30px" data-pg="' + i + '">📅 Programar reforzamiento</button>' : (a.estado === 'pendiente' ? '<br><small style="color:#B45309">Sin reforzamiento programado en el sector</small>' : '');
+  }
+  function programar(a, i) {
+    var tr = $('alr-f' + i); if (!tr) return; if (tr.style.display !== 'none' && tr.getAttribute('data-m') === 'pg') { tr.style.display = 'none'; return; }
+    var c = EST_DATOS.ciclo, otras = EST_DATOS.alertas.filter(function (x) { return x.estado === 'pendiente' && SECN(x.sector) === SECN(a.sector); });
+    var man = new Date(); man.setDate(man.getDate() + 3); var sug = man.toISOString().slice(0, 10); if (sug > c.hasta) sug = c.hasta;
+    tr.setAttribute('data-m', 'pg');
+    tr.children[0].innerHTML = '<div class="alr-form"><div style="font-weight:800;color:#0E2A5C;margin-bottom:.4rem">📅 Programar reforzamiento · Sector ' + esc(a.sector) + ' · ' + esc(a.sup) + '</div>' +
+      '<div class="alr-f"><div><label>Fecha(s)</label><input type="date" id="alr-pf' + i + '" value="' + sug + '"> <input type="date" id="alr-pf2' + i + '" title="Segunda fecha (opcional)"></div>' +
+      '<div style="flex:1;min-width:260px"><label>Rutas y temas a reforzar (van en la observación)</label><input id="alr-po' + i + '" style="width:100%" value="' + esc(otras.map(function (x) { return (x.ruta || x.cod) + (x.cod ? ' (' + x.cod + ')' : '') + ': ' + x.tema + ' ' + P(x.pct); }).join(' · ')) + '"></div>' +
+      '<div><button class="alr-b p" id="alr-pok' + i + '">📅 Programar</button></div></div><small style="color:#64748B">Se crea en la Programación ETI con el mismo formato del Sistema RR.LL.: le aparece al supervisor en Capacitaciones ETI (Mi Panel) y al registrar el reforzamiento aquí se marca ejecutada esa fecha.</small></div>';
+    tr.style.display = '';
+    $('alr-pok' + i).onclick = async function () {
+      var b = this, S = ses() || {}, f = [$('alr-pf' + i).value, $('alr-pf2' + i).value].filter(Boolean).sort();
+      if (!f.length) { aviso('Elige la fecha', 'e'); return; }
+      var db = fsdb(); if (!db) { aviso('Sin conexión a Firebase', 'e'); return; }
+      b.disabled = true; b.textContent = '⏳';
+      var semana = function (iso) { var d = new Date(iso + 'T12:00:00'), y = d.getFullYear(), j = new Date(y, 0, 1); while (j.getDay() !== 1) j.setDate(j.getDate() + 1); return Math.floor((d - j) / 604800000) + 1; };
+      try {
+        await db.collection('programaciones_eti').add({ supervisor: a.sup, sector: a.sector, tema: 'REFORZAMIENTO', fechaProgramada: f[0], fechaFin: f[f.length - 1], fechas: f, diasDesignados: f.length,
+          observaciones: ('Reforzamiento por alertas ETI · ' + $('alr-po' + i).value).slice(0, 480), estado: 'pendiente', registroId: null, creadoPor: S.nom || S.user || '', creadoEn: new Date().toISOString(),
+          empresa: empDe(a.sector, a.emp), turno: '', anio: +f[0].slice(0, 4), semanas: f.map(semana).filter(function (w, k, arr) { return arr.indexOf(w) === k; }), origen: 'EVALUACION_ETI_ALERTAS', creadoPorUsuario: S.user || '', cicloAlertas: c.id });
+        aviso('📅 Reforzamiento programado para ' + f.map(fF).join(', '), 's'); cargar();
+      } catch (e) { aviso('No se pudo programar: ' + e.message, 'e'); b.disabled = false; b.textContent = '📅 Programar'; }
+    };
   }
   function matriz(R) {
     var temas = {}, sects = {};
@@ -203,9 +263,10 @@
     aviso('Mostrando ' + sec + ' · ' + tema, 'i');
   }
   function formulario(a, i) {
-    var tr = $('alr-f' + i); if (!tr) return; if (tr.style.display !== 'none') { tr.style.display = 'none'; return; }
-    var s = a.seg || {};
-    tr.children[0].innerHTML = '<div class="alr-form alr-f"><div><label>Fecha del reforzamiento</label><input type="date" id="alr-fr' + i + '" value="' + esc(s.fechaRef || hoy()) + '" max="' + hoy() + '"></div>' +
+    var tr = $('alr-f' + i); if (!tr) return; if (tr.style.display !== 'none' && tr.getAttribute('data-m') !== 'pg') { tr.style.display = 'none'; return; }
+    tr.setAttribute('data-m', 'f');
+    var s = a.seg || {}, cc = EST_DATOS.ciclo, pr = progRefDe(a.sector, cc.desde, cc.hasta)[0], fs = pr && pr.fechas.filter(function (f) { return f <= hoy(); }).pop();
+    tr.children[0].innerHTML = '<div class="alr-form alr-f"><div><label>Fecha del reforzamiento</label><input type="date" id="alr-fr' + i + '" value="' + esc(s.fechaRef || fs || hoy()) + '" max="' + hoy() + '"></div>' +
       '<div><label>Modalidad</label><select id="alr-mo' + i + '">' + ['Charla de reforzamiento', 'Visita a la ruta', 'Charla de 5 minutos', 'Entrega de material'].map(function (m) { return '<option' + (m === s.modalidad ? ' selected' : '') + '>' + m + '</option>'; }).join('') + '</select></div>' +
       '<div><label>Personas reforzadas</label><input type="number" min="1" id="alr-np' + i + '" value="' + esc(s.personas || a.n) + '" style="width:110px"></div>' +
       '<div style="flex:1;min-width:220px"><label>Qué se reforzó / observación</label><input id="alr-no' + i + '" value="' + esc(s.nota || '') + '" placeholder="Ej. Se explicó de nuevo el canal de quejas con casos" style="width:100%"></div>' +
@@ -217,7 +278,10 @@
       b.disabled = true; b.textContent = '⏳';
       var datos = { ciclo: a.ciclo, emp: a.emp, sector: a.sector, ruta: a.ruta, cod: a.cod, tema: a.tema, temaId: a.temaId, pctAntes: a.pct, nAntes: a.n, sup: a.sup, usuarioSup: a.user,
         fechaRef: f, modalidad: $('alr-mo' + i).value, personas: +$('alr-np' + i).value || 0, nota: $('alr-no' + i).value.trim(), por: S.user, nomPor: S.nom, en: new Date().toISOString(), ts: Date.now() };
-      try { await post('eti/escribir', { ops: [{ col: 'alertas_ref', id: a.id, op: 'set', datos: datos, origen: 'alertas' }] }); aviso('✅ Reforzamiento registrado', 's'); cargar(); }
+      try { var pid = null; try { pid = await marcarProgRef(a.sector, f, EST_DATOS.ciclo); } catch (e2) { console.warn('[_ALERTAS_PROG_V1]', e2); }
+        if (pid) datos.progId = pid;
+        await post('eti/escribir', { ops: [{ col: 'alertas_ref', id: a.id, op: 'set', datos: datos, origen: 'alertas' }] });
+        aviso('✅ Reforzamiento registrado' + (pid ? ' y marcado en la Programación ETI' : ''), 's'); cargar(); }
       catch (e) { aviso('No se pudo guardar: ' + e.message, 'e'); b.disabled = false; b.textContent = '💾 Guardar'; }
     };
   }
@@ -254,7 +318,7 @@
     }
     avisoInicial();
   }
-  window.etiAlertasRef = { abrir: abrir, analizar: analizar, filas: filas, ciclos: ciclos, empDe: empDe, version: 2 };
+  window.etiAlertasRef = { abrir: abrir, analizar: analizar, filas: filas, ciclos: ciclos, empDe: empDe, version: 3 };
   setInterval(menu, 1500); setTimeout(menu, 500);
   try { console.log('[_ALERTAS_REF_V1] listo'); } catch (e) {}
 })();

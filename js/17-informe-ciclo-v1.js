@@ -57,10 +57,35 @@
           secs: (r.secs || []).map(function (s) { return { id: s.id || U(s.nom), nom: s.nom, pct: s.pct != null ? +s.pct : (+s.cum || 0) }; }) }); }); });
     return out.filter(function (x) { return x.ruta || x.cod; });
   }
+  /* _CICLO_PROG_V1 (06-nov): cumplimiento de la Programacion ETI (programaciones_eti): programado vs ejecutado por tipo
+     (Capacitacion · Check List · Reforzamiento). Una fecha esta ejecutada si figura en fechasEjecutadas o si la
+     programacion completa esta "ejecutada". Cumplimiento = ejecutadas / (ejecutadas + vencidas). */
+  var TIPOS_P = [['cap', 'Capacitación ETI', /CAPACITACI/i], ['chk', 'Check List', /CHECKLIST/i], ['ref', 'Reforzamiento', /REFORZ/i]];
+  async function progsCiclo(c) {
+    var L = [];
+    try { if (typeof fbdb !== 'undefined' && fbdb) { var q = await fbdb.collection('programaciones_eti').get(); L = q.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }); } } catch (e) { L = []; }
+    if (!L.length) { try { L = await consultar('programaciones_eti', []); } catch (e) { L = []; } }
+    return L.map(function (x) { x.fechas = (Array.isArray(x.fechas) && x.fechas.length ? x.fechas.slice() : [x.fechaProgramada, x.fechaFin || x.fechaProgramada].filter(Boolean)).sort(); return x; })
+      .filter(function (x) { return x.fechas.some(function (f) { return f >= c.desde && f <= c.hasta; }); });
+  }
+  var ALIAS_S = { 'PAPAYO': 'EL PAPAYO', 'OLIVARES APROA': 'APROA', 'PLANTA': 'PLANTA RAPEL', 'SANTA ROSA I': 'SANTA ROSA', 'SANTA ROSA II': 'SANTA ROSA', 'SANTA ROSA 1': 'SANTA ROSA', 'SANTA ROSA 2': 'SANTA ROSA' };
+  function secTitulo(s) { var x = U(s).replace(/^SECTOR\s+/, ''); x = ALIAS_S[x] || x; return x ? x.toLowerCase().replace(/(^|\s)\S/g, function (m) { return m.toUpperCase(); }) : '—'; }   /* "ALGARROBOS" = "Algarrobos" */
+  function cumplimiento(P, c) {
+    var h = hoy(), fila = function () { return { prog: 0, ejec: 0, venc: 0, fut: 0 }; }, tot = {}, sec = {};
+    TIPOS_P.forEach(function (t) { tot[t[0]] = fila(); });
+    P.forEach(function (p) { var t = TIPOS_P.find(function (x) { return x[2].test(p.tema || ''); }); if (!t) return; var se = secTitulo(p.sector);
+      sec[se] = sec[se] || {}; TIPOS_P.forEach(function (z) { sec[se][z[0]] = sec[se][z[0]] || fila(); });
+      p.fechas.filter(function (f) { return f >= c.desde && f <= c.hasta; }).forEach(function (f) {
+        var ok = p.estado === 'ejecutada' || (p.fechasEjecutadas || []).indexOf(f) >= 0, k = ok ? 'ejec' : f < h ? 'venc' : 'fut';
+        [tot[t[0]], sec[se][t[0]]].forEach(function (r) { r.prog++; r[k]++; }); }); });
+    var pct = function (r) { return r.ejec + r.venc ? r.ejec / (r.ejec + r.venc) : null; };
+    return { tipos: TIPOS_P.map(function (t) { var r = tot[t[0]]; return { k: t[0], nom: t[1], prog: r.prog, ejec: r.ejec, venc: r.venc, fut: r.fut, pct: pct(r) }; }),
+      sectores: Object.keys(sec).sort().map(function (se) { var o = { sector: se }; TIPOS_P.forEach(function (t) { o[t[0]] = Object.assign({ pct: pct(sec[se][t[0]]) }, sec[se][t[0]]); }); return o; }) };
+  }
   async function datos(o) {
     var c = o.ciclo, s = ses() || {}, user = esEditor() ? '' : s.user;
     var Q = await Promise.all([evaluaciones(c, user), consultar('capacitaciones', [['fechaEjecucion', '>=', c.desde], ['fechaEjecucion', '<=', c.hasta]]),
-      consultar('alertas_ref', [['ciclo', '==', c.id]]), consultar('encuestas_sat', [['fecha', '>=', c.desde], ['fecha', '<=', c.hasta]]).catch(function () { return []; })]);
+      consultar('alertas_ref', [['ciclo', '==', c.id]]), consultar('encuestas_sat', [['fecha', '>=', c.desde], ['fecha', '<=', c.hasta]]).catch(function () { return []; }), progsCiclo(c)]);
     var F = Q[0].filter(function (x) { return o.sector ? U(x.sector) === U(o.sector) : (!o.emp || x.emp === o.emp); });
     var sectEmp = {}; Q[0].forEach(function (x) { if (x.sector) sectEmp[U(x.sector)] = x.emp; });
     var CAP = Q[1].filter(function (x) { if (x.eliminado || x.anulado || x.eliminada) return false; var se = U(x.sector);
@@ -68,7 +93,8 @@
     var segs = {}; Q[2].forEach(function (x) { segs[x._id] = x; });
     var A = window.etiAlertasRef.analizar(F, c.id, segs);
     var SAT = Q[3].filter(function (x) { return o.sector ? U(x.sector) === U(o.sector) : (!o.emp || empDe(x.sector, x.emp) === o.emp); });
-    return { F: F, CAP: CAP, A: A, SAT: SAT };
+    var PRG = Q[4].filter(function (x) { var se = U(x.sector).replace(/^SECTOR\s+/, ''); if (o.sector) return se === U(o.sector).replace(/^SECTOR\s+/, ''); var e = x.empresa || EMP_SECTOR[se] || sectEmp[U(x.sector)]; return !o.emp || !e || EMP(e) === o.emp; });
+    return { F: F, CAP: CAP, A: A, SAT: SAT, PRG: PRG };
   }
   /* ── 2) calculos del informe ── */
   function armar(o, X) {
@@ -117,7 +143,7 @@
     /* supervisores */
     var sups = {}; F.forEach(function (x) { if (x.sup) sups[x.sup] = (sups[x.sup] || 0) + x.n; }); X.CAP.forEach(function (x) { if (x.supervisor) sups[x.supervisor] = (sups[x.supervisor] || 0) + 1; });
     var supL = Object.keys(sups).sort(function (a, b) { return sups[b] - sups[a]; });
-    return { cap: cap, ev: ev, alertas: al, sat: sat, anexo: anexo, supervisores: supL, sectores: ev.sectores.map(function (s) { return s.sector; }) };
+    return { cap: cap, ev: ev, alertas: al, sat: sat, anexo: anexo, supervisores: supL, sectores: ev.sectores.map(function (s) { return s.sector; }), prog: cumplimiento(X.PRG || [], o.ciclo) };
   }
   function conclusiones(o, R) {
     var gen = o.modo === 'general', ev = R.ev, L = [], abiertas = R.alertas.filter(function (a) { return a.estado !== 'superada'; });
@@ -128,6 +154,8 @@
     L.push(R.alertas.length ? R.alertas.length + ' alertas de reforzamiento: ' + R.alertas.filter(function (a) { return a.estado === 'superada'; }).length + ' superadas y ' + abiertas.length + ' por cerrar.' : 'No hubo rutas con temas por debajo del 70 %.');
     if (R.sat && R.sat.n) { var k = [['capacitador', R.sat.cap], ['material', R.sat.mat], ['contenido', R.sat.cont], ['logística', R.sat.log]].filter(function (x) { return x[1] != null; }).sort(function (a, b) { return a[1] - b[1]; });
       L.push('Satisfacción del personal: ' + Math.round(R.sat.gen) + '/100 (' + R.sat.n + ' respuestas)' + (k.length ? '; el aspecto a mejorar es ' + k[0][0] + ' (' + Math.round(k[0][1]) + '/100).' : '.')); }
+    var pv = (R.prog && R.prog.tipos || []).filter(function (t) { return t.prog; });
+    if (pv.length) L.push('Cumplimiento de la programación: ' + pv.map(function (t) { return t.nom + ' ' + (t.pct == null ? 'sin fechas vencidas' : pc(t.pct)) + ' (' + t.ejec + '/' + (t.ejec + t.venc) + (t.fut ? ', ' + t.fut + ' por venir' : '') + ')'; }).join(' · ') + '.');
     if (R.cap.sesiones) L.push('Se capacitó a ' + R.cap.total + ' trabajadores en ' + R.cap.sesiones + ' sesiones' + (R.cap.temas.length ? ' sobre: ' + R.cap.temas.slice(0, 6).join('; ') + (R.cap.temas.length > 6 ? '…' : '') : '') + '.');
     var dec;
     if (!abiertas.length) dec = gen ? 'No se requieren reforzamientos adicionales en este ciclo.' : 'No hay rutas pendientes de reforzamiento.';
@@ -194,6 +222,10 @@
       '<div style="background:' + colP(ev.prom)[0] + '"><span>Resultado</span><b style="color:' + colP(ev.prom)[1] + '">' + pc(ev.prom) + '</b><small>' + (gen ? ev.sectores.filter(function (s) { return s.aprueba; }).length + '/' + ev.sectores.length + ' sectores aprueban' : ev.aprueba ? '✅ El sector aprueba' : '❌ El sector no aprueba') + '</small></div>' +
       '<div><span>Alertas</span><b style="color:' + (ab ? '#B91C1C' : '#15803D') + '">' + R.alertas.length + '</b><small>' + ab + ' por cerrar</small></div>' +
       '<div><span>Satisfacción</span><b>' + (R.sat && R.sat.n ? Math.round(R.sat.gen) + '<small>/100</small>' : '—') + '</b><small>' + (R.sat ? R.sat.n + ' respuestas' : 'sin encuesta') + '</small></div></div>';
+    var PG = R.prog || { tipos: [] };
+    h += '<div class="icc-h3">📅 Cumplimiento de la programación</div>' + (PG.tipos.some(function (t) { return t.prog; }) ? '<table class="icc-t"><thead><tr><th>Tipo</th><th>Fechas programadas</th><th>Ejecutadas</th><th>Vencidas sin ejecutar</th><th>Por venir</th><th>Cumplimiento</th></tr></thead><tbody>' +
+      PG.tipos.map(function (t) { return '<tr><td><b>' + t.nom + '</b></td><td>' + t.prog + '</td><td>' + t.ejec + '</td><td style="color:' + (t.venc ? '#B91C1C' : 'inherit') + '">' + t.venc + '</td><td>' + t.fut + '</td><td>' + chip(t.pct) + '</td></tr>'; }).join('') + '</tbody></table>'
+      : '<div class="icc-vacio">No hay fechas programadas en la Programación ETI para este ' + (gen ? 'ciclo' : 'sector y ciclo') + '.</div>');
     h += '<div class="icc-h3">📊 ' + (gen ? 'Sector × tema' : '% por tema') + '</div><div style="overflow-x:auto"><table class="icc-t">' +
       (gen ? '<thead><tr><th>Sector</th>' + ev.temas.map(function (t) { return '<th>' + esc(t.nom) + '</th>'; }).join('') + '<th>General</th><th>Aprueba</th></tr></thead><tbody>' + ev.sectores.map(function (s) { return '<tr><td><b>' + esc(s.sector) + '</b></td>' + ev.temas.map(function (t) { return '<td>' + chip(s.temas[t.id]) + '</td>'; }).join('') + '<td>' + chip(s.prom) + '</td><td>' + (s.aprueba ? '✅' : '❌') + '</td></tr>'; }).join('')
         : '<thead><tr><th>Tema</th><th>Evaluados</th><th>%</th><th>Resultado</th></tr></thead><tbody>' + ev.temas.map(function (t) { return '<tr><td>' + esc(t.nom) + '</td><td>' + t.n + '</td><td>' + chip(t.pct) + '</td><td>' + (t.pct >= MIN ? '✅ Aprueba' : '🔴 Reforzar') + '</td></tr>'; }).join('')) + '</tbody></table></div>';
@@ -212,7 +244,7 @@
     b.disabled = true; b.textContent = '⏳ Generando…';
     try {
       if (typeof window.docx === 'undefined') await cargarJS('lib/docx.iife.js?v=951');
-      if (typeof window.etiInformeCiclo !== 'function') await cargarJS('lib/eti-informe-ciclo.js?v=1');
+      if (typeof window.etiInformeCiclo !== 'function' || (window.etiInformeCiclo.version || 0) < 2) await cargarJS('lib/eti-informe-ciclo.js?v=2');
       var logo = ''; try { logo = (getComputedStyle(document.documentElement).getPropertyValue('--logo').match(/base64,([^)'"]+)/) || [])[1] || ''; } catch (e) {}
       var p1 = o.ciclo.desde, p2 = o.ciclo.hasta, em = fF(hoy());
       var D = Object.assign({}, R, { modo: o.modo, razon: o.emp === 'RAPEL' ? 'Sociedad Agricola Rapel S.A.C.' : 'Sociedad Exportadora Verfrut S.A.C.', sector: o.sector, alcance: 'Todos los sectores de ' + o.emp,
@@ -235,6 +267,6 @@
     var ref = $('alr-menu') || $('enc-menu') || $('inf-menu');
     if (ref && ref.parentNode === nav) nav.insertBefore(b, ref.nextSibling); else nav.appendChild(b);
   }
-  window.etiInformeCicloUI = { abrir: abrir, armar: armar, version: 1 };
+  window.etiInformeCicloUI = { abrir: abrir, armar: armar, cumplimiento: cumplimiento, version: 2 };
   setInterval(menu, 1500); setTimeout(menu, 600);
 })();

@@ -848,7 +848,7 @@ const QR={
         lista.forEach(res=>guardarEvalNube(res));
         const resGen=lista.reduce((a,r)=>a+r.resGen*r.n,0)/resps.length;
         await fbdb.collection(COL_SES).doc(s.id).set({consol:{[fecha]:{n:resps.length,resultado:resGen,por:SESSION.user,en:new Date().toISOString()}}},{merge:true});
-        try{const p=progPendienteDe(s.sup);if(p&&fechasPendientes(p).includes(fecha))marcarProgEjecutada(p.id,fecha);}catch(e){}
+        try{lista.forEach(r=>{const p=progParaFecha(s.sup,r.sector,fecha);if(p)marcarProgEjecutada(p.id,fecha);});}catch(e){}   /* _PROG_SECTOR_V1: cada sector marca SU programacion */
         const ver=lista.length===1?lista[0]:{...lista[0],sector:lista.map(r=>r.sector).join(', '),rutas:lista.flatMap(r=>r.rutas.map(x=>({...x,nom:r.sector+' · '+x.nom}))),resGen};
         try{localStorage.setItem('eti_last_res_'+(SESSION.user||'anon'),JSON.stringify(ver));}catch(e){}
         window._res=ver; renderRes(ver); go('sres');
@@ -915,7 +915,7 @@ const QR={
         await fbdb.collection(COL_SES).doc(s.id).update(upd);
         lista.forEach(res=>guardarEvalNube(res));
         try{ if(window.etiAlertaRutas) window.etiAlertaRutas(lista); }catch(eAl){ console.warn('[_ETI_ALERTA_RUTA_V1]',eAl); }   /* _ETI_ALERTA_RUTA_V1 (20-oct) */
-        try{const p=progPendienteDe(s.sup);if(p&&fechasPendientes(p).includes(s.fecha))marcarProgEjecutada(p.id,s.fecha);}catch(e){}
+        try{lista.forEach(r=>{const p=progParaFecha(s.sup,r.sector,s.fecha);if(p)marcarProgEjecutada(p.id,s.fecha);});}catch(e){}   /* _PROG_SECTOR_V1 */
         const ver=lista.length===1?lista[0]:{...lista[0],sector:lista.map(r=>r.sector).join(', '),rutas:lista.flatMap(r=>r.rutas.map(x=>({...x,nom:r.sector+' · '+x.nom}))),resGen:upd.resultado};
         try{localStorage.setItem('eti_last_res_'+(SESSION.user||'anon'),JSON.stringify(ver));}catch(e){}
         window._res=ver; renderRes(ver); go('sres');

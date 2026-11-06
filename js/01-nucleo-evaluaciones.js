@@ -529,7 +529,7 @@ function guardarEvalNube(res){
     resGen:res.resGen,
     usuario:SESSION?.user||'—', nomUsuario:SESSION?.nom||'—',
     destiempo:res.destiempo||null,
-    prog:(function(){try{const p=progPendienteDe(res.sup);if(!p)return {programada:false};const fs=(p.fechas||[]).slice().sort();const i=fs.indexOf(res.fecha);return {programada:i>=0,id:p.id||null,sector:p.sector||'',sesion:i>=0?(i+1):null,total:fs.length,fechas:fs};}catch(e){return null;}})(),   /* _SESION_PROG_V1: sesión programada (N de M) o no programada */
+    prog:(function(){try{const p=progPendienteDe(res.sup,res.sector);if(!p)return {programada:false};const fs=(p.fechas||[]).slice().sort();const i=fs.indexOf(res.fecha);return {programada:i>=0,id:p.id||null,sector:p.sector||'',sesion:i>=0?(i+1):null,total:fs.length,fechas:fs};}catch(e){return null;}})(),   /* _SESION_PROG_V1: sesión programada (N de M) o no programada */
     modalidad:res.modalidad||'Manual', sesionQR:res.sesionQR||null,   // _MODULOS_V1
     rutas:res.rutas.map(r=>{const o={nom:r.nom, cod:r.cod, ne:r.ne, resGrupo:r.resGrupo, hom:r.hom!=null?+r.hom:null, muj:r.muj!=null?+r.muj:null,   /* _SEXO_V1 */
       secs:r.secs.map(s=>({id:s.id, nom:s.nom, peso:s.peso, pct:s.cum, pond:s.pond, promSec:s.promSec}))};
@@ -1490,7 +1490,7 @@ function p1next(){
 
   // ── CONTROL DE DESTIEMPO (evaluaciones programadas) ──
   S.destiempo=null; S.progId=null;
-  const progEv=progPendienteDe(s);
+  const progEv=progPendienteDe(s,sector);   /* _PROG_SECTOR_V1 */
   if(progEv){
     const pend=fechasPendientes(progEv);
     const ult=pend.length?pend[pend.length-1]:progEv.fechas[progEv.fechas.length-1];
@@ -3138,10 +3138,22 @@ function _progColeccion(id){
   return (p&&p._col)||COL_PROG_EV;
 }
 function saveProgs(l){ localStorage.setItem('eti_prog_evals',JSON.stringify(l)); }
-function progPendienteDe(sup){
+/* _PROG_SECTOR_V1 (06-nov-2026): la programacion se busca por supervisor Y sector (antes solo supervisor:
+   un supervisor con 2 sectores, p. ej. El Papayo y Limones, podia marcar ejecutada la del otro sector).
+   Sin sector se comporta igual que antes. */
+function _progSecN(s){const x=String(s||'').toUpperCase().replace(/^SECTOR\s+/,'').replace(/\s+/g,' ').trim();
+  return ({'PAPAYO':'EL PAPAYO','OLIVARES APROA':'APROA','PLANTA':'PLANTA RAPEL','SANTA ROSA I':'SANTA ROSA','SANTA ROSA II':'SANTA ROSA','SANTA ROSA 1':'SANTA ROSA','SANTA ROSA 2':'SANTA ROSA'})[x]||x;}
+function _progDelSector(p,sector){return !sector||!p.sector||_progSecN(p.sector)===_progSecN(sector);}
+function progPendienteDe(sup,sector){
   return getProgs()
-    .filter(p=>_cumCoincide(p.sup,sup) && p.estado!=='ejecutada' && Array.isArray(p.fechas) && p.fechas.length)
+    .filter(p=>_cumCoincide(p.sup,sup) && p.estado!=='ejecutada' && Array.isArray(p.fechas) && p.fechas.length && _progDelSector(p,sector))
     .slice()
+    .sort((a,b)=>a.fechas[0].localeCompare(b.fechas[0]))[0]||null;
+}
+/* programacion pendiente de ese supervisor y sector que tiene ESA fecha por ejecutar */
+function progParaFecha(sup,sector,fecha){
+  return getProgs()
+    .filter(p=>_cumCoincide(p.sup,sup) && p.estado!=='ejecutada' && Array.isArray(p.fechas) && _progDelSector(p,sector) && fechasPendientes(p).includes(fecha))
     .sort((a,b)=>a.fechas[0].localeCompare(b.fechas[0]))[0]||null;
 }
 // Marca UNA fecha como ejecutada; la programación queda 'ejecutada' solo cuando no quedan fechas pendientes
