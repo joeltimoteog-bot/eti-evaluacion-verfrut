@@ -25,6 +25,10 @@
   var hoy = function () { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
   var U = function (s) { return String(s || '').trim().toUpperCase().replace(/\s+/g, ' '); };
   var EMP = function (s) { return U(s).replace(/\s*S\.?\s*A\.?\s*C\.?$/, ''); };
+  /* empresa OFICIAL de cada sector (misma tabla que Programacion ETI del Sistema RR.LL.); si no esta, la del registro */
+  var EMP_SECTOR = { 'EL PAPAYO': 'RAPEL', 'PAPAYO': 'RAPEL', 'LIMONES': 'RAPEL', 'LOS OLIVARES': 'RAPEL', 'APROA': 'RAPEL', 'OLIVARES APROA': 'RAPEL', 'ALGARROBOS': 'RAPEL', 'SAN VICENTE': 'RAPEL', 'PLANTA RAPEL': 'RAPEL', 'PLANTA': 'RAPEL',
+    'OLIVARES BAJO': 'VERFRUT', 'SANTA ROSA': 'VERFRUT', 'SANTA ROSA I': 'VERFRUT', 'SANTA ROSA II': 'VERFRUT', 'SANTA ROSA 1': 'VERFRUT', 'SANTA ROSA 2': 'VERFRUT', 'PUNTA ARENAS': 'VERFRUT', 'SAN RAFAEL': 'VERFRUT' };
+  var empDe = function (sector, emp) { var s = U(sector).replace(/^SECTOR\s+/, ''); return EMP_SECTOR[s] || EMP(emp); };
   var pc = function (x) { return x == null ? '—' : Math.round(x * 1000) / 10 + '%'; };
   function token() { try { return sessionStorage.getItem('eti_token') || ''; } catch (e) { return ''; } }
   function esEditor() { var s = ses(); return !!s && (s.rol === 'admin' || EDITORES.indexOf(String(s.user || '').toLowerCase()) >= 0); }
@@ -44,12 +48,12 @@
     var f = [['fecha', '>=', c.desde], ['fecha', '<=', c.hasta]], w = function (k) { return user ? f.concat([[k, '==', user]]) : f; };
     var R = await Promise.all([consultar('respuestas_qr', w('usuarioSup')), consultar('evaluaciones_conocimiento', w('usuario'))]), out = [];
     R[0].forEach(function (x) { var r = +x.resultado || 0;
-      out.push({ fecha: x.fecha, emp: EMP(x.emp), sup: x.sup || '', user: x.usuarioSup || '', sector: x.sector || '', ruta: U(x.ruta), cod: U(x.cod), n: 1, res: r, apr: r >= MIN ? 1 : 0, mod: 'QR',
+      out.push({ fecha: x.fecha, emp: empDe(x.sector, x.emp), sup: x.sup || '', user: x.usuarioSup || '', sector: x.sector || '', ruta: U(x.ruta), cod: U(x.cod), n: 1, res: r, apr: r >= MIN ? 1 : 0, mod: 'QR',
         secs: (x.secs || []).map(function (s) { return { id: s.id || U(s.nom), nom: s.nom, pct: +s.pct || 0 }; }) }); });
     R[1].forEach(function (x) { if (x.modalidad === 'QR') return;
       (x.rutas || []).forEach(function (r) { var n = +r.ne || 1, res = +r.resGrupo || 0, d = r.det && r.det.ev;
         var apr = Array.isArray(d) ? d.filter(function (e) { return (+e.res || +e.resultado || 0) >= MIN; }).length : null;
-        out.push({ fecha: x.fecha, emp: EMP(x.emp), sup: x.sup || '', user: x.usuario || '', sector: x.sector || '', ruta: U(r.nom), cod: U(r.cod), n: n, res: res, apr: apr, mod: 'Manual',
+        out.push({ fecha: x.fecha, emp: empDe(x.sector, x.emp), sup: x.sup || '', user: x.usuario || '', sector: x.sector || '', ruta: U(r.nom), cod: U(r.cod), n: n, res: res, apr: apr, mod: 'Manual',
           secs: (r.secs || []).map(function (s) { return { id: s.id || U(s.nom), nom: s.nom, pct: s.pct != null ? +s.pct : (+s.cum || 0) }; }) }); }); });
     return out.filter(function (x) { return x.ruta || x.cod; });
   }
@@ -57,13 +61,13 @@
     var c = o.ciclo, s = ses() || {}, user = esEditor() ? '' : s.user;
     var Q = await Promise.all([evaluaciones(c, user), consultar('capacitaciones', [['fechaEjecucion', '>=', c.desde], ['fechaEjecucion', '<=', c.hasta]]),
       consultar('alertas_ref', [['ciclo', '==', c.id]]), consultar('encuestas_sat', [['fecha', '>=', c.desde], ['fecha', '<=', c.hasta]]).catch(function () { return []; })]);
-    var F = Q[0].filter(function (x) { return (!o.emp || x.emp === o.emp) && (!o.sector || U(x.sector) === U(o.sector)); });
+    var F = Q[0].filter(function (x) { return o.sector ? U(x.sector) === U(o.sector) : (!o.emp || x.emp === o.emp); });
     var sectEmp = {}; Q[0].forEach(function (x) { if (x.sector) sectEmp[U(x.sector)] = x.emp; });
     var CAP = Q[1].filter(function (x) { if (x.eliminado || x.anulado || x.eliminada) return false; var se = U(x.sector);
-      if (o.sector) return se === U(o.sector); return !o.emp || !sectEmp[se] || sectEmp[se] === o.emp; });
+      if (o.sector) return se === U(o.sector); var e = EMP_SECTOR[se.replace(/^SECTOR\s+/, '')] || sectEmp[se]; return !o.emp || !e || e === o.emp; });
     var segs = {}; Q[2].forEach(function (x) { segs[x._id] = x; });
     var A = window.etiAlertasRef.analizar(F, c.id, segs);
-    var SAT = Q[3].filter(function (x) { return (!o.emp || EMP(x.emp) === o.emp) && (!o.sector || U(x.sector) === U(o.sector)); });
+    var SAT = Q[3].filter(function (x) { return o.sector ? U(x.sector) === U(o.sector) : (!o.emp || empDe(x.sector, x.emp) === o.emp); });
     return { F: F, CAP: CAP, A: A, SAT: SAT };
   }
   /* ── 2) calculos del informe ── */
@@ -168,14 +172,14 @@
     M.innerHTML = '<div class="icc-box" role="dialog" aria-modal="true"><div class="icc-hd"><div><b>📑 Informes de cierre de ciclo ETI</b><small>Capacitaciones + evaluación checklist + reforzamientos + encuesta de satisfacción · vista previa y Word</small></div><button class="icc-b" id="icc-x">✕</button></div>' +
       '<div class="icc-bd"><div class="icc-f"><div><label>Informe</label><div class="icc-seg"><button data-m="sector" class="on">📍 Por sector</button>' + (ed ? '<button data-m="general">🏢 General</button>' : '') + '</div></div>' +
       '<div><label>Ciclo</label><select id="icc-ci">' + cs.map(function (c) { return '<option value="' + c.id + '"' + (c.id === act.id ? ' selected' : '') + '>' + c.nom + '</option>'; }).join('') + '</select></div>' +
-      '<div><label>Empresa</label><select id="icc-emp"><option>VERFRUT</option><option>RAPEL</option></select></div>' +
-      '<div id="icc-secw"><label>Sector</label><select id="icc-sec">' + sects.map(function (x) { return '<option>' + esc(x) + '</option>'; }).join('') + '</select></div>' +
+      '<div id="icc-empw" style="display:none"><label>Empresa</label><select id="icc-emp"><option>VERFRUT</option><option>RAPEL</option></select></div>' +
+      '<div id="icc-secw"><label>Sector</label><select id="icc-sec">' + sects.map(function (x) { return '<option value="' + esc(x) + '">' + esc(x) + ' · ' + (empDe(x, '') || '?') + '</option>'; }).join('') + '</select></div>' +
       '<div><button class="icc-b p" id="icc-ver">👁 Ver resultados</button></div></div><div id="icc-out"><div class="icc-vacio" style="margin-top:1rem">Elige el ciclo' + (ed ? ', el tipo de informe' : '') + ' y el sector, y pulsa <b>👁 Ver resultados</b>.</div></div></div></div>';
     document.body.appendChild(M);
     $('icc-x').onclick = function () { M.remove(); M = null; };
     var modo = 'sector';
-    Array.prototype.forEach.call(M.querySelectorAll('[data-m]'), function (b) { b.onclick = function () { modo = b.getAttribute('data-m'); Array.prototype.forEach.call(M.querySelectorAll('[data-m]'), function (x) { x.classList.toggle('on', x === b); }); $('icc-secw').style.display = modo === 'general' ? 'none' : ''; }; });
-    $('icc-ver').onclick = function () { var c = cs.find(function (x) { return x.id === $('icc-ci').value; }); ver({ modo: modo, ciclo: c, emp: $('icc-emp').value, sector: modo === 'general' ? '' : $('icc-sec').value }); };
+    Array.prototype.forEach.call(M.querySelectorAll('[data-m]'), function (b) { b.onclick = function () { modo = b.getAttribute('data-m'); Array.prototype.forEach.call(M.querySelectorAll('[data-m]'), function (x) { x.classList.toggle('on', x === b); }); $('icc-secw').style.display = modo === 'general' ? 'none' : ''; $('icc-empw').style.display = modo === 'general' ? '' : 'none'; }; });
+    $('icc-ver').onclick = function () { var c = cs.find(function (x) { return x.id === $('icc-ci').value; }), sec = modo === 'general' ? '' : $('icc-sec').value; ver({ modo: modo, ciclo: c, emp: sec ? empDe(sec, $('icc-emp').value) : $('icc-emp').value, sector: sec }); };
   }
   async function ver(o) {
     var out = $('icc-out'), b = $('icc-ver'); b.disabled = true; out.innerHTML = '<p>⏳ Reuniendo capacitaciones, evaluaciones, reforzamientos y encuestas de ' + esc(o.ciclo.nom) + '…</p>';

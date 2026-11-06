@@ -24,6 +24,10 @@
   var hoy = function () { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
   var U = function (s) { return String(s || '').trim().toUpperCase().replace(/\s+/g, ' '); };
   var EMP = function (s) { return U(s).replace(/\s*S\.?\s*A\.?\s*C\.?$/, ''); };   /* "VERFRUT S.A.C." = "VERFRUT" */
+  /* empresa OFICIAL de cada sector (misma tabla que Programacion ETI del Sistema RR.LL.); si no esta, la del registro */
+  var EMP_SECTOR = { 'EL PAPAYO': 'RAPEL', 'PAPAYO': 'RAPEL', 'LIMONES': 'RAPEL', 'LOS OLIVARES': 'RAPEL', 'APROA': 'RAPEL', 'OLIVARES APROA': 'RAPEL', 'ALGARROBOS': 'RAPEL', 'SAN VICENTE': 'RAPEL', 'PLANTA RAPEL': 'RAPEL', 'PLANTA': 'RAPEL',
+    'OLIVARES BAJO': 'VERFRUT', 'SANTA ROSA': 'VERFRUT', 'SANTA ROSA I': 'VERFRUT', 'SANTA ROSA II': 'VERFRUT', 'SANTA ROSA 1': 'VERFRUT', 'SANTA ROSA 2': 'VERFRUT', 'PUNTA ARENAS': 'VERFRUT', 'SAN RAFAEL': 'VERFRUT' };
+  var empDe = function (sector, emp) { var s = U(sector).replace(/^SECTOR\s+/, ''); return EMP_SECTOR[s] || EMP(emp); };
   var P = function (v) { return v == null ? '—' : Math.round(v * 1000) / 10 + '%'; };
   function token() { try { return sessionStorage.getItem('eti_token') || ''; } catch (e) { return ''; } }
   function esEditor() { var s = ses(); return !!s && (s.rol === 'admin' || EDITORES.indexOf(String(s.user || '').toLowerCase()) >= 0); }
@@ -49,13 +53,13 @@
     var f = [['fecha', '>=', desde], ['fecha', '<=', hasta]], w = function (c) { return user ? f.concat([[c, '==', user]]) : f; };   /* supervisor: solo lo suyo (filtra el servidor) */
     var R = await Promise.all([consultar('respuestas_qr', w('usuarioSup')), consultar('evaluaciones_conocimiento', w('usuario'))]), out = [];
     R[0].forEach(function (x) {
-      out.push({ fecha: x.fecha, emp: EMP(x.emp), sup: x.sup || '', user: x.usuarioSup || '', sector: x.sector || '', ruta: U(x.ruta), cod: U(x.cod), n: 1, mod: 'QR',
+      out.push({ fecha: x.fecha, emp: empDe(x.sector, x.emp), sup: x.sup || '', user: x.usuarioSup || '', sector: x.sector || '', ruta: U(x.ruta), cod: U(x.cod), n: 1, mod: 'QR',
         secs: (x.secs || []).map(function (s) { return { id: s.id || U(s.nom), nom: s.nom, pct: +s.pct || 0 }; }) });
     });
     R[1].forEach(function (x) {
       if (x.modalidad === 'QR') return;   /* el consolidado QR ya esta por persona en respuestas_qr */
       (x.rutas || []).forEach(function (r) {
-        out.push({ fecha: x.fecha, emp: EMP(x.emp), sup: x.sup || '', user: x.usuario || '', sector: x.sector || '', ruta: U(r.nom), cod: U(r.cod), n: +r.ne || 1, mod: 'Manual',
+        out.push({ fecha: x.fecha, emp: empDe(x.sector, x.emp), sup: x.sup || '', user: x.usuario || '', sector: x.sector || '', ruta: U(r.nom), cod: U(r.cod), n: +r.ne || 1, mod: 'Manual',
           secs: (r.secs || []).map(function (s) { return { id: s.id || U(s.nom), nom: s.nom, pct: s.pct != null ? +s.pct : (+s.cum || 0) }; }) });
       });
     });
@@ -250,7 +254,7 @@
     }
     avisoInicial();
   }
-  window.etiAlertasRef = { abrir: abrir, analizar: analizar, filas: filas, ciclos: ciclos, version: 1 };
+  window.etiAlertasRef = { abrir: abrir, analizar: analizar, filas: filas, ciclos: ciclos, empDe: empDe, version: 2 };
   setInterval(menu, 1500); setTimeout(menu, 500);
   try { console.log('[_ALERTAS_REF_V1] listo'); } catch (e) {}
 })();
