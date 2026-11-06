@@ -299,15 +299,17 @@ window.ETIMIS={
       if(v.h==='') v.h=String(R.hom); if(v.m==='') v.m=String(R.muj);   /* _SEXO_V1 */
       if(R.ssx) toast('ℹ️ '+R.ssx+' evaluado(s) sin dato de hombre/mujer (registros anteriores)','i');
       toast('⏳ Generando el Informe Check List en Word…','i');
-      try{ if(typeof window.JSZip==='undefined') await cargarScript('lib/jszip.min.js?v=3101'); if(typeof window.etiInformeChecklist!=='function') await cargarScript('lib/eti-informe-checklist.js?v=2'); }
+      try{ if(typeof window.JSZip==='undefined') await cargarScript('lib/jszip.min.js?v=3101'); if(typeof window.etiInformeChecklist!=='function') await cargarScript('lib/eti-informe-checklist.js?v=3'); }
       catch(e){toast('No se pudo cargar el generador: '+e.message,'e');return;}
       let plantilla; try{const r=await fetch('lib/plantilla-informe-checklist-eti.docx?v=2',{cache:'no-store'}); if(!r.ok) throw new Error('HTTP '+r.status); plantilla=await r.arrayBuffer();}
       catch(e){toast('No se pudo leer la plantilla del informe: '+e.message,'e');return;}
       const cnt={}; F.forEach(r=>{const e=r.emp||'';cnt[e]=(cnt[e]||0)+r.n;}); const emp=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0]||'';
       const datos={plantilla,emp,sector:sects[0],nom,fechaEval:fe,fechasEval:fechasSel,fechaInforme:hoyI(),tipos:[...new Set(F.map(r=>r.tipo==='empleado'?'empleado':'obrero'))],temas:temas(F),R,v};
+      if(window.etiInformeFotos){ const okF=await window.etiInformeFotos.completar(datos); if(!okF) return; }   /* _INFORME_ETI_V1 (05-nov): 4 a 6 fotos en la seccion IV */
       const nombre='Informe_CheckList_ETI_GH-03_'+String(sects[0]).replace(/[^\w]+/g,'_')+'_'+fechasSel[0].replace(/-/g,'')+(fechasSel.length>1?'_al_'+fechasSel[fechasSel.length-1].replace(/-/g,''):'')+'.docx';
-      try{const blob=await window.etiInformeChecklist(datos);const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=nombre;a.style.display='none';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},800);}
+      let blob; try{blob=await window.etiInformeChecklist(datos);const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=nombre;a.style.display='none';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},800);}
       catch(e){console.error(e);toast('No se pudo generar el Word: '+e.message,'e');return;}
+      if(window.etiInformeFotos&&datos.fotos){ window.etiInformeFotos.guardar(datos,blob,nombre); return; }   /* _INFORME_ETI_V1: se guarda en Supabase y se avisa */
       const msg='✅ Se emitió tu Informe Check List ETI (INF-SC-GH-03) · '+sects[0]+' · '+fechasSel.map(fF).join(', ')+' en Word ('+nombre+'). Este es el informe que debes utilizar para tus evaluaciones ETI. RECUERDA: inserta la EVIDENCIA FOTOGRÁFICA en la sección IV (Foto 1 a Foto 4), revisa tus CONCLUSIONES (sección V), coloca tu FIRMA DIGITAL y adjunta el registro de asistencia antes de enviarlo. El sistema no guarda el informe ni las fotos; puedes volver a emitirlo desde este reporte.';
       toast('📝 Informe Check List descargado · inserta las fotos antes de enviarlo','s'); try{if(typeof confMod==='function')confMod('📝 Informe Check List emitido',msg,()=>{});}catch(e){}};
     if(window.etiMiniForm) window.etiMiniForm('📝 Informe Check List ETI (INF-SC-GH-03)','<b>Este es el informe que debes utilizar para las evaluaciones ETI.</b> Completa los datos que el sistema no tiene; lo demás (empresa, sector, total evaluados, semáforo por temas y conclusiones) se llena solo con la evaluación de <b>'+esc(sects[0])+'</b>.',campos,go);
