@@ -95,7 +95,7 @@ const SUPERVISORES = [
   {nom:'Alex Zapata Suarez',             sector:'Aproa',         rol:'Supervisor', reemplazante:false},
   {nom:'Yhanell Geraldine Luzon Venegas',        sector:'Santa Rosa',    rol:'Supervisor', reemplazante:false},
   // SUPERVISORES REEMPLAZANTES (sector variable según a quién cubren)
-  {nom:'Muriel Mechato Navarro',          sector:'', rol:'Reemplazante', reemplazante:true},
+  {nom:'Muriel Mechato Navarro',          sector:'', rol:'Reemplazante', reemplazante:true, activo:false}   /* _EQUIPO_ETI_V1: Bienestar Social, no se evalua */,
   {nom:'Socorro Miranda Pasapera',        sector:'', rol:'Reemplazante', reemplazante:true},
   {nom:'Jhonny Avendaño Granda',          sector:'', rol:'Reemplazante', reemplazante:true, activo:false}   /* _EQUIPO_ETI_V1 */,
   {nom:'Jaime Siancas Viera',             sector:'', rol:'Reemplazante', reemplazante:true, activo:false}   /* _EQUIPO_ETI_V1: no es del equipo RR.LL. */,
