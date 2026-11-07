@@ -270,7 +270,7 @@ function pintarBase(){
       <div class="fg"><label class="fl">Hasta</label><input class="fc" type="date" id="ind-hasta" value="${f.hasta}"></div>
       <div class="fg"><label class="fl">Empresa</label><select class="fc" id="ind-emp"><option value="">Todas</option><option ${f.empresa==='VERFRUT S.A.C.'?'selected':''}>VERFRUT S.A.C.</option><option ${f.empresa==='RAPEL S.A.C.'?'selected':''}>RAPEL S.A.C.</option></select></div>
       <div class="fg"><label class="fl">Sector / fundo</label><select class="fc" id="ind-sec"><option value="">Todos</option>${sects.map(s=>`<option ${f.sector===s?'selected':''}>${esc(s)}</option>`).join('')}</select></div>
-      ${esAdmin()?`<div class="fg"><label class="fl">Supervisor</label><select class="fc" id="ind-sup"><option value="">Todos</option>${SUPERVISORES.filter(s=>s.rol!=='Administrador').map(s=>`<option ${f.supervisor===s.nom?'selected':''}>${esc(s.nom)}</option>`).join('')}</select></div>`:''}
+      ${esAdmin()?`<div class="fg"><label class="fl">Supervisor</label><select class="fc" id="ind-sup"><option value="">Todos</option>${SUPERVISORES.filter(s=>s.rol!=='Administrador'&&s.activo!==false).map(s=>`<option ${f.supervisor===s.nom?'selected':''}>${esc(s.nom)}</option>`).join('')}</select></div>`:''}
       <div class="fg"><label class="fl">Modalidad</label><select class="fc" id="ind-mod"><option value="">Todas</option><option value="QR" ${f.modalidad==='QR'?'selected':''}>QR (anónima)</option><option value="MANUAL" ${f.modalidad==='MANUAL'?'selected':''}>Manual</option></select></div>
       <button class="btn bpri" onclick="ETIND.aplicar()">Filtrar</button>
     </div></div>

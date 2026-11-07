@@ -424,7 +424,7 @@ window.etiQRDeUsuario=async(user,activar)=>{
 /* _QR_TODOS_V1 (03-oct-2026): candidatos a QR = supervisores de la lista de Gestión + usuarios del módulo Usuarios */
 function candidatosQR(){
   const adm=SUPERVISORES.filter(x=>x.rol==='Administrador').map(x=>x.nom);
-  const out=SUPERVISORES.filter(x=>x.rol!=='Administrador').map(x=>({nom:x.nom,sector:x.multiSector||x.reemplazante?'':(x.sector||''),user:userDeSup(x.nom),fuente:'Gestión'}));
+  const out=SUPERVISORES.filter(x=>x.rol!=='Administrador'&&x.activo!==false).map(x=>({nom:x.nom,sector:x.multiSector||x.reemplazante?'':(x.sector||''),user:userDeSup(x.nom),fuente:'Gestión'}));
   getUsuarios().filter(u=>u.rol!=='admin').forEach(u=>{
     if(adm.some(n=>n===u.nom||_cumCoincide(n,u.nom))) return;
     if(out.some(o=>o.nom===u.nom||_cumCoincide(o.nom,u.nom))) return;
@@ -869,7 +869,7 @@ const QR={
   qrEliminarResp(id){confMod('¿Eliminar esta respuesta?','Se elimina en Azure y Firebase. No se puede deshacer.',()=>window.etiAdminCambio({sesion_id:sesActiva.id,ids:[id]},null,'Eliminando'));},
   qrEditarSesion(id){const s=sesiones.find(x=>x.id===id);if(!s)return;
     let m=$('ix-modal');if(!m){m=document.createElement('div');m.id='ix-modal';m.className='ix-modal';document.body.appendChild(m);}
-    const sups=SUPERVISORES.filter(x=>x.rol!=='Administrador');
+    const sups=SUPERVISORES.filter(x=>x.rol!=='Administrador'&&(x.activo!==false||x.nom===s.sup));   /* _EQUIPO_ETI_V1 */
     m.innerHTML=`<div class="ix-mbox"><h3>✏️ Editar sesión ${esc(s.id)}</h3><p>Cambia a quién está asignada, el sector, la fecha o su estado.</p>
       <label class="fl">Asignada a</label><select class="fc" id="es-sup">${sups.map(x=>`<option ${x.nom===s.sup?'selected':''}>${esc(x.nom)}</option>`).join('')}</select>
       <label class="fl">Sector / fundo</label><select class="fc" id="es-sec"><option value="">— Varios (el trabajador elige) —</option>${SECTORES_TODOS.map(x=>`<option ${x===s.sector?'selected':''}>${esc(x)}</option>`).join('')}</select>

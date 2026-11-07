@@ -3209,7 +3209,8 @@ async function guardarAtribucion(){
   if(!fbdb||!SESSION||SESSION.rol!=='admin') return;
   try{
     const us=(typeof getUsuarios==='function'?getUsuarios(true):[]);
-    const sups=SUPERVISORES.filter(s=>s.rol!=='Administrador').map(s=>{const u=us.find(x=>x.rol!=='admin'&&_cumCoincide(x.nom,s.nom));
+    const sups=SUPERVISORES.filter(s=>s.rol!=='Administrador'&&s.activo!==false).map(s=>{   /* _EQUIPO_ETI_V1 */
+      const u=us.find(x=>x.rol!=='admin'&&_cumCoincide(x.nom,s.nom));
       return {nom:s.nom,user:u?u.user:'',sector:s.sector||'',sectores:s.sectores||[],reemplazante:!!s.reemplazante};});
     await fbdb.collection('config_eti').doc('atribucion').set({sups,regla:'programacion',por:SESSION.user,en:new Date().toISOString()});
   }catch(e){console.warn('atribucion:',e&&e.message);}
