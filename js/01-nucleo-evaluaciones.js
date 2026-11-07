@@ -82,10 +82,10 @@ SECS.forEach(s => { s.maxSec = s.pregs.reduce((a,p)=>a+p.max,0); });
 const SUPERVISORES = [
   // ADMINISTRADORES
   {nom:'Joel Timoteo Gonza',              sector:'',   rol:'Administrador',  reemplazante:false},
-  {nom:'Olga Vilela Ludeña',              sector:'',   rol:'Administrador',  reemplazante:false},
+  {nom:'Olga Vilela Ludeña',              sector:'',   rol:'Administrador',  reemplazante:false, activo:false}   /* _EQUIPO_ETI_V1 */,
   {nom:'Jorge Chavez Coordova',           sector:'',   rol:'Administrador',  reemplazante:false},
   // SUPERVISORES CON SECTOR FIJO
-  {nom:'Elberth Castro Bayona',           sector:'San Vicente',   rol:'Supervisor', reemplazante:false},
+  {nom:'Elberth Castro Bayona',           sector:'San Vicente',   rol:'Supervisor', reemplazante:false, activo:false}   /* _EQUIPO_ETI_V1 (06-nov): ya no pertenece al area; se conserva para registros antiguos */,
   {nom:'Sergio Viera Giron',              sector:'Algarrobos',    rol:'Supervisor', reemplazante:false},
   {nom:'Alexander Martinez Juarez',       sector:'Punta Arenas',  rol:'Supervisor', reemplazante:false},
   {nom:'Roberto Molero Abad',             sector:'Planta Rapel',  rol:'Supervisor', reemplazante:false},
@@ -97,9 +97,9 @@ const SUPERVISORES = [
   // SUPERVISORES REEMPLAZANTES (sector variable según a quién cubren)
   {nom:'Muriel Mechato Navarro',          sector:'', rol:'Reemplazante', reemplazante:true},
   {nom:'Socorro Miranda Pasapera',        sector:'', rol:'Reemplazante', reemplazante:true},
-  {nom:'Jhonny Avendaño Granda',          sector:'', rol:'Reemplazante', reemplazante:true},
-  {nom:'Jaime Siancas Viera',             sector:'', rol:'Reemplazante', reemplazante:true},
-  {nom:'Deysi Quispe Juarez',             sector:'', rol:'Reemplazante', reemplazante:true},
+  {nom:'Jhonny Avendaño Granda',          sector:'', rol:'Reemplazante', reemplazante:true, activo:false}   /* _EQUIPO_ETI_V1 */,
+  {nom:'Jaime Siancas Viera',             sector:'', rol:'Reemplazante', reemplazante:true, activo:false}   /* _EQUIPO_ETI_V1: no es del equipo RR.LL. */,
+  {nom:'Deysi Quispe Juarez',             sector:'', rol:'Reemplazante', reemplazante:true, activo:false}   /* _EQUIPO_ETI_V1 */,
   {nom:'JHON STEVE HERNANDEZ BORRERO',    sector:'', rol:'Reemplazante', reemplazante:true},   /* _SUP_BORRERO_V1 (18-oct): jborrero; cubre sectores según la ausencia registrada en el RR.LL. (hoy Santa Rosa) */
 ];
 
@@ -135,9 +135,11 @@ function p1sectorInpChange(){
 }
 
 function renderSupSelect(){
-  const adm  = SUPERVISORES.filter(s=>s.rol==='Administrador');
-  const fijo = SUPERVISORES.filter(s=>s.rol==='Supervisor');
-  const remp = SUPERVISORES.filter(s=>s.rol==='Reemplazante');
+  /* _EQUIPO_ETI_V1 (06-nov-2026): los marcados activo:false no salen en el combo (siguen en la lista para los registros antiguos) */
+  const vig  = SUPERVISORES.filter(s=>s.activo!==false);
+  const adm  = vig.filter(s=>s.rol==='Administrador');
+  const fijo = vig.filter(s=>s.rol==='Supervisor');
+  const remp = vig.filter(s=>s.rol==='Reemplazante');
   const supLabel = s => s.multiSector
     ? `${s.nom} — ${s.sectores.join(' / ')}`
     : `${s.nom} — ${s.sector}`;
