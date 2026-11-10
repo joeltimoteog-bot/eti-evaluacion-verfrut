@@ -1,17 +1,17 @@
 # Graph Report - Sistema - Evaluacion Eti  (2026-11-10)
 
 ## Corpus Check
-- 33 files · ~177,462 words
+- 34 files · ~181,288 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 2 file(s) not represented in the graph (top: (none) 1, .diff 1)
 
 ## Summary
-- 747 nodes · 1736 edges · 41 communities (33 shown, 8 thin omitted)
-- Extraction: 94% EXTRACTED · 6% INFERRED · 0% AMBIGUOUS · INFERRED: 98 edges (avg confidence: 0.85)
+- 759 nodes · 1757 edges · 42 communities (34 shown, 8 thin omitted)
+- Extraction: 94% EXTRACTED · 6% INFERRED · 0% AMBIGUOUS · INFERRED: 101 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `ba10cd3f`
+- Built from commit: `eaf466bd`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -53,6 +53,7 @@
 - eti-informe-ciclo.js
 - ETI-Base-completa-al-2026-11-05_b5ed297b.md
 - 13-menu-depurado-v1.js
+- 21-informe-evaluaciones-v1.js
 
 ## God Nodes (most connected - your core abstractions)
 1. `toast()` - 39 edges
@@ -81,7 +82,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (41 total, 8 thin omitted)
+## Communities (42 total, 8 thin omitted)
 
 ### Community 0 - "solreprog.js"
 Cohesion: 0.29
@@ -188,8 +189,8 @@ Cohesion: 0.19
 Nodes (26): abrir(), analizar(), avisoInicial(), cargar(), cargarProgsRef(), cicloActual(), ciclos(), consultar() (+18 more)
 
 ### Community 32 - "19-centro-informes-v1.js"
-Cohesion: 0.17
-Nodes (25): abrirCentro(), abrirCentroRL(), abrirExpediente(), autoAbrir(), cerrar(), cerrarLateral(), cicloSel(), css() (+17 more)
+Cohesion: 0.16
+Nodes (26): abrirCentro(), abrirCentroRL(), abrirExpediente(), autoAbrir(), cerrar(), cerrarLateral(), cicloSel(), correr() (+18 more)
 
 ### Community 33 - "17-informe-ciclo-v1.js"
 Cohesion: 0.19
@@ -215,6 +216,10 @@ Nodes (3): b64bytes(), build(), etiInformeCiclo()
 Cohesion: 0.50
 Nodes (3): Sheet: Evaluaciones, Sheet: Por pregunta (QR), Sheet: Por supervisor
 
+### Community 41 - "21-informe-evaluaciones-v1.js"
+Cohesion: 0.33
+Nodes (10): abrir(), armar(), documento(), esEditor(), excel(), marcar(), nombre(), periodo() (+2 more)
+
 ## Knowledge Gaps
 - **8 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -222,16 +227,16 @@ Nodes (3): Sheet: Evaluaciones, Sheet: Por pregunta (QR), Sheet: Por supervisor
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `etiBandeja` connect `14-informe-eti-v1.js` to `respuestas-auditoria.js`, `01-nucleo-evaluaciones.js`?**
-  _High betweenness centrality (0.122) - this node is a cross-community bridge._
+  _High betweenness centrality (0.118) - this node is a cross-community bridge._
 - **Are the 4 inferred relationships involving `fmtF()` (e.g. with `actualizarAlertaProgP1()` and `buildDestiempoHTML()`) actually correct?**
   _`fmtF()` has 4 INFERRED edges - model-reasoned connections that need verification._
 - **Should `respuestas-auditoria.js` be split into smaller, more focused modules?**
   _Cohesion score 0.1294871794871795 - nodes in this community are weakly interconnected._
 - **Why does `poner()` connect `respuestas-auditoria.js` to `14-informe-eti-v1.js`?**
-  _High betweenness centrality (0.098) - this node is a cross-community bridge._
+  _High betweenness centrality (0.095) - this node is a cross-community bridge._
 - **Should `05-banco-respuestas.js` be split into smaller, more focused modules?**
   _Cohesion score 0.054075235109717866 - nodes in this community are weakly interconnected._
 - **Why does `fF()` connect `14-informe-eti-v1.js` to `respuestas-auditoria.js`, `10-mis-evaluaciones.js`, `16-alertas-ref-v1.js`?**
-  _High betweenness centrality (0.095) - this node is a cross-community bridge._
+  _High betweenness centrality (0.092) - this node is a cross-community bridge._
 - **Should `10-mis-evaluaciones.js` be split into smaller, more focused modules?**
   _Cohesion score 0.11020408163265306 - nodes in this community are weakly interconnected._

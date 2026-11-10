@@ -8,6 +8,8 @@
    · EXPEDIENTE DE AUDITORIA POR SECTOR (Joel, Lucia, administradores): usa EXACTAMENTE los datos y
      calculos del Informe de cierre de ciclo (etiInformeCicloUI.datos/armar/conclusiones), todo leido
      de Supabase (eti/consultar). Vista en pantalla, Imprimir / PDF (A4) y Excel. Solo lee: no cambia nada.
+   v8 (10-nov): _DOC_FORMATO_V2 · formato del documento protegido de los estilos de la pagina; temas abreviados con leyenda.
+   v7 (10-nov): _EXP_RANGO_V1 · expediente por un ciclo, rango de ciclos o todo el año; cada cuadro vacio explica el motivo.
    v6 (10-nov): tarjeta del Informe de Evaluaciones ETI (21-informe-evaluaciones-v1.js).
    v5 (10-nov): _SECTOR_UNICO_V1 · las variantes de un sector se cuentan como un solo sector.
    v4 (10-nov): tambien funciona DENTRO de Programacion ETI del Sistema RR.LL. (window._ETI_EN_RL), sin abrir otra pagina.
@@ -195,18 +197,38 @@
     if (!listo()) { aviso('Recarga la página (Ctrl+F5) para cargar el expediente', 'e'); return; }
     var cs = ciclos(), h = hoy(), act = cs.find(function (c) { return h >= c.desde && h <= c.hasta; }) || cs[0];
     modal('🗂 Expediente de auditoría', 'Toda la evidencia ETI de un sector, ordenada para Certificaciones o el auditor. Solo lectura.',
-      '<div class="ci-f"><div><label>Ciclo</label><select id="xp-ci">' + cs.map(function (c) { return '<option value="' + c.id + '"' + (act && c.id === act.id ? ' selected' : '') + '>' + esc(c.nom) + '</option>'; }).join('') + '</select></div>' +
+      '<div class="ci-f"><div><label>Desde el ciclo</label><select id="xp-ci">' + cs.map(function (c) { return '<option value="' + c.id + '"' + (act && c.id === act.id ? ' selected' : '') + '>' + esc(c.nom) + '</option>'; }).join('') + '</select></div>' +
+      '<div><label>Hasta el ciclo</label><select id="xp-ci2">' + cs.map(function (c) { return '<option value="' + c.id + '"' + (act && c.id === act.id ? ' selected' : '') + '>' + esc(c.nom) + '</option>'; }).join('') + '</select></div>' +
+      '<div><button class="ci-b" id="xp-anio" title="Los 4 ciclos del año">Todo el año</button></div>' +
       '<div><label>Empresa</label><select id="xp-emp"><option value="">Todas</option><option>RAPEL</option><option>VERFRUT</option></select></div>' +
       '<div><button class="ci-b p" id="xp-res">📋 Ver sectores</button></div></div><div id="xp-out"><div class="ci-vacio">Elige el ciclo y pulsa <b>📋 Ver sectores</b>.</div></div>');
     $('xp-res').onclick = resumen;
+    $('xp-anio').onclick = function () { var y = String(new Date().getFullYear()); $('xp-ci').value = y + '-C1'; $('xp-ci2').value = y + '-C4'; resumen(); };
     resumen();
   }
-  function cicloSel() { var id = $('xp-ci').value; return ciclos().find(function (c) { return c.id === id; }); }
+  /* _EXP_RANGO_V1 (10-nov): un ciclo, un rango de ciclos o todo el año */
+  function cicloSel() {
+    var L = ciclos(), a = L.find(function (c) { return c.id === $('xp-ci').value; }), b = L.find(function (c) { return c.id === ($('xp-ci2') || {}).value; }) || a; if (!a) return null;
+    if (a.desde > b.desde) { var t = a; a = b; b = t; }
+    var lista = L.filter(function (c) { return c.desde >= a.desde && c.desde <= b.desde; }).sort(function (x, y) { return x.desde.localeCompare(y.desde); });
+    if (lista.length === 1) return Object.assign({}, lista[0], { lista: lista });
+    return { id: a.id + '_' + b.id, nom: a.nom + ' a ' + b.nom, desde: a.desde, hasta: b.hasta, lista: lista };
+  }
+  /* resultados del periodo completo; las alertas de reforzamiento se calculan ciclo por ciclo (como en el sistema) y se juntan */
+  async function correr(o) {
+    var UI = window.etiInformeCicloUI, c = o.ciclo, R = UI.armar(o, await UI.datos(o));
+    if (c.lista && c.lista.length > 1) {
+      var h = hoy(), us = c.lista.filter(function (z) { return z.desde <= h; });
+      var Q = await Promise.all(us.map(function (z) { var o2 = Object.assign({}, o, { ciclo: z }); return UI.datos(o2).then(function (X2) { return UI.armar(o2, X2).alertas.map(function (a) { return Object.assign({}, a, { cicloNom: z.nom }); }); }); }));
+      R.alertas = [].concat.apply([], Q);
+    }
+    return R;
+  }
   async function resumen() {
     var out = $('xp-out'), b = $('xp-res'), c = cicloSel(), emp = $('xp-emp').value; if (!c) return;
     b.disabled = true; out.innerHTML = '<p>⏳ Leyendo de Supabase capacitaciones, evaluaciones, reforzamientos y encuestas de ' + esc(c.nom) + '…</p>';
     try {
-      var o = { modo: 'general', ciclo: c, emp: emp, sector: '' }, X = await etiInformeCicloUI.datos(o), R = etiInformeCicloUI.armar(o, X);
+      var o = { modo: 'general', ciclo: c, emp: emp, sector: '' }, R = await correr(o);
       /* _SECTOR_UNICO_V1: se suman las variantes del mismo sector ("Olivares Aproa" + "Aproa") */
       var cap = {}; R.cap.porSector.forEach(function (s) { var k = norm(s.sector), z = cap[k] || (cap[k] = { sesiones: 0, total: 0 }); z.sesiones += s.sesiones; z.total += s.total; });
       var ev = {}; R.anexo.forEach(function (a) { if (a.prom == null) return; var k = norm(a.sector), z = ev[k] || (ev[k] = { n: 0, s: 0 }); z.n += a.n; z.s += a.prom * a.n; });
@@ -235,7 +257,7 @@
     var out = $('xp-out'), c = cicloSel(); if (!c) return;
     out.innerHTML = '<p>⏳ Armando el expediente de ' + esc(sector) + '…</p>';
     try {
-      var o = { modo: 'sector', ciclo: c, emp: empDe(sector), sector: sector }, X = await etiInformeCicloUI.datos(o), R = etiInformeCicloUI.armar(o, X), K = etiInformeCicloUI.conclusiones(o, R);
+      var o = { modo: 'sector', ciclo: c, emp: empDe(sector), sector: sector }, R = await correr(o), K = etiInformeCicloUI.conclusiones(o, R);
       ULT = { o: o, R: R, K: K, html: documento(o, R, K) };
       out.innerHTML = '<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.8rem"><button class="ci-b" id="xp-atras">← Sectores</button><button class="ci-b r" id="xp-pdf">🖨 Imprimir / PDF</button><button class="ci-b p" id="xp-xls">📊 Excel del sector</button></div>' +
         '<div class="ci-doc"><div style="max-width:794px;margin:0 auto">' + ULT.html + '</div></div>';
@@ -248,8 +270,9 @@
     var ev = R.ev, s = ses() || {}, emp = o.emp === 'RAPEL' ? 'Sociedad Agrícola Rapel S.A.C.' : 'Sociedad Exportadora Verfrut S.A.C.';
     var T = ev.temas, n = 0;
     var h2 = function (t) { n++; return '<h2 class="x-h2">' + n + '. ' + t + '</h2>'; };
+    var VAC = '';   /* motivo que se muestra cuando un cuadro no tiene datos */
     var tabla = function (heads, filas, alinea) { return '<table class="x-t"><thead><tr>' + heads.map(function (x, i) { return '<th style="text-align:' + ((alinea || [])[i] || 'left') + '">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' +
-      (filas.length ? filas.map(function (f) { return '<tr>' + f.map(function (x, i) { return '<td style="text-align:' + ((alinea || [])[i] || 'left') + '">' + x + '</td>'; }).join('') + '</tr>'; }).join('') : '<tr><td colspan="' + heads.length + '" style="text-align:center;color:#64748B">Sin registros en el periodo</td></tr>') + '</tbody></table>'; };
+      (filas.length ? filas.map(function (f) { return '<tr>' + f.map(function (x, i) { return '<td style="text-align:' + ((alinea || [])[i] || 'left') + '">' + x + '</td>'; }).join('') + '</tr>'; }).join('') : '<tr><td colspan="' + heads.length + '" style="text-align:center;color:#64748B">' + (VAC || 'Sin registros en el periodo') + '</td></tr>') + '</tbody></table>'; };
     var obs = {}; R.alertas.forEach(function (a) { obs[a.ruta + '|' + a.cod] = 1; });
     var abiertas = R.alertas.filter(function (a) { return a.estado !== 'superada'; }).length;
     var apr = {}; R.anexo.forEach(function (a) { var k = (a.cod || a.ruta); var z = apr[k] || (apr[k] = { n: 0, ap: 0, conAp: false }); z.n += a.n; if (a.apr != null) { z.ap += a.apr; z.conAp = true; } });
@@ -269,29 +292,36 @@
       ['Emitido por', esc((s.nom || s.user || '') + ' (' + (s.user || '') + ')')]].map(function (r) { return '<tr><th>' + r[0] + '</th><td>' + (r[0] === 'Responsable(s)' || r[0] === 'Sector' || r[0] === 'Empresa' ? esc(r[1]) : r[1]) + '</td></tr>'; }).join('') + '</tbody></table>';
     x += h2('Resumen ejecutivo') + '<div class="x-cards">' + cards.map(function (c) { return '<div style="border-top-color:' + c[3] + '"><span>' + c[0] + '</span><b style="color:' + c[3] + '">' + c[1] + '</b><small>' + esc(c[2]) + '</small></div>'; }).join('') + '</div>';
     var PG = (R.prog && R.prog.tipos) || [];
+    VAC = 'No hay fechas cargadas en Programación ETI para este sector en el periodo elegido.';
     x += h2('Cumplimiento de la programación') + tabla(['Tipo', 'Fechas programadas', 'Ejecutadas', 'Vencidas sin ejecutar', 'Por venir', 'Cumplimiento'],
       PG.filter(function (t) { return t.prog; }).map(function (t) { return ['<b>' + esc(t.nom) + '</b>', t.prog, t.ejec, t.venc, t.fut, chip(t.pct)]; }), ['left', 'right', 'right', 'right', 'right', 'left']);
+    VAC = 'No hay capacitaciones registradas en Capacitaciones ETI para este sector en el periodo elegido.';
     x += h2('Capacitaciones del sector') + tabla(['Fecha', 'Sesiones', 'Temas', 'Hombres', 'Mujeres', 'Capacitados'],
       R.cap.porDia.map(function (d) { return [d.fechaTxt, d.sesiones, esc(d.temas.join('; ')), d.h, d.m, '<b>' + d.total + '</b>']; }).concat(R.cap.porDia.length ? [['<b>Total</b>', '<b>' + R.cap.sesiones + '</b>', '', '<b>' + R.cap.h + '</b>', '<b>' + R.cap.m + '</b>', '<b>' + R.cap.total + '</b>']] : []),
       ['left', 'right', 'left', 'right', 'right', 'right']);
+    VAC = 'No hay evaluaciones (Check List) registradas para este sector en el periodo elegido.';
     x += h2('Resultado por tema') + tabla(['Tema', 'Evaluados', 'Resultado', 'Situación'],
       T.map(function (t) { return ['<b>' + esc(t.nom) + '</b>', t.n, chip(t.pct), t.pct == null ? '—' : t.pct >= MIN ? est('Aprobado', 'ok') : est('Reforzar', 'bad')]; })
         .concat(T.length ? [['<b>Resultado general</b>', '<b>' + ev.n + '</b>', chip(ev.prom), ev.aprueba ? est('Aprueba', 'ok') : est('No aprueba', 'bad')]] : []), ['left', 'right', 'left', 'left']);
     x += h2('Resultado por ruta y código') + '<p class="x-p">Porcentaje de cada ruta en cada tema. Una ruta queda observada si algún tema está bajo 70 %. "Bajo 70 %" cuenta a los evaluados por QR con resultado general menor a 70 %.</p>' +
-      tabla(['Ruta', 'Código', 'Eval.'].concat(T.map(function (t) { return esc(t.nom); })).concat(['General', 'Bajo 70 %', 'Estado']),
+      tabla(['Ruta', 'Código', 'Eval.'].concat(T.map(function (t) { return abTema(t.nom); })).concat(['General', '&lt; 70 %', 'Estado']),
         ev.rutas.map(function (r) { var z = apr[r.cod || r.ruta]; var bajo = z && z.conAp ? (z.n - z.ap) : '—';
           return [esc(r.ruta || '—'), esc(r.cod || '—'), r.n].concat(T.map(function (t) { return chip(r.temas[t.id]); })).concat(['<b>' + pc(r.prom) + '</b>', bajo, obs[r.ruta + '|' + r.cod] ? est('Observada', 'med') : est('Aprobada', 'ok')]); }),
         ['left', 'left', 'right'].concat(T.map(function () { return 'center'; })).concat(['right', 'right', 'left']));
+    VAC = 'Ninguna ruta tuvo temas bajo 70 %: el sector no requiere reforzamiento en este periodo.';
+    x += leyendaTemas(T);
     x += h2('Rutas que requieren reforzamiento') + tabla(['Ruta', 'Código', 'Tema', 'Resultado', 'Evaluados', 'Reforzamiento', 'Resultado post', 'Estado'],
       R.alertas.map(function (a) { var k = a.estado === 'superada' ? 'ok' : a.estado === 'reforzado' ? 'info' : a.estado === 'reevaluar' ? 'bad' : 'med';
-        return [esc(a.ruta || '—'), esc(a.cod || '—'), esc(a.tema), chip(a.pct), a.n, a.seg ? a.seg.fechaTxt : '—', a.post ? chip(a.post.pct) : '—', est(a.estadoTxt || a.estado, k)]; }),
+        return [esc(a.ruta || '—') + (a.cicloNom ? '<br><small style="color:#64748b">' + esc(a.cicloNom) + '</small>' : ''), esc(a.cod || '—'), esc(a.tema), chip(a.pct), a.n, a.seg ? a.seg.fechaTxt : '—', a.post ? chip(a.post.pct) : '—', est(a.estadoTxt || a.estado, k)]; }),
       ['left', 'left', 'left', 'left', 'right', 'left', 'left', 'left']);
+    VAC = 'No hay evaluaciones (Check List) registradas para este sector en el periodo elegido.';
     x += h2('Evaluaciones aplicadas (detalle)') + tabla(['Fecha', 'Ruta', 'Código', 'Modo', 'Responsable', 'Evaluados', 'Aprobados', 'Resultado'],
       R.anexo.map(function (a) { return [a.fechaTxt, esc(a.ruta || '—'), esc(a.cod || '—'), a.mod, esc(a.sup || '—'), a.n, a.apr == null ? '—' : a.apr, chip(a.prom)]; }),
       ['left', 'left', 'left', 'left', 'left', 'right', 'right', 'left']);
     if (R.sat && R.sat.n) x += h2('Satisfacción del personal capacitado') + tabla(['Aspecto', 'Puntaje (0–100)'],
       [['Capacitador', R.sat.cap], ['Material', R.sat.mat], ['Contenido', R.sat.cont], ['Logística', R.sat.log], ['<b>General</b>', R.sat.gen]].filter(function (r) { return r[1] != null; }).map(function (r) { return [r[0], '<b>' + Math.round(r[1]) + '</b>']; }), ['left', 'right']) +
       '<p class="x-p">' + R.sat.n + ' respuestas anónimas por QR.</p>';
+    else x += h2('Satisfacción del personal capacitado') + '<p class="x-p" style="color:#64748b">No se aplicó la encuesta de satisfacción por QR a este sector en el periodo elegido.</p>';
     x += h2('Conclusiones') + '<ul class="x-ul">' + K.lista.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul>' +
       h2('Decisión de reforzamiento') + '<ul class="x-ul">' + String(K.decision || '').split('\n').filter(Boolean).map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul>' +
       '<p class="x-p"><b>Documentos del expediente:</b> Informes INF-SC-GH-03 de cada sesión (modelo oficial), registro de asistencia y base de datos en Excel del sector.</p>';
@@ -299,6 +329,10 @@
     x += '<div class="x-pie"><span>Gestión Humana · Relaciones Laborales · Unifrutti Perú</span><span>Generado por el sistema desde Supabase · ' + new Date().toLocaleString('es-PE') + '</span></div>';
     return '<div class="x-doc">' + estilosDoc() + x + '</div>';
   }
+  /* _DOC_FORMATO_V2 (10-nov): en los cuadros ruta/sector x tema el encabezado va abreviado (como en la maqueta) con su leyenda */
+  function abTema(nom) { var u = String(nom || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return /LEGIS/.test(u) ? 'Legis.' : /BIENEST/.test(u) ? 'Bienest.' : /SUSTENT/.test(u) ? 'Sust.' : /ETICA/.test(u) ? 'Ética' : /SEGURIDAD|SST/.test(u) ? 'SST' : /AMBIENT/.test(u) ? 'Medioamb.' : esc(String(nom || '').slice(0, 10)); }
+  function leyendaTemas(T) { return T.length ? '<p class="x-p" style="color:#64748b;margin-top:4px">' + T.map(function (t) { return '<b>' + abTema(t.nom) + '</b> ' + esc(t.nom); }).join(' · ') + '</p>' : ''; }
   function estilosDoc() {
     return '<style>.x-doc{font-family:Inter,Arial,sans-serif;color:#0f172a;font-size:12px;line-height:1.45}.x-doc *{box-sizing:border-box}' +
       '.x-hd{display:grid;grid-template-columns:96px 1fr 170px;border:1px solid #0f172a}.x-logo{display:flex;align-items:center;justify-content:center;border-right:1px solid #0f172a;padding:6px}.x-logo img{height:56px;width:auto}' +
@@ -310,7 +344,12 @@
       '.x-t{width:100%;border-collapse:collapse;border:1px solid #0f172a;font-size:12px}.x-t th{background:#0b2a6f;color:#fff;font-weight:700;padding:4px 6px}.x-t td{padding:4px 6px;border-top:1px solid #cbd5e1}.x-t tbody tr:nth-child(even) td{background:#f8fafc}.x-t tr{break-inside:avoid}' +
       '.x-chip{display:inline-block;padding:1px 7px;border-radius:999px;font-weight:700;font-size:12px;white-space:nowrap}.x-p{margin:4px 0 6px}.x-ul{margin:0;padding-left:18px}.x-ul li{margin-bottom:3px}' +
       '.x-firmas{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:40px;text-align:center;break-inside:avoid}.x-l{border-top:1px solid #0f172a;padding-top:4px;font-weight:700}.x-firmas small{color:#475569}' +
-      '.x-pie{display:flex;justify-content:space-between;gap:10px;margin-top:18px;border-top:1px solid #cbd5e1;padding-top:6px;color:#475569;font-size:12px}</style>';
+      '.x-pie{display:flex;justify-content:space-between;gap:10px;margin-top:18px;border-top:1px solid #cbd5e1;padding-top:6px;color:#475569;font-size:12px}' +
+      /* _DOC_FORMATO_V2: el documento conserva su formato aunque la pagina que lo muestra tenga estilos propios para tablas */
+      '.x-doc table{margin:0;table-layout:auto}.x-doc table.x-t th{background:#0b2a6f!important;color:#fff!important;font-family:Inter,Arial,sans-serif!important;font-size:12px!important;font-weight:700!important;text-transform:none!important;letter-spacing:0!important;padding:4px 6px!important;border:0!important;white-space:normal!important;line-height:1.3!important}' +
+      '.x-doc table.x-t td{font-family:Inter,Arial,sans-serif!important;font-size:12px!important;padding:4px 6px!important;color:#0f172a;border-left:0!important;border-right:0!important;border-bottom:0!important;line-height:1.35!important;text-transform:none!important}' +
+      '.x-doc table.x-kv th{background:#f1f5f9!important;color:#0f172a!important;font-family:Inter,Arial,sans-serif!important;font-size:12px!important;font-weight:700!important;text-transform:none!important;letter-spacing:0!important;padding:4px 8px!important}.x-doc table.x-kv td{font-family:Inter,Arial,sans-serif!important;font-size:12px!important;padding:4px 8px!important}' +
+      '.x-doc h2.x-h2{font-family:Inter,Arial,sans-serif!important;font-size:13px!important}</style>';
   }
   function imprimirHtml(html, t) {
     var w = window.open('', '_blank'); if (!w) { aviso('Permite las ventanas emergentes para imprimir', 'e'); return; }
@@ -352,7 +391,7 @@
   }
 
   /* compartidos con 20-informe-capacitaciones-v1.js (_INFORME_CAP_V1): misma ventana, mismo modelo de documento */
-  window.etiCentroInformes = { abrir: abrirCentro, expediente: abrirExpediente, _documento: documento, _modal: modal, _estilosDoc: estilosDoc, _logo: logo, _imprimir: imprimirHtml, version: 2 };
+  window.etiCentroInformes = { abrir: abrirCentro, expediente: abrirExpediente, _documento: documento, _modal: modal, _estilosDoc: estilosDoc, _ab: abTema, _leyenda: leyendaTemas, _logo: logo, _imprimir: imprimirHtml, version: 2 };
   setInterval(function () { menu(); autoAbrir(); }, 1500); setTimeout(menu, 700);
   console.log('[_CENTRO_INFORMES_V1] activo' + (CLASICO ? ' (menú clásico)' : ''));
 })();

@@ -73,6 +73,7 @@
     var CI = window.etiCentroInformes || {}, s = ses() || {}, n = 0, ev = R.ev, T = ev.temas, emp = alc.sector ? empDe(alc.sector) : alc.emp;
     var razon = emp === 'RAPEL' ? 'Sociedad Agrícola Rapel S.A.C.' : emp === 'VERFRUT' ? 'Sociedad Exportadora Verfrut S.A.C.' : 'Sociedad Agrícola Rapel S.A.C. · Sociedad Exportadora Verfrut S.A.C.';
     var h2 = function (t) { n++; return '<h2 class="x-h2">' + n + '. ' + t + '</h2>'; };
+    var ab = CI._ab || function (z) { return esc(z); }, ley = CI._leyenda ? CI._leyenda(T) : '';
     var tabla = function (heads, filas, al, total) { return '<table class="x-t"><thead><tr>' + heads.map(function (x, i) { return '<th style="text-align:' + ((al || [])[i] || 'left') + '">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' +
       (filas.length ? filas.map(function (f) { return '<tr>' + f.map(function (x, i) { return '<td style="text-align:' + ((al || [])[i] || 'left') + '">' + x + '</td>'; }).join('') + '</tr>'; }).join('') : '<tr><td colspan="' + heads.length + '" style="text-align:center;color:#64748B">Sin registros en el periodo</td></tr>') +
       (total && filas.length ? '<tr>' + total.map(function (x, i) { return '<td style="text-align:' + ((al || [])[i] || 'left') + ';background:#e2e8f0;font-weight:800">' + x + '</td>'; }).join('') + '</tr>' : '') + '</tbody></table>'; };
@@ -95,12 +96,13 @@
     x += h2('Resumen ejecutivo') + '<div class="x-cards">' + cards.map(function (k) { return '<div style="border-top-color:' + k[3] + '"><span>' + k[0] + '</span><b style="color:' + k[3] + '">' + k[1] + '</b><small>' + esc(k[2]) + '</small></div>'; }).join('') + '</div>';
     x += h2('Resultado por tema') + tabla(['Tema', 'Evaluados', 'Resultado', 'Situación'], T.map(function (t) { return ['<b>' + esc(t.nom) + '</b>', t.n, chip(t.pct), t.pct == null ? '—' : t.pct >= MIN ? est('Aprobado', 'ok') : est('Reforzar', 'bad')]; }),
       ['left', 'right', 'left', 'left'], ['Resultado general', ev.n, chip(ev.prom), ev.aprueba ? est('Aprueba', 'ok') : est('No aprueba', 'bad')]);
-    if (!alc.sector) x += h2('Resultado por sector y tema') + tabla(['Sector', 'Eval.'].concat(T.map(function (t) { return esc(t.nom); })).concat(['General', 'Estado']),
+    if (!alc.sector) x += h2('Resultado por sector y tema') + tabla(['Sector', 'Eval.'].concat(T.map(function (t) { return ab(t.nom); })).concat(['General', 'Estado']),
       ev.sectores.map(function (z) { return ['<b>' + esc(z.sector) + '</b>', R.nSec[z.sector] || '—'].concat(T.map(function (t) { return chip(z.temas[t.id]); })).concat(['<b>' + pc(z.prom) + '</b>', z.aprueba ? est('Aprueba', 'ok') : est('No aprueba', 'bad')]); }),
       ['left', 'right'].concat(T.map(function () { return 'center'; })).concat(['right', 'left']));
-    else x += h2('Resultado por ruta y código') + tabla(['Ruta', 'Código', 'Eval.'].concat(T.map(function (t) { return esc(t.nom); })).concat(['General']),
+    else x += h2('Resultado por ruta y código') + tabla(['Ruta', 'Código', 'Eval.'].concat(T.map(function (t) { return ab(t.nom); })).concat(['General']),
       ev.rutas.map(function (r) { return [esc(r.ruta || '—'), esc(r.cod || '—'), r.n].concat(T.map(function (t) { return chip(r.temas[t.id]); })).concat(['<b>' + pc(r.prom) + '</b>']); }),
       ['left', 'left', 'right'].concat(T.map(function () { return 'center'; })).concat(['right']));
+    x += ley;
     if (R.porCiclo.length) x += h2('Evolución por ciclo') + tabla(['Ciclo', 'Check list', 'Evaluados', 'Resultado', 'Alertas', 'Por cerrar'], R.porCiclo.map(function (c) { return ['<b>' + esc(c.nom) + '</b>', c.chk, c.n, chip(c.prom), c.alertas, c.abiertas]; }), ['left', 'right', 'right', 'left', 'right', 'right']);
     if (R.meses.length) x += h2('Evolución por mes') + tabla(['Mes', 'Check list', 'Evaluados', 'Resultado'], R.meses.map(function (m) { return ['<b>' + m.nom + '</b>', m.chk, m.n, chip(m.prom)]; }), ['left', 'right', 'right', 'left'], ['Total', R.anexo.length, ev.n, chip(ev.prom)]);
     x += h2('Rutas observadas y reforzamiento') + tabla((P.tipo === 'anio' ? ['Ciclo'] : []).concat(['Sector', 'Ruta', 'Código', 'Tema', 'Resultado', 'Eval.', 'Reforzamiento', 'Resultado post', 'Estado']),
