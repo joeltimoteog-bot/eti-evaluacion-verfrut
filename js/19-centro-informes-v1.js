@@ -8,6 +8,7 @@
    · EXPEDIENTE DE AUDITORIA POR SECTOR (Joel, Lucia, administradores): usa EXACTAMENTE los datos y
      calculos del Informe de cierre de ciclo (etiInformeCicloUI.datos/armar/conclusiones), todo leido
      de Supabase (eti/consultar). Vista en pantalla, Imprimir / PDF (A4) y Excel. Solo lee: no cambia nada.
+   v2 (10-nov): tarjeta del Informe de Capacitaciones ETI (mes, ciclo, cierre de año) · ?abrir=capacitaciones.
    INTERRUPTOR (vuelve al menu anterior): localStorage.setItem('eti_menu_clasico','on') y recargar.
    ════════════════════════════════════════════════════════════════════════════ */
 (function () {
@@ -134,7 +135,8 @@
     ciclo: function () { cerrar(); if (window.etiInformeCicloUI && etiInformeCicloUI.abrir) etiInformeCicloUI.abrir(); else aviso('Recarga la página (Ctrl+F5)', 'e'); },
     historico: function () { cerrar(); if (typeof window.etiInformeAuditoria === 'function') window.etiInformeAuditoria(); else aviso('Solo el administrador', 'e'); },
     excel: function () { if (typeof exportAdminExcel === 'function') exportAdminExcel(); else aviso('Solo el administrador', 'e'); },
-    alertas: function () { cerrar(); var b = $('alr-menu'); if (b) b.click(); }
+    alertas: function () { cerrar(); var b = $('alr-menu'); if (b) b.click(); },
+    capacitaciones: function () { if (window.etiInformeCap) window.etiInformeCap.abrir(); else aviso('Recarga la página (Ctrl+F5)', 'e'); }
   };
   function pasos() {
     var L = [['Capacitar', 'Capacitaciones ETI'], ['Evaluar', 'QR o manual'], ['Informe GH-03', 'por sesión'], ['Reforzar', 'rutas < 70 %'], ['Expediente', 'por sector'], ['Cierre de ciclo', 'cada trimestre']];
@@ -148,11 +150,13 @@
       [['mis', 'Emitir desde ' + (ed ? 'evaluaciones' : 'mis evaluaciones'), 'p']]));
     if (ed) c.push(tarjeta(3, '#15803D', 'Expediente de auditoría', 'Todo un sector ordenado: programación, capacitaciones, temas, rutas y códigos, reforzamientos, satisfacción y conclusiones.', 'Certificaciones · auditoría', 'Cuando lo pidan o al cerrar el mes',
       [['expediente', 'Abrir expediente', 'r']]));
-    c.push(tarjeta(ed ? 4 : 3, '#15803D', 'Informe de cierre de ciclo', 'Resultado del trimestre ' + (ed ? 'por sector y general' : 'de tu sector') + ', con la decisión de reforzamiento. Word.', ed ? 'Coordinación y Certificaciones' : 'Tú y la Coordinación', 'Al cerrar cada ciclo (I a IV)',
+    if (ed) c.push(tarjeta(4, '#B45309', 'Informe de Capacitaciones ETI', 'Programado vs. ejecutado, capacitados, actas, reprogramaciones y satisfacción. Mensual, por ciclo o cierre de año; general o por sector.', 'Coordinación · Subgerencia · Certificaciones', 'Cada mes, al cerrar el ciclo y al cerrar el año',
+      [['capacitaciones', 'Abrir informe', 'p']]));
+    c.push(tarjeta(ed ? 5 : 3, '#15803D', 'Informe de cierre de ciclo', 'Resultado del trimestre ' + (ed ? 'por sector y general' : 'de tu sector') + ', con la decisión de reforzamiento. Word.', ed ? 'Coordinación y Certificaciones' : 'Tú y la Coordinación', 'Al cerrar cada ciclo (I a IV)',
       [['ciclo', 'Abrir', 'p']]));
-    c.push(tarjeta(ed ? 5 : 4, '#B45309', 'Alertas de reforzamiento', 'Rutas con algún tema bajo 70 % y su seguimiento (pendiente · reforzado · superada).', ed ? 'Supervisores y Coordinación' : 'Tú', 'Después de cada evaluación',
+    c.push(tarjeta(ed ? 6 : 4, '#B45309', 'Alertas de reforzamiento', 'Rutas con algún tema bajo 70 % y su seguimiento (pendiente · reforzado · superada).', ed ? 'Supervisores y Coordinación' : 'Tú', 'Después de cada evaluación',
       [['alertas', 'Ver alertas', 'p']]));
-    if (adm) c.push(tarjeta(6, '#475569', 'Datos y respaldos', 'Excel con todas las evaluaciones e informe de auditoría del histórico 2026 (Reporte y GH-04 oficiales).', 'Administración', 'Cuando se necesite el dato fuente',
+    if (adm) c.push(tarjeta(7, '#475569', 'Datos y respaldos', 'Excel con todas las evaluaciones e informe de auditoría del histórico 2026 (Reporte y GH-04 oficiales).', 'Administración', 'Cuando se necesite el dato fuente',
       [['excel', 'Excel global', 'p'], ['historico', 'Histórico para auditoría']]));
     modal('📑 Centro de informes', 'Todos los informes ETI en un solo lugar, en el orden en que se trabajan.', pasos() + '<div class="ci-grid">' + c.join('') + '</div>' +
       '<p style="font-size:.82rem;color:#64748B;margin:.9rem 0 0">Cada informe se abre desde aquí con el mismo botón de siempre. Los datos se leen de Supabase.</p>');
@@ -286,12 +290,14 @@
       '.x-firmas{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:40px;text-align:center;break-inside:avoid}.x-l{border-top:1px solid #0f172a;padding-top:4px;font-weight:700}.x-firmas small{color:#475569}' +
       '.x-pie{display:flex;justify-content:space-between;gap:10px;margin-top:18px;border-top:1px solid #cbd5e1;padding-top:6px;color:#475569;font-size:12px}</style>';
   }
+  function imprimirHtml(html, t) {
+    var w = window.open('', '_blank'); if (!w) { aviso('Permite las ventanas emergentes para imprimir', 'e'); return; }
+    w.document.write('<!doctype html><html lang="es"><head><meta charset="utf-8"><title>' + esc(t) + '</title><style>@page{size:A4;margin:14mm 12mm}body{margin:0}</style></head><body>' + html + '<script>setTimeout(function(){window.print()},400)<\/script></body></html>');
+    w.document.close();
+  }
   function imprimir() {
     if (!ULT) return;
-    var w = window.open('', '_blank'); if (!w) { aviso('Permite las ventanas emergentes para imprimir', 'e'); return; }
-    var t = 'Expediente_auditoria_' + String(ULT.o.sector).replace(/\s+/g, '_') + '_' + String(ULT.o.ciclo.nom).replace(/[^\w]+/g, '_');
-    w.document.write('<!doctype html><html lang="es"><head><meta charset="utf-8"><title>' + esc(t) + '</title><style>@page{size:A4;margin:14mm 12mm}body{margin:0}</style></head><body>' + ULT.html + '<script>setTimeout(function(){window.print()},400)<\/script></body></html>');
-    w.document.close();
+    imprimirHtml(ULT.html, 'Expediente_auditoria_' + String(ULT.o.sector).replace(/\s+/g, '_') + '_' + String(ULT.o.ciclo.nom).replace(/[^\w]+/g, '_'));
   }
   function excel() {
     if (!ULT || !window.XLSX) { aviso('No se pudo cargar el Excel', 'e'); return; }
@@ -313,14 +319,17 @@
     if (!PEDIDO || intentos++ > 40) { PEDIDO = ''; return; }
     if (!ses() || !$('es-nav')) return;   /* espera a que la sesion (pase SSO) y el menu esten listos */
     if (PEDIDO !== 'centro' && !listo()) return;
+    if (PEDIDO === 'capacitaciones' && !window.etiInformeCap) return;
     var p = PEDIDO; PEDIDO = '';
     try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {}
     if (p === 'expediente' && esEditor()) abrirExpediente();
     else if (p === 'ciclo' && window.etiInformeCicloUI) etiInformeCicloUI.abrir();
+    else if (p === 'capacitaciones' && esEditor() && window.etiInformeCap) window.etiInformeCap.abrir();
     else abrirCentro();
   }
 
-  window.etiCentroInformes = { abrir: abrirCentro, expediente: abrirExpediente, _documento: documento, version: 1 };
+  /* compartidos con 20-informe-capacitaciones-v1.js (_INFORME_CAP_V1): misma ventana, mismo modelo de documento */
+  window.etiCentroInformes = { abrir: abrirCentro, expediente: abrirExpediente, _documento: documento, _modal: modal, _estilosDoc: estilosDoc, _logo: logo, _imprimir: imprimirHtml, version: 2 };
   setInterval(function () { menu(); autoAbrir(); }, 1500); setTimeout(menu, 700);
   console.log('[_CENTRO_INFORMES_V1] activo' + (CLASICO ? ' (menú clásico)' : ''));
 })();

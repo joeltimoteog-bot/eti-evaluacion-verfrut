@@ -6,10 +6,10 @@
     "semantic_hash": "72efca29d1b2116ab2d38f04f573eefd"
   },
   "lib/eti-informe-checklist.js": {
-    "mtime": 1792429908.3151474,
-    "seen": 1792976709.1724443,
-    "ast_hash": "dc24f0f71ab7b80d198ea4b73582b872",
-    "semantic_hash": "dc24f0f71ab7b80d198ea4b73582b872"
+    "mtime": 1793933808.1829712,
+    "seen": 1794335799.02967,
+    "ast_hash": "4300d5650a4e760a4193bb8d646b8b7e",
+    "semantic_hash": ""
   },
   "lib/eti-informe-gh04.js": {
     "mtime": 1792422207.3112051,
@@ -36,9 +36,9 @@
     "semantic_hash": "574f428bb3bf3e98659562eeb8b7e965"
   },
   "js/01-nucleo-evaluaciones.js": {
-    "mtime": 1793016589.823277,
-    "seen": 1793016755.7294486,
-    "ast_hash": "8be411700a4f2690c74ec771d36da531",
+    "mtime": 1794019370.3311787,
+    "seen": 1794335799.0295708,
+    "ast_hash": "a6c94d7c38f31017049b37d64a40781a",
     "semantic_hash": ""
   },
   "js/02-login-particulas.js": {
@@ -60,15 +60,15 @@
     "semantic_hash": ""
   },
   "js/05-banco-respuestas.js": {
-    "mtime": 1793016589.9254851,
-    "seen": 1793016755.7294486,
-    "ast_hash": "0caabe305c35a60be017f39de640c884",
+    "mtime": 1794018917.4450493,
+    "seen": 1794335799.0295858,
+    "ast_hash": "59e093a144378bbc538c0b2085b3027a",
     "semantic_hash": ""
   },
   "js/06-indicadores.js": {
-    "mtime": 1793016589.9437902,
-    "seen": 1793016755.7294486,
-    "ast_hash": "a7f58dade13d1838807d833c1e840fde",
+    "mtime": 1794018917.419725,
+    "seen": 1794335799.0295901,
+    "ast_hash": "3e075abfec6dd8dc29d8a2f181a992a3",
     "semantic_hash": ""
   },
   "js/07-shell-rl.js": {
@@ -90,9 +90,9 @@
     "semantic_hash": ""
   },
   "js/10-mis-evaluaciones.js": {
-    "mtime": 1793016590.0029924,
-    "seen": 1793016755.7294486,
-    "ast_hash": "e11cc0d1099a7e9cdafdeb6094b28d29",
+    "mtime": 1793933807.5386958,
+    "seen": 1794335799.029638,
+    "ast_hash": "71b91d6f20f86c1b5233073ae06e2a09",
     "semantic_hash": ""
   },
   "GOOGLE_SHEETS_INSTRUCCIONES.md": {
@@ -114,15 +114,15 @@
     "semantic_hash": ""
   },
   "evaluar.html": {
-    "mtime": 1792895490.1879296,
-    "seen": 1793016755.7294486,
-    "ast_hash": "338245ed7c785c03a1379cd4d85286b8",
+    "mtime": 1793926837.943527,
+    "seen": 1794335799.0297403,
+    "ast_hash": "181b23972037ee7b6c1137abdd463556",
     "semantic_hash": ""
   },
   "index.html": {
-    "mtime": 1793016590.0305462,
-    "seen": 1793016755.7294486,
-    "ast_hash": "44e89e9686eaac875e9d256eec3b0bab",
+    "mtime": 1794335761.1505754,
+    "seen": 1794335799.0297487,
+    "ast_hash": "ddf65b86751c8088bb4702b041b19e33",
     "semantic_hash": ""
   },
   "index_ANTERIOR_06set.html": {
@@ -147,6 +147,96 @@
     "mtime": 1793016590.0399578,
     "seen": 1793016755.7294486,
     "ast_hash": "af7ff776efdfbcf3d051a28f80948c9f",
+    "semantic_hash": ""
+  },
+  "js/11-historico-2026-v1.js": {
+    "mtime": 1793752736.5092683,
+    "seen": 1794335799.0296433,
+    "ast_hash": "5555ed2a1339e062a47903c16045ecda",
+    "semantic_hash": ""
+  },
+  "js/12-informe-auditoria-v1.js": {
+    "mtime": 1793752283.4232843,
+    "seen": 1794335799.0296466,
+    "ast_hash": "70c077f5ab51dbf1f102db793b62e21e",
+    "semantic_hash": ""
+  },
+  "js/13-menu-depurado-v1.js": {
+    "mtime": 1793752283.7221594,
+    "seen": 1794335799.0296495,
+    "ast_hash": "c33b6ef97d2602dafa2ac7683e3c1b79",
+    "semantic_hash": ""
+  },
+  "js/14-informe-eti-v1.js": {
+    "mtime": 1793934422.3194776,
+    "seen": 1794335799.0296516,
+    "ast_hash": "3538a62766f4b000008053e7da80a584",
+    "semantic_hash": ""
+  },
+  "js/15-encuesta-sat-v1.js": {
+    "mtime": 1793940433.7346818,
+    "seen": 1794335799.0296543,
+    "ast_hash": "3c5406cb777e327dc90e5e09d428c8ba",
+    "semantic_hash": ""
+  },
+  "js/16-alertas-ref-v1.js": {
+    "mtime": 1793963229.3180227,
+    "seen": 1794335799.029657,
+    "ast_hash": "79ee22e010802d1fed1e1db9e2b14074",
+    "semantic_hash": ""
+  },
+  "js/17-informe-ciclo-v1.js": {
+    "mtime": 1794332944.3034089,
+    "seen": 1794335799.0296588,
+    "ast_hash": "1dc5694ea21bfab05bcd43dfa225d1ad",
+    "semantic_hash": ""
+  },
+  "js/18-aviso-reprog-v1.js": {
+    "mtime": 1793964382.5297725,
+    "seen": 1794335799.029661,
+    "ast_hash": "639ea4dd0896a71281576aba3d2ad05d",
+    "semantic_hash": ""
+  },
+  "js/19-centro-informes-v1.js": {
+    "mtime": 1794335771.90835,
+    "seen": 1794335799.0296636,
+    "ast_hash": "a22f7aacdaa56787a6246bd147c8752f",
+    "semantic_hash": ""
+  },
+  "js/20-informe-capacitaciones-v1.js": {
+    "mtime": 1794335753.127354,
+    "seen": 1794335799.0296657,
+    "ast_hash": "124c89cec563a345a3aee77a1eeb46c1",
+    "semantic_hash": ""
+  },
+  "lib/eti-informe-ciclo.js": {
+    "mtime": 1793963231.1492927,
+    "seen": 1794335799.0296721,
+    "ast_hash": "927a67f8a615b0bd6ac8195db0d81d6f",
+    "semantic_hash": ""
+  },
+  "respaldo-eti-historico-2026-11-04T004241.json": {
+    "mtime": 1793752982.1962898,
+    "seen": 1794335799.029713,
+    "ast_hash": "15d6669eef95944473bd1f139d3373f9",
+    "semantic_hash": ""
+  },
+  "encuesta.html": {
+    "mtime": 1793940433.4541929,
+    "seen": 1794335799.029737,
+    "ast_hash": "f2c532ab4b43c67fded1e9593a8528e0",
+    "semantic_hash": ""
+  },
+  "graphify-out/converted/ETI-Base-completa-al-2026-11-05_b5ed297b.md": {
+    "mtime": 1794335790.2166078,
+    "seen": 1794335799.0297432,
+    "ast_hash": "7d985509282a525af12c362939f70ebf",
+    "semantic_hash": ""
+  },
+  "graphify-out/converted/plantilla-informe-checklist-eti_46fbc707.md": {
+    "mtime": 1794335792.4443827,
+    "seen": 1794335799.0297456,
+    "ast_hash": "8cc2bd8b9ac701189da16780380e615d",
     "semantic_hash": ""
   }
 }
