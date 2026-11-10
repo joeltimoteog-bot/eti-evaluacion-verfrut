@@ -342,7 +342,7 @@
   /* _FIRMA_EMISOR_V1 (10-nov): firma SOLO quien emite el informe (Joel, Lucia o Eduardo; otro usuario, con su nombre) */
   function firmaEmisor() {
     var s = ses() || {}, u = String(s.user || '').toLowerCase();
-    var M = { jtimoteo: ['Joel Angel Timoteo Gonza', 'Coordinador de Relaciones Laborales'], lcastillo: ['Lucia Gabriela Castillo Celi', 'Responsable de capacitaciones de ética social'], lcovenas: ['Luis Eduardo Coveñas Chero', 'Subgerente de Personas'] };
+    var M = { jtimoteo: ['Joel Angel Timoteo Gonza', 'Coordinador de Relaciones Laborales'], lcastillo: ['Lucia Gabriela Castillo Celi', 'Analista de Gestión Humana'], lcovenas: ['Luis Eduardo Coveñas Chero', 'Subgerente de Personas'] };
     var f = M[u] || [s.nom || u, 'Gestión Humana'];
     return '<div class="x-firmas"><div><div class="x-l">' + esc(f[0]) + '</div><small>' + esc(f[1]) + '</small></div></div>';
   }
