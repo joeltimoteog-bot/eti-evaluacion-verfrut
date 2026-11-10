@@ -307,7 +307,20 @@
     XLSX.writeFile(wb, ('Expediente_auditoria_' + ULT.o.sector + '_' + ULT.o.ciclo.nom).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '_') + '.xlsx');
   }
 
+  /* ══ 4) LLEGADA DESDE PROGRAMACION ETI (Sistema RR.LL.): ?abrir=centro | expediente | ciclo ══ */
+  var PEDIDO = (function () { try { return (new URLSearchParams(location.search).get('abrir') || '').toLowerCase(); } catch (e) { return ''; } })(), intentos = 0;
+  function autoAbrir() {
+    if (!PEDIDO || intentos++ > 40) { PEDIDO = ''; return; }
+    if (!ses() || !$('es-nav')) return;   /* espera a que la sesion (pase SSO) y el menu esten listos */
+    if (PEDIDO !== 'centro' && !listo()) return;
+    var p = PEDIDO; PEDIDO = '';
+    try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {}
+    if (p === 'expediente' && esEditor()) abrirExpediente();
+    else if (p === 'ciclo' && window.etiInformeCicloUI) etiInformeCicloUI.abrir();
+    else abrirCentro();
+  }
+
   window.etiCentroInformes = { abrir: abrirCentro, expediente: abrirExpediente, _documento: documento, version: 1 };
-  setInterval(menu, 1500); setTimeout(menu, 700);
+  setInterval(function () { menu(); autoAbrir(); }, 1500); setTimeout(menu, 700);
   console.log('[_CENTRO_INFORMES_V1] activo' + (CLASICO ? ' (menú clásico)' : ''));
 })();
