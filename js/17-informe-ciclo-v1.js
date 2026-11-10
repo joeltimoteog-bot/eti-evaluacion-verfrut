@@ -267,6 +267,6 @@
     var ref = $('alr-menu') || $('enc-menu') || $('inf-menu');
     if (ref && ref.parentNode === nav) nav.insertBefore(b, ref.nextSibling); else nav.appendChild(b);
   }
-  window.etiInformeCicloUI = { abrir: abrir, armar: armar, cumplimiento: cumplimiento, version: 2 };
+  window.etiInformeCicloUI = { abrir: abrir, armar: armar, cumplimiento: cumplimiento, datos: datos, conclusiones: conclusiones, version: 3 };   /* _CENTRO_INFORMES_V1 (10-nov): el Expediente de auditoria usa estos mismos datos y calculos */
   setInterval(menu, 1500); setTimeout(menu, 600);
 })();
