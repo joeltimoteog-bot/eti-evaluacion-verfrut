@@ -1,17 +1,17 @@
 # Graph Report - Sistema - Evaluacion Eti  (2026-11-10)
 
 ## Corpus Check
-- 33 files · ~177,307 words
+- 33 files · ~177,462 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 2 file(s) not represented in the graph (top: (none) 1, .diff 1)
 
 ## Summary
-- 746 nodes · 1733 edges · 41 communities (33 shown, 8 thin omitted)
+- 747 nodes · 1736 edges · 41 communities (33 shown, 8 thin omitted)
 - Extraction: 94% EXTRACTED · 6% INFERRED · 0% AMBIGUOUS · INFERRED: 98 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `8bad903d`
+- Built from commit: `ba10cd3f`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -36,7 +36,7 @@
 - actualizar
 - getProgs
 - go
-- renderCumplimiento
+- adminTab
 - 07-shell-rl.js
 - 📊 Conectar el Sistema con Google Sheets
 - 14-informe-eti-v1.js
@@ -104,8 +104,8 @@ Cohesion: 0.11
 Nodes (47): abrir(), banner(), cargarInformes(), cargarScript(), cargarTodos(), checklistDe(), crearPantalla(), cuadrosHTML() (+39 more)
 
 ### Community 6 - "01-nucleo-evaluaciones.js"
-Cohesion: 0.06
-Nodes (38): acCerrar(), acEsc(), acFuera(), acMostrar(), acQuitar(), acUkey(), acUser(), acVerificar() (+30 more)
+Cohesion: 0.05
+Nodes (45): acCerrar(), acEsc(), acFuera(), acMostrar(), acQuitar(), acUkey(), acUser(), acVerificar() (+37 more)
 
 ### Community 7 - "eti-alerta-ruta.js"
 Cohesion: 0.60
@@ -116,8 +116,8 @@ Cohesion: 0.10
 Nodes (36): agregar(), aplicar(), aplicarCambio(), arr(), azAdmin(), azPost(), buscar(), cargar() (+28 more)
 
 ### Community 9 - "renderChat"
-Cohesion: 0.13
-Nodes (29): abrirChatCon(), actualizarBadgeConectados(), actualizarChatBadge(), chatVolverLista(), crearChatUI(), enviarChatMsg(), escHtml(), escucharPresenciaAdmin() (+21 more)
+Cohesion: 0.15
+Nodes (26): abrirChatCon(), actualizarBadgeConectados(), actualizarChatBadge(), chatVolverLista(), crearChatUI(), enviarChatMsg(), escHtml(), escucharPresenciaAdmin() (+18 more)
 
 ### Community 10 - "eti-informe-gh04.js"
 Cohesion: 0.83
@@ -125,19 +125,19 @@ Nodes (3): b64bytes(), build(), etiInformeGH04()
 
 ### Community 12 - "iniciarSesionCon"
 Cohesion: 0.14
-Nodes (21): addUser(), confMod(), delUser(), etiHash(), etiUsrActivo(), etiUsrRestaurar(), _evCargarElimRL(), exportAdminExcel() (+13 more)
+Nodes (22): addUser(), _alRecibirEvals(), confMod(), delUser(), detenerEvalsNube(), escucharEvalsNube(), etiHash(), etiUsrActivo() (+14 more)
 
 ### Community 13 - "maxEv"
-Cohesion: 0.19
-Nodes (22): avisoPts(), buildEvOpts(), calcPct(), calcular(), evPresente(), maxEv(), mkAc(), mkCuest() (+14 more)
+Cohesion: 0.25
+Nodes (18): buildEvOpts(), calcPct(), calcular(), evPresente(), maxEv(), mkAc(), mkCuest(), onSel() (+10 more)
 
 ### Community 14 - "toast"
-Cohesion: 0.17
-Nodes (22): buildCuadrosSemaforo(), buildDestiempoHTML(), copiar(), copiarDirecto(), descargar(), enviarCorreo(), enviarCorreoDirecto(), exportar() (+14 more)
+Cohesion: 0.19
+Nodes (20): buildCuadrosSemaforo(), buildDestiempoHTML(), copiar(), copiarDirecto(), enviarCorreo(), enviarCorreoDirecto(), exportar(), exportarExcel() (+12 more)
 
 ### Community 15 - "iniciarSesionCon"
-Cohesion: 0.16
-Nodes (19): actualizarAlertaProgP1(), _detBanco(), _detManual(), enviarASheets(), fechasPendientes(), getSectorActual(), guardarEvalNube(), hoy() (+11 more)
+Cohesion: 0.18
+Nodes (17): actualizarAlertaProgP1(), descargar(), exportarExcelCompleto(), exportDashCsv(), exportDashTxt(), fechasPendientes(), getSectorActual(), hoy() (+9 more)
 
 ### Community 16 - "03-guia.js"
 Cohesion: 0.22
@@ -152,16 +152,16 @@ Cohesion: 0.19
 Nodes (17): actualizar(), cargarCaps(), cargarEvals(), cargarRRLL(), coincide(), escA(), fmtD(), fsDocs() (+9 more)
 
 ### Community 19 - "getProgs"
-Cohesion: 0.25
-Nodes (14): getProgs(), marcarProgEjecutada(), mreprCerrar(), mreprGuardar(), pgAddFecha(), pgDelFecha(), pgEliminar(), pgGuardar() (+6 more)
+Cohesion: 0.17
+Nodes (20): _cumCoincide(), _cumRefrescarSiVisible(), escCob(), escucharNube(), getProgs(), guardarAtribucion(), marcarProgEjecutada(), mreprCerrar() (+12 more)
 
 ### Community 20 - "go"
-Cohesion: 0.21
-Nodes (13): agregarArea(), go(), iniciar(), iniciarComoAdmin(), mdestCerrar(), mdestConfirmar(), p1continue(), p2next() (+5 more)
+Cohesion: 0.24
+Nodes (11): agregarArea(), go(), iniciar(), iniciarComoAdmin(), mdestCerrar(), mdestConfirmar(), p1continue(), p2next() (+3 more)
 
-### Community 21 - "renderCumplimiento"
-Cohesion: 0.18
-Nodes (15): adminTab(), _alRecibirEvals(), _cumCoincide(), _cumRefrescarSiVisible(), detenerEvalsNube(), escCob(), escucharEvalsNube(), escucharNube() (+7 more)
+### Community 21 - "adminTab"
+Cohesion: 0.14
+Nodes (14): adminTab(), fmtFCorta(), histDesdeNube(), irDash(), limpH(), pgAddFecha(), pgDelFecha(), renderAdminDash() (+6 more)
 
 ### Community 22 - "07-shell-rl.js"
 Cohesion: 0.35
@@ -193,7 +193,7 @@ Nodes (25): abrirCentro(), abrirCentroRL(), abrirExpediente(), autoAbrir(), cerr
 
 ### Community 33 - "17-informe-ciclo-v1.js"
 Cohesion: 0.19
-Nodes (21): abrir(), armar(), cargarJS(), conclusiones(), consultar(), css(), cumplimiento(), datos() (+13 more)
+Nodes (22): abrir(), armar(), cargarJS(), conclusiones(), consultar(), css(), cumplimiento(), datos() (+14 more)
 
 ### Community 34 - "20-informe-capacitaciones-v1.js"
 Cohesion: 0.22

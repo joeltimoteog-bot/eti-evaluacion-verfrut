@@ -8,12 +8,12 @@
   "12": "iniciarSesionCon",
   "13": "maxEv",
   "14": "toast",
-  "15": "iniciarSesionCon",
+  "15": "fmtF",
   "16": "03-guia.js",
   "17": "09-trafico-vivo.js",
   "18": "actualizar",
   "19": "getProgs",
-  "20": "go",
+  "20": "getProgs",
   "21": "adminTab",
   "22": "07-shell-rl.js",
   "23": "📊 Conectar el Sistema con Google Sheets",
@@ -33,5 +33,6 @@
   "37": "eti-informe-ciclo.js",
   "38": "ETI-Base-completa-al-2026-11-05_b5ed297b.md",
   "39": "13-menu-depurado-v1.js",
-  "40": "plantilla-informe-checklist-eti_46fbc707.md"
+  "40": "plantilla-informe-checklist-eti_46fbc707.md",
+  "41": "21-informe-evaluaciones-v1.js"
 }

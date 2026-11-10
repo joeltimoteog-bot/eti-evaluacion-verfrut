@@ -1,17 +1,17 @@
 # Graph Report - Sistema - Evaluacion Eti  (2026-11-10)
 
 ## Corpus Check
-- 33 files · ~177,462 words
+- 34 files · ~180,860 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 2 file(s) not represented in the graph (top: (none) 1, .diff 1)
 
 ## Summary
-- 747 nodes · 1736 edges · 41 communities (33 shown, 8 thin omitted)
-- Extraction: 94% EXTRACTED · 6% INFERRED · 0% AMBIGUOUS · INFERRED: 98 edges (avg confidence: 0.85)
+- 758 nodes · 1754 edges · 42 communities (34 shown, 8 thin omitted)
+- Extraction: 94% EXTRACTED · 6% INFERRED · 0% AMBIGUOUS · INFERRED: 101 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `ba10cd3f`
+- Built from commit: `de070469`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -30,12 +30,12 @@
 - iniciarSesionCon
 - maxEv
 - toast
-- iniciarSesionCon
+- fmtF
 - 03-guia.js
 - 09-trafico-vivo.js
 - actualizar
 - getProgs
-- go
+- getProgs
 - adminTab
 - 07-shell-rl.js
 - 📊 Conectar el Sistema con Google Sheets
@@ -53,6 +53,7 @@
 - eti-informe-ciclo.js
 - ETI-Base-completa-al-2026-11-05_b5ed297b.md
 - 13-menu-depurado-v1.js
+- 21-informe-evaluaciones-v1.js
 
 ## God Nodes (most connected - your core abstractions)
 1. `toast()` - 39 edges
@@ -81,7 +82,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (41 total, 8 thin omitted)
+## Communities (42 total, 8 thin omitted)
 
 ### Community 0 - "solreprog.js"
 Cohesion: 0.29
@@ -105,7 +106,7 @@ Nodes (47): abrir(), banner(), cargarInformes(), cargarScript(), cargarTodos(), 
 
 ### Community 6 - "01-nucleo-evaluaciones.js"
 Cohesion: 0.05
-Nodes (45): acCerrar(), acEsc(), acFuera(), acMostrar(), acQuitar(), acUkey(), acUser(), acVerificar() (+37 more)
+Nodes (42): acCerrar(), acEsc(), acFuera(), acMostrar(), acQuitar(), acUkey(), acUser(), acVerificar() (+34 more)
 
 ### Community 7 - "eti-alerta-ruta.js"
 Cohesion: 0.60
@@ -116,8 +117,8 @@ Cohesion: 0.10
 Nodes (36): agregar(), aplicar(), aplicarCambio(), arr(), azAdmin(), azPost(), buscar(), cargar() (+28 more)
 
 ### Community 9 - "renderChat"
-Cohesion: 0.15
-Nodes (26): abrirChatCon(), actualizarBadgeConectados(), actualizarChatBadge(), chatVolverLista(), crearChatUI(), enviarChatMsg(), escHtml(), escucharPresenciaAdmin() (+18 more)
+Cohesion: 0.13
+Nodes (29): abrirChatCon(), actualizarBadgeConectados(), actualizarChatBadge(), chatVolverLista(), crearChatUI(), enviarChatMsg(), escHtml(), escucharPresenciaAdmin() (+21 more)
 
 ### Community 10 - "eti-informe-gh04.js"
 Cohesion: 0.83
@@ -125,19 +126,19 @@ Nodes (3): b64bytes(), build(), etiInformeGH04()
 
 ### Community 12 - "iniciarSesionCon"
 Cohesion: 0.14
-Nodes (22): addUser(), _alRecibirEvals(), confMod(), delUser(), detenerEvalsNube(), escucharEvalsNube(), etiHash(), etiUsrActivo() (+14 more)
+Nodes (20): addUser(), confMod(), delUser(), etiHash(), etiUsrActivo(), etiUsrRestaurar(), _evCargarElimRL(), exportAdminExcel() (+12 more)
 
 ### Community 13 - "maxEv"
-Cohesion: 0.25
-Nodes (18): buildEvOpts(), calcPct(), calcular(), evPresente(), maxEv(), mkAc(), mkCuest(), onSel() (+10 more)
+Cohesion: 0.19
+Nodes (22): avisoPts(), buildEvOpts(), calcPct(), calcular(), evPresente(), maxEv(), mkAc(), mkCuest() (+14 more)
 
 ### Community 14 - "toast"
-Cohesion: 0.19
-Nodes (20): buildCuadrosSemaforo(), buildDestiempoHTML(), copiar(), copiarDirecto(), enviarCorreo(), enviarCorreoDirecto(), exportar(), exportarExcel() (+12 more)
+Cohesion: 0.21
+Nodes (17): buildCuadrosSemaforo(), buildDestiempoHTML(), copiar(), copiarDirecto(), descargar(), enviarCorreo(), enviarCorreoDirecto(), exportar() (+9 more)
 
-### Community 15 - "iniciarSesionCon"
-Cohesion: 0.18
-Nodes (17): actualizarAlertaProgP1(), descargar(), exportarExcelCompleto(), exportDashCsv(), exportDashTxt(), fechasPendientes(), getSectorActual(), hoy() (+9 more)
+### Community 15 - "fmtF"
+Cohesion: 0.14
+Nodes (27): actualizarAlertaProgP1(), fechasPendientes(), fmtF(), getSectorActual(), go(), hoy(), iniciar(), iniciarComoAdmin() (+19 more)
 
 ### Community 16 - "03-guia.js"
 Cohesion: 0.22
@@ -152,16 +153,16 @@ Cohesion: 0.19
 Nodes (17): actualizar(), cargarCaps(), cargarEvals(), cargarRRLL(), coincide(), escA(), fmtD(), fsDocs() (+9 more)
 
 ### Community 19 - "getProgs"
-Cohesion: 0.17
-Nodes (20): _cumCoincide(), _cumRefrescarSiVisible(), escCob(), escucharNube(), getProgs(), guardarAtribucion(), marcarProgEjecutada(), mreprCerrar() (+12 more)
+Cohesion: 0.19
+Nodes (14): _alRecibirEvals(), _cumCoincide(), _cumRefrescarSiVisible(), detenerEvalsNube(), escCob(), escucharEvalsNube(), escucharNube(), guardarAtribucion() (+6 more)
 
-### Community 20 - "go"
-Cohesion: 0.24
-Nodes (11): agregarArea(), go(), iniciar(), iniciarComoAdmin(), mdestCerrar(), mdestConfirmar(), p1continue(), p2next() (+3 more)
+### Community 20 - "getProgs"
+Cohesion: 0.25
+Nodes (14): adminTab(), getProgs(), marcarProgEjecutada(), mreprCerrar(), mreprGuardar(), pgAddFecha(), pgDelFecha(), pgEliminar() (+6 more)
 
 ### Community 21 - "adminTab"
-Cohesion: 0.14
-Nodes (14): adminTab(), fmtFCorta(), histDesdeNube(), irDash(), limpH(), pgAddFecha(), pgDelFecha(), renderAdminDash() (+6 more)
+Cohesion: 0.25
+Nodes (8): fmtFCorta(), histDesdeNube(), irDash(), limpH(), renderAdminDash(), renderDash(), renderDashChart(), sincronizarHistorialNube()
 
 ### Community 22 - "07-shell-rl.js"
 Cohesion: 0.35
@@ -215,6 +216,10 @@ Nodes (3): b64bytes(), build(), etiInformeCiclo()
 Cohesion: 0.50
 Nodes (3): Sheet: Evaluaciones, Sheet: Por pregunta (QR), Sheet: Por supervisor
 
+### Community 41 - "21-informe-evaluaciones-v1.js"
+Cohesion: 0.33
+Nodes (10): abrir(), armar(), documento(), esEditor(), excel(), marcar(), nombre(), periodo() (+2 more)
+
 ## Knowledge Gaps
 - **8 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -222,16 +227,16 @@ Nodes (3): Sheet: Evaluaciones, Sheet: Por pregunta (QR), Sheet: Por supervisor
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `etiBandeja` connect `14-informe-eti-v1.js` to `respuestas-auditoria.js`, `01-nucleo-evaluaciones.js`?**
-  _High betweenness centrality (0.122) - this node is a cross-community bridge._
+  _High betweenness centrality (0.118) - this node is a cross-community bridge._
 - **Are the 4 inferred relationships involving `fmtF()` (e.g. with `actualizarAlertaProgP1()` and `buildDestiempoHTML()`) actually correct?**
   _`fmtF()` has 4 INFERRED edges - model-reasoned connections that need verification._
 - **Should `respuestas-auditoria.js` be split into smaller, more focused modules?**
   _Cohesion score 0.1294871794871795 - nodes in this community are weakly interconnected._
 - **Why does `poner()` connect `respuestas-auditoria.js` to `14-informe-eti-v1.js`?**
-  _High betweenness centrality (0.098) - this node is a cross-community bridge._
+  _High betweenness centrality (0.095) - this node is a cross-community bridge._
 - **Should `05-banco-respuestas.js` be split into smaller, more focused modules?**
   _Cohesion score 0.054075235109717866 - nodes in this community are weakly interconnected._
 - **Why does `fF()` connect `14-informe-eti-v1.js` to `respuestas-auditoria.js`, `10-mis-evaluaciones.js`, `16-alertas-ref-v1.js`?**
-  _High betweenness centrality (0.095) - this node is a cross-community bridge._
+  _High betweenness centrality (0.092) - this node is a cross-community bridge._
 - **Should `10-mis-evaluaciones.js` be split into smaller, more focused modules?**
   _Cohesion score 0.11020408163265306 - nodes in this community are weakly interconnected._

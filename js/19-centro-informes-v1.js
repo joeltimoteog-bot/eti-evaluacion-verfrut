@@ -8,6 +8,7 @@
    · EXPEDIENTE DE AUDITORIA POR SECTOR (Joel, Lucia, administradores): usa EXACTAMENTE los datos y
      calculos del Informe de cierre de ciclo (etiInformeCicloUI.datos/armar/conclusiones), todo leido
      de Supabase (eti/consultar). Vista en pantalla, Imprimir / PDF (A4) y Excel. Solo lee: no cambia nada.
+   v6 (10-nov): tarjeta del Informe de Evaluaciones ETI (21-informe-evaluaciones-v1.js).
    v5 (10-nov): _SECTOR_UNICO_V1 · las variantes de un sector se cuentan como un solo sector.
    v4 (10-nov): tambien funciona DENTRO de Programacion ETI del Sistema RR.LL. (window._ETI_EN_RL), sin abrir otra pagina.
    v2 (10-nov): tarjeta del Informe de Capacitaciones ETI (mes, ciclo, cierre de año) · ?abrir=capacitaciones.
@@ -138,7 +139,8 @@
     historico: function () { cerrar(); if (typeof window.etiInformeAuditoria === 'function') window.etiInformeAuditoria(); else aviso('Solo el administrador', 'e'); },
     excel: function () { if (typeof exportAdminExcel === 'function') exportAdminExcel(); else aviso('Solo el administrador', 'e'); },
     alertas: function () { cerrar(); var b = $('alr-menu'); if (b) b.click(); else if (window.etiAlertasRef && etiAlertasRef.abrir) etiAlertasRef.abrir(); },
-    capacitaciones: function () { if (window.etiInformeCap) window.etiInformeCap.abrir(); else aviso('Recarga la página (Ctrl+F5)', 'e'); }
+    capacitaciones: function () { if (window.etiInformeCap) window.etiInformeCap.abrir(); else aviso('Recarga la página (Ctrl+F5)', 'e'); },
+    evaluaciones: function () { if (window.etiInformeEval) window.etiInformeEval.abrir(); else aviso('Recarga la página (Ctrl+F5)', 'e'); }
   };
   function pasos() {
     var L = [['Capacitar', 'Capacitaciones ETI'], ['Evaluar', 'QR o manual'], ['Informe GH-03', 'por sesión'], ['Reforzar', 'rutas < 70 %'], ['Expediente', 'por sector'], ['Cierre de ciclo', 'cada trimestre']];
@@ -155,11 +157,12 @@
       [['expediente', 'Abrir expediente', 'r']]));
     if (ed) c.push(tarjeta(4, '#B45309', 'Informe de Capacitaciones ETI', 'Programado vs. ejecutado, capacitados, actas, reprogramaciones y satisfacción. Mensual, por ciclo o cierre de año; general o por sector.', 'Coordinación · Subgerencia · Certificaciones', 'Cada mes, al cerrar el ciclo y al cerrar el año',
       [['capacitaciones', 'Abrir informe', 'p']]));
-    c.push(tarjeta(ed ? 5 : 3, '#15803D', 'Informe de cierre de ciclo', 'Resultado del trimestre ' + (ed ? 'por sector y general' : 'de tu sector') + ', con la decisión de reforzamiento. Word.', ed ? 'Coordinación y Certificaciones' : 'Tú y la Coordinación', 'Al cerrar cada ciclo (I a IV)',
+    if (ed) c.push(tarjeta(5, '#B45309', 'Informe de Evaluaciones ETI', 'Resultado del Check List por tema, sector, ruta y código, con rutas observadas y reforzamientos. Mensual, por ciclo o cierre de año; general o por sector.', 'Coordinación · Certificaciones', 'Cada mes, al cerrar el ciclo y al cerrar el año', [['evaluaciones', 'Abrir informe', 'p']]));
+    c.push(tarjeta(ed ? 6 : 3, '#15803D', 'Informe de cierre de ciclo', 'Resultado del trimestre ' + (ed ? 'por sector y general' : 'de tu sector') + ', con la decisión de reforzamiento. Word.', ed ? 'Coordinación y Certificaciones' : 'Tú y la Coordinación', 'Al cerrar cada ciclo (I a IV)',
       [['ciclo', 'Abrir', 'p']]));
-    c.push(tarjeta(ed ? 6 : 4, '#B45309', 'Alertas de reforzamiento', 'Rutas con algún tema bajo 70 % y su seguimiento (pendiente · reforzado · superada).', ed ? 'Supervisores y Coordinación' : 'Tú', 'Después de cada evaluación',
+    c.push(tarjeta(ed ? 7 : 4, '#B45309', 'Alertas de reforzamiento', 'Rutas con algún tema bajo 70 % y su seguimiento (pendiente · reforzado · superada).', ed ? 'Supervisores y Coordinación' : 'Tú', 'Después de cada evaluación',
       [['alertas', 'Ver alertas', 'p']]));
-    if (adm) c.push(tarjeta(7, '#475569', 'Datos y respaldos', 'Excel con todas las evaluaciones e informe de auditoría del histórico 2026 (Reporte y GH-04 oficiales).', 'Administración', 'Cuando se necesite el dato fuente',
+    if (adm) c.push(tarjeta(8, '#475569', 'Datos y respaldos', 'Excel con todas las evaluaciones e informe de auditoría del histórico 2026 (Reporte y GH-04 oficiales).', 'Administración', 'Cuando se necesite el dato fuente',
       [['excel', 'Excel global', 'p'], ['historico', 'Histórico para auditoría']]));
     modal('📑 Centro de informes', 'Todos los informes ETI en un solo lugar, en el orden en que se trabajan.', pasos() + '<div class="ci-grid">' + c.join('') + '</div>' +
       '<p style="font-size:.82rem;color:#64748B;margin:.9rem 0 0">Cada informe se abre desde aquí con el mismo botón de siempre. Los datos se leen de Supabase.</p>');
@@ -172,8 +175,9 @@
     var ed = esEditor(), c = [];
     if (ed) c.push(tarjeta(1, '#15803D', 'Expediente de auditoría', 'Todo un sector ordenado: programación, capacitaciones, temas, rutas y códigos, reforzamientos, satisfacción y conclusiones.', 'Certificaciones · auditoría', 'Cuando lo pidan o al cerrar el mes', [['expediente', 'Abrir expediente', 'r']]));
     if (ed) c.push(tarjeta(2, '#B45309', 'Informe de Capacitaciones ETI', 'Programado vs. ejecutado, capacitados, actas, reprogramaciones y satisfacción. Mensual, por ciclo o cierre de año; general o por sector.', 'Coordinación · Subgerencia · Certificaciones', 'Cada mes, al cerrar el ciclo y al cerrar el año', [['capacitaciones', 'Abrir informe', 'p']]));
-    c.push(tarjeta(ed ? 3 : 1, '#15803D', 'Informe de cierre de ciclo', 'Resultado del trimestre por sector y general, con la decisión de reforzamiento. Word.', 'Coordinación y Certificaciones', 'Al cerrar cada ciclo (I a IV)', [['ciclo', 'Abrir', 'p']]));
-    c.push(tarjeta(ed ? 4 : 2, '#B45309', 'Alertas de reforzamiento', 'Rutas con algún tema bajo 70 % y su seguimiento (pendiente · reforzado · superada).', 'Supervisores y Coordinación', 'Después de cada evaluación', [['alertas', 'Ver alertas', 'p']]));
+    if (ed) c.push(tarjeta(3, '#B45309', 'Informe de Evaluaciones ETI', 'Resultado del Check List por tema, sector, ruta y código, con rutas observadas y reforzamientos. Mensual, por ciclo o cierre de año; general o por sector.', 'Coordinación · Certificaciones', 'Cada mes, al cerrar el ciclo y al cerrar el año', [['evaluaciones', 'Abrir informe', 'p']]));
+    c.push(tarjeta(ed ? 4 : 1, '#15803D', 'Informe de cierre de ciclo', 'Resultado del trimestre por sector y general, con la decisión de reforzamiento. Word.', 'Coordinación y Certificaciones', 'Al cerrar cada ciclo (I a IV)', [['ciclo', 'Abrir', 'p']]));
+    c.push(tarjeta(ed ? 5 : 2, '#B45309', 'Alertas de reforzamiento', 'Rutas con algún tema bajo 70 % y su seguimiento (pendiente · reforzado · superada).', 'Supervisores y Coordinación', 'Después de cada evaluación', [['alertas', 'Ver alertas', 'p']]));
     modal('📑 Centro de informes', 'Informes ETI dentro de Programación ETI · datos de Supabase.', pasos() + '<div class="ci-grid">' + c.join('') + '</div>' +
       '<p style="font-size:.82rem;color:#64748B;margin:.9rem 0 0">Los informes de cada sesión (GH-03 Check List y GH-04) los emite el supervisor en Evaluaciones ETI, al terminar su evaluación.</p>');
     Array.prototype.forEach.call(M.querySelectorAll('[data-ci]'), function (b) { b.onclick = function () { var f = ACC[b.getAttribute('data-ci')]; if (f) f(); }; });
@@ -343,6 +347,7 @@
     if (p === 'expediente' && esEditor()) abrirExpediente();
     else if (p === 'ciclo' && window.etiInformeCicloUI) etiInformeCicloUI.abrir();
     else if (p === 'capacitaciones' && esEditor() && window.etiInformeCap) window.etiInformeCap.abrir();
+    else if (p === 'evaluaciones' && esEditor() && window.etiInformeEval) window.etiInformeEval.abrir();
     else abrirCentro();
   }
 
