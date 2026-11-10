@@ -8,6 +8,7 @@
    · EXPEDIENTE DE AUDITORIA POR SECTOR (Joel, Lucia, administradores): usa EXACTAMENTE los datos y
      calculos del Informe de cierre de ciclo (etiInformeCicloUI.datos/armar/conclusiones), todo leido
      de Supabase (eti/consultar). Vista en pantalla, Imprimir / PDF (A4) y Excel. Solo lee: no cambia nada.
+   v4 (10-nov): tambien funciona DENTRO de Programacion ETI del Sistema RR.LL. (window._ETI_EN_RL), sin abrir otra pagina.
    v2 (10-nov): tarjeta del Informe de Capacitaciones ETI (mes, ciclo, cierre de año) · ?abrir=capacitaciones.
    INTERRUPTOR (vuelve al menu anterior): localStorage.setItem('eti_menu_clasico','on') y recargar.
    ════════════════════════════════════════════════════════════════════════════ */
@@ -135,7 +136,7 @@
     ciclo: function () { cerrar(); if (window.etiInformeCicloUI && etiInformeCicloUI.abrir) etiInformeCicloUI.abrir(); else aviso('Recarga la página (Ctrl+F5)', 'e'); },
     historico: function () { cerrar(); if (typeof window.etiInformeAuditoria === 'function') window.etiInformeAuditoria(); else aviso('Solo el administrador', 'e'); },
     excel: function () { if (typeof exportAdminExcel === 'function') exportAdminExcel(); else aviso('Solo el administrador', 'e'); },
-    alertas: function () { cerrar(); var b = $('alr-menu'); if (b) b.click(); },
+    alertas: function () { cerrar(); var b = $('alr-menu'); if (b) b.click(); else if (window.etiAlertasRef && etiAlertasRef.abrir) etiAlertasRef.abrir(); },
     capacitaciones: function () { if (window.etiInformeCap) window.etiInformeCap.abrir(); else aviso('Recarga la página (Ctrl+F5)', 'e'); }
   };
   function pasos() {
@@ -144,6 +145,7 @@
   }
   function abrirCentro() {
     var ed = esEditor(), adm = esAdmin(), c = [];
+    if (window._ETI_EN_RL) return abrirCentroRL();   /* _ETI_EN_RL: abierto dentro de Programacion ETI (Sistema RR.LL.) */
     c.push(tarjeta(1, '#0E2A5C', 'Informe Check List · GH-03', 'Informe oficial de cada sesión de evaluación, con fotos. El sistema llena los cuadros.', ed ? 'Supervisor lo emite · administración lo revisa' : 'Tú', 'Al terminar cada evaluación',
       [['mis', ed ? 'Emitir / ver por evaluación' : 'Emitir desde mis evaluaciones', 'p'], ['emitidos', 'Informes emitidos']]));
     c.push(tarjeta(2, '#0E2A5C', 'Informe de capacitación · GH-04', 'Capacitación de actualización y desarrollo o reforzamiento. Sale en Word para insertar las fotos.', ed ? 'Supervisor' : 'Tú', 'Después de capacitar o reforzar',
@@ -160,6 +162,19 @@
       [['excel', 'Excel global', 'p'], ['historico', 'Histórico para auditoría']]));
     modal('📑 Centro de informes', 'Todos los informes ETI en un solo lugar, en el orden en que se trabajan.', pasos() + '<div class="ci-grid">' + c.join('') + '</div>' +
       '<p style="font-size:.82rem;color:#64748B;margin:.9rem 0 0">Cada informe se abre desde aquí con el mismo botón de siempre. Los datos se leen de Supabase.</p>');
+    Array.prototype.forEach.call(M.querySelectorAll('[data-ci]'), function (b) { b.onclick = function () { var f = ACC[b.getAttribute('data-ci')]; if (f) f(); }; });
+  }
+
+  /* v4 (10-nov): dentro de Programacion ETI del Sistema RR.LL. solo van los informes que se arman con los datos
+     (sin pantallas propias de Evaluaciones ETI). El GH-03 y el GH-04 se siguen emitiendo en Evaluaciones ETI. */
+  function abrirCentroRL() {
+    var ed = esEditor(), c = [];
+    if (ed) c.push(tarjeta(1, '#15803D', 'Expediente de auditoría', 'Todo un sector ordenado: programación, capacitaciones, temas, rutas y códigos, reforzamientos, satisfacción y conclusiones.', 'Certificaciones · auditoría', 'Cuando lo pidan o al cerrar el mes', [['expediente', 'Abrir expediente', 'r']]));
+    if (ed) c.push(tarjeta(2, '#B45309', 'Informe de Capacitaciones ETI', 'Programado vs. ejecutado, capacitados, actas, reprogramaciones y satisfacción. Mensual, por ciclo o cierre de año; general o por sector.', 'Coordinación · Subgerencia · Certificaciones', 'Cada mes, al cerrar el ciclo y al cerrar el año', [['capacitaciones', 'Abrir informe', 'p']]));
+    c.push(tarjeta(ed ? 3 : 1, '#15803D', 'Informe de cierre de ciclo', 'Resultado del trimestre por sector y general, con la decisión de reforzamiento. Word.', 'Coordinación y Certificaciones', 'Al cerrar cada ciclo (I a IV)', [['ciclo', 'Abrir', 'p']]));
+    c.push(tarjeta(ed ? 4 : 2, '#B45309', 'Alertas de reforzamiento', 'Rutas con algún tema bajo 70 % y su seguimiento (pendiente · reforzado · superada).', 'Supervisores y Coordinación', 'Después de cada evaluación', [['alertas', 'Ver alertas', 'p']]));
+    modal('📑 Centro de informes', 'Informes ETI dentro de Programación ETI · datos de Supabase.', pasos() + '<div class="ci-grid">' + c.join('') + '</div>' +
+      '<p style="font-size:.82rem;color:#64748B;margin:.9rem 0 0">Los informes de cada sesión (GH-03 Check List y GH-04) los emite el supervisor en Evaluaciones ETI, al terminar su evaluación.</p>');
     Array.prototype.forEach.call(M.querySelectorAll('[data-ci]'), function (b) { b.onclick = function () { var f = ACC[b.getAttribute('data-ci')]; if (f) f(); }; });
   }
 
