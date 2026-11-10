@@ -70,6 +70,8 @@
   }
   var ALIAS_S = { 'PAPAYO': 'EL PAPAYO', 'OLIVARES APROA': 'APROA', 'PLANTA': 'PLANTA RAPEL', 'SANTA ROSA I': 'SANTA ROSA', 'SANTA ROSA II': 'SANTA ROSA', 'SANTA ROSA 1': 'SANTA ROSA', 'SANTA ROSA 2': 'SANTA ROSA' };
   function secTitulo(s) { var x = U(s).replace(/^SECTOR\s+/, ''); x = ALIAS_S[x] || x; return x ? x.toLowerCase().replace(/(^|\s)\S/g, function (m) { return m.toUpperCase(); }) : '—'; }   /* "ALGARROBOS" = "Algarrobos" */
+  /* _SECTOR_UNICO_V1 (10-nov): mismo sector aunque se escriba distinto ("Olivares Aproa" = "Aproa", "Santa Rosa I" = "Santa Rosa", "Sector X" = "X") */
+  function mismoSec(a, b) { return secTitulo(a) === secTitulo(b); }
   function cumplimiento(P, c) {
     var h = hoy(), fila = function () { return { prog: 0, ejec: 0, venc: 0, fut: 0 }; }, tot = {}, sec = {};
     TIPOS_P.forEach(function (t) { tot[t[0]] = fila(); });
@@ -86,14 +88,14 @@
     var c = o.ciclo, s = ses() || {}, user = esEditor() ? '' : s.user;
     var Q = await Promise.all([evaluaciones(c, user), consultar('capacitaciones', [['fechaEjecucion', '>=', c.desde], ['fechaEjecucion', '<=', c.hasta]]),
       consultar('alertas_ref', [['ciclo', '==', c.id]]), consultar('encuestas_sat', [['fecha', '>=', c.desde], ['fecha', '<=', c.hasta]]).catch(function () { return []; }), progsCiclo(c)]);
-    var F = Q[0].filter(function (x) { return o.sector ? U(x.sector) === U(o.sector) : (!o.emp || x.emp === o.emp); });
+    var F = Q[0].filter(function (x) { return o.sector ? mismoSec(x.sector, o.sector) : (!o.emp || x.emp === o.emp); });
     var sectEmp = {}; Q[0].forEach(function (x) { if (x.sector) sectEmp[U(x.sector)] = x.emp; });
     var CAP = Q[1].filter(function (x) { if (x.eliminado || x.anulado || x.eliminada) return false; var se = U(x.sector);
-      if (o.sector) return se === U(o.sector); var e = EMP_SECTOR[se.replace(/^SECTOR\s+/, '')] || sectEmp[se]; return !o.emp || !e || e === o.emp; });
+      if (o.sector) return mismoSec(x.sector, o.sector); var e = EMP_SECTOR[se.replace(/^SECTOR\s+/, '')] || sectEmp[se]; return !o.emp || !e || e === o.emp; });
     var segs = {}; Q[2].forEach(function (x) { segs[x._id] = x; });
     var A = window.etiAlertasRef.analizar(F, c.id, segs);
-    var SAT = Q[3].filter(function (x) { return o.sector ? U(x.sector) === U(o.sector) : (!o.emp || empDe(x.sector, x.emp) === o.emp); });
-    var PRG = Q[4].filter(function (x) { var se = U(x.sector).replace(/^SECTOR\s+/, ''); if (o.sector) return se === U(o.sector).replace(/^SECTOR\s+/, ''); var e = x.empresa || EMP_SECTOR[se] || sectEmp[U(x.sector)]; return !o.emp || !e || EMP(e) === o.emp; });
+    var SAT = Q[3].filter(function (x) { return o.sector ? mismoSec(x.sector, o.sector) : (!o.emp || empDe(x.sector, x.emp) === o.emp); });
+    var PRG = Q[4].filter(function (x) { var se = U(x.sector).replace(/^SECTOR\s+/, ''); if (o.sector) return mismoSec(x.sector, o.sector); var e = x.empresa || EMP_SECTOR[se] || sectEmp[U(x.sector)]; return !o.emp || !e || EMP(e) === o.emp; });
     return { F: F, CAP: CAP, A: A, SAT: SAT, PRG: PRG };
   }
   /* ── 2) calculos del informe ── */

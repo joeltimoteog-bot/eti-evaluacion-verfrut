@@ -1,17 +1,17 @@
 # Graph Report - Sistema - Evaluacion Eti  (2026-11-10)
 
 ## Corpus Check
-- 33 files · ~177,002 words
+- 33 files · ~177,307 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 2 file(s) not represented in the graph (top: (none) 1, .diff 1)
 
 ## Summary
-- 745 nodes · 1727 edges · 41 communities (33 shown, 8 thin omitted)
+- 746 nodes · 1733 edges · 41 communities (33 shown, 8 thin omitted)
 - Extraction: 94% EXTRACTED · 6% INFERRED · 0% AMBIGUOUS · INFERRED: 98 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `4d3a415e`
+- Built from commit: `8bad903d`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -56,27 +56,27 @@
 
 ## God Nodes (most connected - your core abstractions)
 1. `toast()` - 39 edges
-2. `iniciarSesionCon()` - 19 edges
-3. `fmtF()` - 19 edges
-4. `renderBanco()` - 19 edges
-5. `excel()` - 19 edges
+2. `fmtF()` - 19 edges
+3. `iniciarSesionCon()` - 19 edges
+4. `excel()` - 19 edges
+5. `renderBanco()` - 19 edges
 6. `bkMarcar()` - 17 edges
 7. `hoy()` - 16 edges
 8. `fF()` - 16 edges
-9. `render()` - 15 edges
-10. `enviarInforme()` - 15 edges
+9. `enviarInforme()` - 15 edges
+10. `render()` - 15 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `etiBandeja` --indirect_call--> `poner()`  [INFERRED]
   js/01-nucleo-evaluaciones.js → respuestas-auditoria.js
+- `ok()` --indirect_call--> `sup()`  [INFERRED]
+  respuestas-auditoria.js → js/10-mis-evaluaciones.js
 - `render()` --indirect_call--> `fF()`  [INFERRED]
-  js/10-mis-evaluaciones.js → respuestas-auditoria.js
-- `rptInforme()` --indirect_call--> `fF()`  [INFERRED]
   js/10-mis-evaluaciones.js → respuestas-auditoria.js
 - `rptChecklist()` --indirect_call--> `fF()`  [INFERRED]
   js/10-mis-evaluaciones.js → respuestas-auditoria.js
-- `ok()` --indirect_call--> `sup()`  [INFERRED]
-  respuestas-auditoria.js → js/10-mis-evaluaciones.js
+- `rptInforme()` --indirect_call--> `fF()`  [INFERRED]
+  js/10-mis-evaluaciones.js → respuestas-auditoria.js
 
 ## Import Cycles
 - None detected.
@@ -105,7 +105,7 @@ Nodes (47): abrir(), banner(), cargarInformes(), cargarScript(), cargarTodos(), 
 
 ### Community 6 - "01-nucleo-evaluaciones.js"
 Cohesion: 0.06
-Nodes (33): acCerrar(), acEsc(), acFuera(), acMostrar(), acQuitar(), acUkey(), acUser(), acVerificar() (+25 more)
+Nodes (38): acCerrar(), acEsc(), acFuera(), acMostrar(), acQuitar(), acUkey(), acUser(), acVerificar() (+30 more)
 
 ### Community 7 - "eti-alerta-ruta.js"
 Cohesion: 0.60
@@ -124,20 +124,20 @@ Cohesion: 0.83
 Nodes (3): b64bytes(), build(), etiInformeGH04()
 
 ### Community 12 - "iniciarSesionCon"
-Cohesion: 0.15
-Nodes (20): addUser(), confMod(), delUser(), etiHash(), etiUsrActivo(), etiUsrRestaurar(), _evCargarElimRL(), getAllHist() (+12 more)
+Cohesion: 0.14
+Nodes (21): addUser(), confMod(), delUser(), etiHash(), etiUsrActivo(), etiUsrRestaurar(), _evCargarElimRL(), exportAdminExcel() (+13 more)
 
 ### Community 13 - "maxEv"
-Cohesion: 0.16
-Nodes (25): avisoPts(), buildEvOpts(), calcPct(), calcular(), _detBanco(), _detManual(), evPresente(), guardarEvalNube() (+17 more)
+Cohesion: 0.19
+Nodes (22): avisoPts(), buildEvOpts(), calcPct(), calcular(), evPresente(), maxEv(), mkAc(), mkCuest() (+14 more)
 
 ### Community 14 - "toast"
 Cohesion: 0.17
-Nodes (23): buildCuadrosSemaforo(), buildDestiempoHTML(), copiar(), copiarDirecto(), descargar(), enviarCorreo(), enviarCorreoDirecto(), exportar() (+15 more)
+Nodes (22): buildCuadrosSemaforo(), buildDestiempoHTML(), copiar(), copiarDirecto(), descargar(), enviarCorreo(), enviarCorreoDirecto(), exportar() (+14 more)
 
 ### Community 15 - "iniciarSesionCon"
-Cohesion: 0.17
-Nodes (18): actualizarAlertaProgP1(), enviarASheets(), exportAdminExcel(), exportarExcelCompleto(), fechasPendientes(), getSectorActual(), hoy(), iniciarSesionCon() (+10 more)
+Cohesion: 0.16
+Nodes (19): actualizarAlertaProgP1(), _detBanco(), _detManual(), enviarASheets(), fechasPendientes(), getSectorActual(), guardarEvalNube(), hoy() (+11 more)
 
 ### Community 16 - "03-guia.js"
 Cohesion: 0.22
@@ -156,12 +156,12 @@ Cohesion: 0.25
 Nodes (14): getProgs(), marcarProgEjecutada(), mreprCerrar(), mreprGuardar(), pgAddFecha(), pgDelFecha(), pgEliminar(), pgGuardar() (+6 more)
 
 ### Community 20 - "go"
-Cohesion: 0.24
-Nodes (11): agregarArea(), go(), iniciar(), iniciarComoAdmin(), mdestCerrar(), mdestConfirmar(), p1continue(), p2next() (+3 more)
+Cohesion: 0.21
+Nodes (13): agregarArea(), go(), iniciar(), iniciarComoAdmin(), mdestCerrar(), mdestConfirmar(), p1continue(), p2next() (+5 more)
 
 ### Community 21 - "renderCumplimiento"
-Cohesion: 0.13
-Nodes (20): adminTab(), _alRecibirEvals(), _cumCoincide(), _cumRefrescarSiVisible(), detenerEvalsNube(), escCob(), escucharEvalsNube(), escucharNube() (+12 more)
+Cohesion: 0.18
+Nodes (15): adminTab(), _alRecibirEvals(), _cumCoincide(), _cumRefrescarSiVisible(), detenerEvalsNube(), escCob(), escucharEvalsNube(), escucharNube() (+7 more)
 
 ### Community 22 - "07-shell-rl.js"
 Cohesion: 0.35
@@ -188,8 +188,8 @@ Cohesion: 0.19
 Nodes (26): abrir(), analizar(), avisoInicial(), cargar(), cargarProgsRef(), cicloActual(), ciclos(), consultar() (+18 more)
 
 ### Community 32 - "19-centro-informes-v1.js"
-Cohesion: 0.16
-Nodes (24): abrirCentro(), abrirExpediente(), autoAbrir(), cerrar(), cerrarLateral(), cicloSel(), css(), cssMenu() (+16 more)
+Cohesion: 0.17
+Nodes (25): abrirCentro(), abrirCentroRL(), abrirExpediente(), autoAbrir(), cerrar(), cerrarLateral(), cicloSel(), css() (+17 more)
 
 ### Community 33 - "17-informe-ciclo-v1.js"
 Cohesion: 0.19
@@ -222,7 +222,7 @@ Nodes (3): Sheet: Evaluaciones, Sheet: Por pregunta (QR), Sheet: Por supervisor
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `etiBandeja` connect `14-informe-eti-v1.js` to `respuestas-auditoria.js`, `01-nucleo-evaluaciones.js`?**
-  _High betweenness centrality (0.123) - this node is a cross-community bridge._
+  _High betweenness centrality (0.122) - this node is a cross-community bridge._
 - **Are the 4 inferred relationships involving `fmtF()` (e.g. with `actualizarAlertaProgP1()` and `buildDestiempoHTML()`) actually correct?**
   _`fmtF()` has 4 INFERRED edges - model-reasoned connections that need verification._
 - **Should `respuestas-auditoria.js` be split into smaller, more focused modules?**

@@ -8,6 +8,7 @@
    · EXPEDIENTE DE AUDITORIA POR SECTOR (Joel, Lucia, administradores): usa EXACTAMENTE los datos y
      calculos del Informe de cierre de ciclo (etiInformeCicloUI.datos/armar/conclusiones), todo leido
      de Supabase (eti/consultar). Vista en pantalla, Imprimir / PDF (A4) y Excel. Solo lee: no cambia nada.
+   v5 (10-nov): _SECTOR_UNICO_V1 · las variantes de un sector se cuentan como un solo sector.
    v4 (10-nov): tambien funciona DENTRO de Programacion ETI del Sistema RR.LL. (window._ETI_EN_RL), sin abrir otra pagina.
    v2 (10-nov): tarjeta del Informe de Capacitaciones ETI (mes, ciclo, cierre de año) · ?abrir=capacitaciones.
    INTERRUPTOR (vuelve al menu anterior): localStorage.setItem('eti_menu_clasico','on') y recargar.
@@ -202,8 +203,10 @@
     b.disabled = true; out.innerHTML = '<p>⏳ Leyendo de Supabase capacitaciones, evaluaciones, reforzamientos y encuestas de ' + esc(c.nom) + '…</p>';
     try {
       var o = { modo: 'general', ciclo: c, emp: emp, sector: '' }, X = await etiInformeCicloUI.datos(o), R = etiInformeCicloUI.armar(o, X);
-      var cap = {}; R.cap.porSector.forEach(function (s) { cap[norm(s.sector)] = s; });
-      var ev = {}; R.ev.sectores.forEach(function (s) { ev[norm(s.sector)] = s; });
+      /* _SECTOR_UNICO_V1: se suman las variantes del mismo sector ("Olivares Aproa" + "Aproa") */
+      var cap = {}; R.cap.porSector.forEach(function (s) { var k = norm(s.sector), z = cap[k] || (cap[k] = { sesiones: 0, total: 0 }); z.sesiones += s.sesiones; z.total += s.total; });
+      var ev = {}; R.anexo.forEach(function (a) { if (a.prom == null) return; var k = norm(a.sector), z = ev[k] || (ev[k] = { n: 0, s: 0 }); z.n += a.n; z.s += a.prom * a.n; });
+      Object.keys(ev).forEach(function (k) { ev[k].prom = ev[k].n ? ev[k].s / ev[k].n : null; });
       var rut = {}; R.ev.rutas.forEach(function (r) { var k = norm(r.sector); rut[k] = (rut[k] || 0) + 1; });
       var obs = {}; R.alertas.forEach(function (a) { var k = norm(a.sector); obs[k] = obs[k] || {}; obs[k][a.ruta + '|' + a.cod] = 1; });
       var pend = {}; R.alertas.forEach(function (a) { if (a.estado !== 'superada') { var k = norm(a.sector); pend[k] = (pend[k] || 0) + 1; } });
@@ -223,7 +226,7 @@
     } catch (e) { console.error('[_CENTRO_INFORMES_V1]', e); out.innerHTML = '<div class="ci-vacio">No se pudo leer: ' + esc(e.message) + '</div>'; }
     finally { b.disabled = false; }
   }
-  function norm(s) { return String(s || '').trim().toUpperCase().replace(/\s+/g, ' '); }   /* misma comparacion que el Informe de cierre de ciclo (U(x.sector) === U(sector)) */
+  function norm(s) { var x = String(s || '').trim().toUpperCase().replace(/\s+/g, ' ').replace(/^SECTOR\s+/, ''); var A = { 'PAPAYO': 'EL PAPAYO', 'OLIVARES APROA': 'APROA', 'PLANTA': 'PLANTA RAPEL', 'SANTA ROSA I': 'SANTA ROSA', 'SANTA ROSA II': 'SANTA ROSA', 'SANTA ROSA 1': 'SANTA ROSA', 'SANTA ROSA 2': 'SANTA ROSA' }; return A[x] || x; }   /* _SECTOR_UNICO_V1: misma regla que el Informe de cierre de ciclo (secTitulo) */
   async function verSector(sector) {
     var out = $('xp-out'), c = cicloSel(); if (!c) return;
     out.innerHTML = '<p>⏳ Armando el expediente de ' + esc(sector) + '…</p>';
