@@ -90,7 +90,7 @@
       var nueva = r.nuevaIni || (r.fechasNueva || [])[0] || '';
       reprog.push({ sector: secTit(p.sector), sup: p.supervisor || '', ant: ant, nueva: nueva, motivo: r.motivo || '—', detalle: r.detalle || '', estado: (p.fechasEjecutadas || []).indexOf(nueva) >= 0 || p.estado === 'ejecutada' ? 'Ejecutada' : nueva && nueva < h ? 'Vencida' : 'Pendiente' }); }); });
     reprog.sort(function (a, b) { return a.ant.localeCompare(b.ant); });
-    var sat = X.SAT.length && window.etiEncuesta ? window.etiEncuesta.resumen(X.SAT) : null;
+    var sat = null;   /* _SIN_SATISFACCION_V1 (10-nov): la encuesta de satisfaccion no va en este informe */
     var sesiones = X.CAP.slice().sort(function (a, b) { return String(a.fechaEjecucion).localeCompare(String(b.fechaEjecucion)); }).map(function (x) {
       return { fecha: fF(x.fechaEjecucion), sector: secTit(x.sector), sup: x.supervisor || '', tema: x.tema || '', h: +x.varones || 0, m: +x.mujeres || 0, total: +x.total || ((+x.varones || 0) + (+x.mujeres || 0)),
         acta: x.fechaEnvio ? fF(x.fechaEnvio) : '—', plazo: x.fechaEnvio ? (x.fechaLimite && String(x.fechaEnvio).slice(0, 10) > String(x.fechaLimite).slice(0, 10) ? 'Fuera de plazo' : 'En plazo') : 'Sin acta' }; });
@@ -128,17 +128,17 @@
     var titulo = (P.tipo === 'anio' ? 'INFORME ANUAL DE CAPACITACIONES ETI · CIERRE DE AÑO' : P.tipo === 'ciclo' ? 'INFORME DE CAPACITACIONES ETI POR CICLO' : 'INFORME MENSUAL DE CAPACITACIONES ETI') + (alc.sector ? ' · SECTOR ' + U(alc.sector) : '');
     var actas = R.tot.plazo + R.tot.fuera, c = R.cumpl, enMeta = R.sectores.filter(function (x) { return x.c.pct != null && x.c.pct >= 0.95; }).length, conPct = R.sectores.filter(function (x) { return x.c.pct != null; }).length;
     var cards = [['Cumplimiento del programa', pc(c.pct), c.ejec + ' de ' + (c.ejec + c.venc) + ' vencidas · meta 95 % (K3)', colP(c.pct)[1]],
-      ['Personal capacitado', String(R.tot.total), 'H ' + R.tot.h + ' · M ' + R.tot.m + ' · ' + R.tot.sesiones + ' sesiones', '#0b2a6f'],
+      ['Personal capacitado', String(R.tot.total), 'Hombres ' + R.tot.h + ' · Mujeres ' + R.tot.m, '#0b2a6f'],
       ['Actas en plazo', actas ? pc(R.tot.plazo / actas) : '—', R.tot.plazo + ' en plazo · ' + R.tot.fuera + ' fuera · ' + R.tot.sinActa + ' sin envío', actas ? colP(R.tot.plazo / actas)[1] : '#64748b'],
       ['Reprogramaciones', String(R.reprog.length), R.reprog.filter(function (r) { return r.estado === 'Ejecutada'; }).length + ' ejecutadas · ' + R.reprog.filter(function (r) { return r.estado !== 'Ejecutada'; }).length + ' por ejecutar', R.reprog.length ? '#b45309' : '#15803d'],
-      ['Satisfacción del personal', R.sat && R.sat.n ? Math.round(R.sat.gen) + '/100' : '—', R.sat ? R.sat.n + ' respuestas (QR)' : 'sin encuesta', '#0b2a6f'],
+      ['Sesiones registradas', String(R.tot.sesiones), 'en Capacitaciones ETI', '#0b2a6f'],
       [alc.sector ? 'Fechas por venir' : 'Sectores en meta', alc.sector ? String(c.fut) : enMeta + ' de ' + conPct, alc.sector ? 'programadas dentro del periodo' : 'cumplimiento ≥ 95 %', '#0b2a6f']];
     var logo = CI._logo ? CI._logo() : '';
     var x = (CI._cabecera ? CI._cabecera(razon, titulo, P.nom + ' · emitido el ' + fF(hoy())) : '');
     x += h2('Generalidades') + '<table class="x-kv"><tbody>' + [['Periodo', esc(P.nom) + ' · ' + fF(P.desde) + ' al ' + fF(P.hasta)], ['Empresa', esc(razon)],
       ['Alcance', alc.sector ? 'Sector ' + esc(alc.sector) + (R.sectores[0] && R.sectores[0].sups.length ? ' · ' + esc(R.sectores[0].sups.join(' · ')) : '') : R.sectores.length + ' sectores'],
       ['Tema', 'Capacitaciones ETI · CAP-SC-10 Ética social e ingresos masivos'],
-      ['Fuente de datos', 'Programación ETI del Sistema RR.LL. + registros de Capacitaciones ETI + encuesta de satisfacción · Supabase'],
+      ['Fuente de datos', 'Programación ETI del Sistema RR.LL. + registros de Capacitaciones ETI · Supabase'],
       ['Emitido por', esc((s.nom || s.user || '') + ' (' + (s.user || '') + ')')]].map(function (r) { return '<tr><th>' + r[0] + '</th><td>' + r[1] + '</td></tr>'; }).join('') + '</tbody></table>';
     x += h2('Resumen ejecutivo') + '<div class="x-cards">' + cards.map(function (k) { return '<div style="border-top-color:' + k[3] + '"><span>' + k[0] + '</span><b style="color:' + k[3] + '">' + k[1] + '</b><small>' + esc(k[2]) + '</small></div>'; }).join('') + '</div>';
     x += h2(alc.sector ? 'Cumplimiento del sector' : 'Cumplimiento por sector') + tabla(['Sector', 'Empresa', 'Prog.', 'Ejec.', 'Vencidas', 'Por venir', 'Cumplimiento', 'Capacitados', 'Actas en plazo', 'Estado'],
@@ -164,7 +164,7 @@
       h2('Acciones de mejora') + '<ul class="x-ul">' + K.acciones.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul>';
     var firmas = alc.sector ? [{ nom: (R.sectores[0] && R.sectores[0].sups[0]) || 'Supervisor(a) de Gestión Humana', cargo: 'Supervisor(a) de Gestión Humana · ' + alc.sector }, COORD]
       : [COORD, { nom: 'Luis Eduardo Coveñas Chero', cargo: 'Subgerente de Personas' }];
-    x += '<p class="x-p">Es todo en cuanto tengo que informar.</p><div class="x-firmas">' + firmas.map(function (f) { return '<div><div class="x-l">' + esc(f.nom) + '</div><small>' + esc(f.cargo) + '</small></div>'; }).join('') + '</div>';
+    x += '<p class="x-p">Es todo en cuanto tengo que informar.</p>' + (CI._firma ? CI._firma() : '');
     x += '<div class="x-pie"><span>Gestión Humana · Relaciones Laborales · Unifrutti Perú</span><span>Generado por el sistema desde Supabase · ' + new Date().toLocaleString('es-PE') + '</span></div>';
     return '<div class="x-doc">' + (CI._estilosDoc ? CI._estilosDoc() : '') + x + '</div>';
   }
@@ -178,7 +178,7 @@
     var d = new Date(), y = d.getFullYear(), cs = window.etiAlertasRef.ciclos(), h = hoy(), act = cs.find(function (c) { return h >= c.desde && h <= c.hasta; }) || cs[0];
     var anios = []; for (var a = y; a >= 2026; a--) anios.push(a);
     var opt = function (L, sel) { return L.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (String(o[0]) === String(sel) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join(''); };
-    CI._modal('📘 Informe de Capacitaciones ETI', 'Programado vs. ejecutado, capacitados, actas, reprogramaciones y satisfacción · por mes, ciclo o año, general o por sector. Datos de Supabase.',
+    CI._modal('📘 Informe de Capacitaciones ETI', 'Programado vs. ejecutado, capacitados, actas y reprogramaciones · por mes, ciclo o año, general o por sector. Datos de Supabase.',
       '<div class="ci-f">' +
       '<div><label>Periodo</label><select id="ic-tipo">' + opt([['mes', 'Mensual'], ['ciclo', 'Por ciclo'], ['anio', 'Cierre de año']], 'mes') + '</select></div>' +
       '<div id="ic-w-mes"><label>Mes</label><select id="ic-mes">' + opt(MESES.map(function (m, i) { return [i + 1, m]; }), d.getMonth() + 1) + '</select></div>' +
@@ -194,7 +194,7 @@
     var out = $('ic-out'), b = $('ic-ver'), t = $('ic-tipo').value, a = +$('ic-anio').value, v = $('ic-alc').value;
     var P = t === 'mes' ? periodoMes(a, +$('ic-mes').value) : t === 'anio' ? periodoAnio(a) : periodoCiclo(window.etiAlertasRef.ciclos().find(function (c) { return c.id === $('ic-ciclo').value; }));
     var alc = { emp: v.indexOf('E:') === 0 ? v.slice(2) : '', sector: v.indexOf('S:') === 0 ? v.slice(2) : '' };
-    b.disabled = true; out.innerHTML = '<p>⏳ Leyendo de Supabase la programación, las capacitaciones y la encuesta de ' + esc(P.nom) + '…</p>';
+    b.disabled = true; out.innerHTML = '<p>⏳ Leyendo de Supabase la programación y las capacitaciones de ' + esc(P.nom) + '…</p>';
     try {
       var X = await datos(P, alc), R = armar(P, alc, X), K = conclusiones(P, alc, R);
       if (!R.tot.sesiones && !R.cumpl.prog) { out.innerHTML = '<div class="ci-vacio">No hay capacitaciones programadas ni registradas en ' + esc(P.nom) + (alc.sector ? ' para ' + esc(alc.sector) : '') + '.</div>'; return; }

@@ -8,6 +8,7 @@
    · EXPEDIENTE DE AUDITORIA POR SECTOR (Joel, Lucia, administradores): usa EXACTAMENTE los datos y
      calculos del Informe de cierre de ciclo (etiInformeCicloUI.datos/armar/conclusiones), todo leido
      de Supabase (eti/consultar). Vista en pantalla, Imprimir / PDF (A4) y Excel. Solo lee: no cambia nada.
+   v10 (10-nov): sin seccion de satisfaccion; firma solo quien emite el informe.
    v9 (10-nov): _DOC_GH03_V1 · documentos con el modelo INF-SC-GH-03, montados aislados de los estilos de la pagina.
    v8 (10-nov): _DOC_FORMATO_V2 · formato del documento protegido de los estilos de la pagina; temas abreviados con leyenda.
    v7 (10-nov): _EXP_RANGO_V1 · expediente por un ciclo, rango de ciclos o todo el año; cada cuadro vacio explica el motivo.
@@ -156,9 +157,9 @@
       [['mis', ed ? 'Emitir / ver por evaluación' : 'Emitir desde mis evaluaciones', 'p'], ['emitidos', 'Informes emitidos']]));
     c.push(tarjeta(2, '#0E2A5C', 'Informe de capacitación · GH-04', 'Capacitación de actualización y desarrollo o reforzamiento. Sale en Word para insertar las fotos.', ed ? 'Supervisor' : 'Tú', 'Después de capacitar o reforzar',
       [['mis', 'Emitir desde ' + (ed ? 'evaluaciones' : 'mis evaluaciones'), 'p']]));
-    if (ed) c.push(tarjeta(3, '#15803D', 'Expediente de auditoría', 'Todo un sector ordenado: programación, capacitaciones, temas, rutas y códigos, reforzamientos, satisfacción y conclusiones.', 'Certificaciones · auditoría', 'Cuando lo pidan o al cerrar el mes',
+    if (ed) c.push(tarjeta(3, '#15803D', 'Expediente de auditoría', 'Todo un sector ordenado: programación, capacitaciones, temas, rutas y códigos, reforzamientos y conclusiones.', 'Certificaciones · auditoría', 'Cuando lo pidan o al cerrar el mes',
       [['expediente', 'Abrir expediente', 'r']]));
-    if (ed) c.push(tarjeta(4, '#B45309', 'Informe de Capacitaciones ETI', 'Programado vs. ejecutado, capacitados, actas, reprogramaciones y satisfacción. Mensual, por ciclo o cierre de año; general o por sector.', 'Coordinación · Subgerencia · Certificaciones', 'Cada mes, al cerrar el ciclo y al cerrar el año',
+    if (ed) c.push(tarjeta(4, '#B45309', 'Informe de Capacitaciones ETI', 'Programado vs. ejecutado, capacitados, actas, y reprogramaciones. Mensual, por ciclo o cierre de año; general o por sector.', 'Coordinación · Subgerencia · Certificaciones', 'Cada mes, al cerrar el ciclo y al cerrar el año',
       [['capacitaciones', 'Abrir informe', 'p']]));
     if (ed) c.push(tarjeta(5, '#B45309', 'Informe de Evaluaciones ETI', 'Resultado del Check List por tema, sector, ruta y código, con rutas observadas y reforzamientos. Mensual, por ciclo o cierre de año; general o por sector.', 'Coordinación · Certificaciones', 'Cada mes, al cerrar el ciclo y al cerrar el año', [['evaluaciones', 'Abrir informe', 'p']]));
     c.push(tarjeta(ed ? 6 : 3, '#15803D', 'Informe de cierre de ciclo', 'Resultado del trimestre ' + (ed ? 'por sector y general' : 'de tu sector') + ', con la decisión de reforzamiento. Word.', ed ? 'Coordinación y Certificaciones' : 'Tú y la Coordinación', 'Al cerrar cada ciclo (I a IV)',
@@ -176,8 +177,8 @@
      (sin pantallas propias de Evaluaciones ETI). El GH-03 y el GH-04 se siguen emitiendo en Evaluaciones ETI. */
   function abrirCentroRL() {
     var ed = esEditor(), c = [];
-    if (ed) c.push(tarjeta(1, '#15803D', 'Expediente de auditoría', 'Todo un sector ordenado: programación, capacitaciones, temas, rutas y códigos, reforzamientos, satisfacción y conclusiones.', 'Certificaciones · auditoría', 'Cuando lo pidan o al cerrar el mes', [['expediente', 'Abrir expediente', 'r']]));
-    if (ed) c.push(tarjeta(2, '#B45309', 'Informe de Capacitaciones ETI', 'Programado vs. ejecutado, capacitados, actas, reprogramaciones y satisfacción. Mensual, por ciclo o cierre de año; general o por sector.', 'Coordinación · Subgerencia · Certificaciones', 'Cada mes, al cerrar el ciclo y al cerrar el año', [['capacitaciones', 'Abrir informe', 'p']]));
+    if (ed) c.push(tarjeta(1, '#15803D', 'Expediente de auditoría', 'Todo un sector ordenado: programación, capacitaciones, temas, rutas y códigos, reforzamientos y conclusiones.', 'Certificaciones · auditoría', 'Cuando lo pidan o al cerrar el mes', [['expediente', 'Abrir expediente', 'r']]));
+    if (ed) c.push(tarjeta(2, '#B45309', 'Informe de Capacitaciones ETI', 'Programado vs. ejecutado, capacitados, actas, y reprogramaciones. Mensual, por ciclo o cierre de año; general o por sector.', 'Coordinación · Subgerencia · Certificaciones', 'Cada mes, al cerrar el ciclo y al cerrar el año', [['capacitaciones', 'Abrir informe', 'p']]));
     if (ed) c.push(tarjeta(3, '#B45309', 'Informe de Evaluaciones ETI', 'Resultado del Check List por tema, sector, ruta y código, con rutas observadas y reforzamientos. Mensual, por ciclo o cierre de año; general o por sector.', 'Coordinación · Certificaciones', 'Cada mes, al cerrar el ciclo y al cerrar el año', [['evaluaciones', 'Abrir informe', 'p']]));
     c.push(tarjeta(ed ? 4 : 1, '#15803D', 'Informe de cierre de ciclo', 'Resultado del trimestre por sector y general, con la decisión de reforzamiento. Word.', 'Coordinación y Certificaciones', 'Al cerrar cada ciclo (I a IV)', [['ciclo', 'Abrir', 'p']]));
     c.push(tarjeta(ed ? 5 : 2, '#B45309', 'Alertas de reforzamiento', 'Rutas con algún tema bajo 70 % y su seguimiento (pendiente · reforzado · superada).', 'Supervisores y Coordinación', 'Después de cada evaluación', [['alertas', 'Ver alertas', 'p']]));
@@ -227,7 +228,7 @@
   }
   async function resumen() {
     var out = $('xp-out'), b = $('xp-res'), c = cicloSel(), emp = $('xp-emp').value; if (!c) return;
-    b.disabled = true; out.innerHTML = '<p>⏳ Leyendo de Supabase capacitaciones, evaluaciones, reforzamientos y encuestas de ' + esc(c.nom) + '…</p>';
+    b.disabled = true; out.innerHTML = '<p>⏳ Leyendo de Supabase capacitaciones, evaluaciones y reforzamientos de ' + esc(c.nom) + '…</p>';
     try {
       var o = { modo: 'general', ciclo: c, emp: emp, sector: '' }, R = await correr(o);
       /* _SECTOR_UNICO_V1: se suman las variantes del mismo sector ("Olivares Aproa" + "Aproa") */
@@ -277,18 +278,18 @@
     var obs = {}; R.alertas.forEach(function (a) { obs[a.ruta + '|' + a.cod] = 1; });
     var abiertas = R.alertas.filter(function (a) { return a.estado !== 'superada'; }).length;
     var apr = {}; R.anexo.forEach(function (a) { var k = (a.cod || a.ruta); var z = apr[k] || (apr[k] = { n: 0, ap: 0, conAp: false }); z.n += a.n; if (a.apr != null) { z.ap += a.apr; z.conAp = true; } });
-    var cards = [['Capacitaciones', String(R.cap.sesiones), R.cap.total + ' capacitados (H ' + R.cap.h + ' · M ' + R.cap.m + ')', '#0b2a6f'],
+    var cards = [['Capacitaciones', String(R.cap.sesiones), 'sesiones registradas en el periodo', '#0b2a6f'],
       ['Resultado de la evaluación', pc(ev.prom), ev.n + ' evaluados · aprobación ≥ 70 %', colP(ev.prom)[1]],
       ['Rutas evaluadas', String(ev.rutas.length), Object.keys(obs).length + ' con algún tema < 70 %', Object.keys(obs).length ? '#b45309' : '#15803d'],
       ['Alertas de reforzamiento', String(R.alertas.length), abiertas + ' por cerrar · ' + (R.alertas.length - abiertas) + ' superadas', abiertas ? '#b91c1c' : '#15803d'],
       ['Checklist aplicados', String(R.anexo.length), 'QR y manual', '#0b2a6f'],
-      ['Satisfacción del personal', R.sat && R.sat.n ? Math.round(R.sat.gen) + '/100' : '—', R.sat ? R.sat.n + ' respuestas (QR)' : 'sin encuesta', '#0b2a6f']];
+      ['Personal capacitado', String(R.cap.total), 'Hombres ' + R.cap.h + ' · Mujeres ' + R.cap.m, '#0b2a6f']];
     var firmas = [{ nom: R.supervisores[0] || 'Supervisor(a) de Gestión Humana', cargo: 'Supervisor(a) de Gestión Humana · ' + o.sector }, COORD];
     var x = '';
     x += cabecera(emp, 'EXPEDIENTE DE AUDITORÍA ETI · SECTOR ' + String(o.sector).toUpperCase(), o.ciclo.nom + ' · emitido el ' + fF(hoy()));
     x += h2('Generalidades') + '<table class="x-kv"><tbody>' + [['Empresa', emp], ['Sector', o.sector], ['Responsable(s)', R.supervisores.join(' · ') || '—'], ['Periodo', esc(o.ciclo.nom) + ' · ' + fF(o.ciclo.desde) + ' al ' + fF(o.ciclo.hasta)],
       ['Tema', 'CAP-SC-10 · Legislación laboral, mecanismo de quejas y sugerencias, hostigamiento sexual, código de conducta, medioambiente, ética empresarial'],
-      ['Fuente de datos', 'Programación ETI, Capacitaciones ETI, Evaluaciones ETI (QR y manual), alertas de reforzamiento y encuesta de satisfacción · Supabase'],
+      ['Fuente de datos', 'Programación ETI, Capacitaciones ETI, Evaluaciones ETI (QR y manual), y alertas de reforzamiento · Supabase'],
       ['Emitido por', esc((s.nom || s.user || '') + ' (' + (s.user || '') + ')')]].map(function (r) { return '<tr><th>' + r[0] + '</th><td>' + (r[0] === 'Responsable(s)' || r[0] === 'Sector' || r[0] === 'Empresa' ? esc(r[1]) : r[1]) + '</td></tr>'; }).join('') + '</tbody></table>';
     x += h2('Resumen ejecutivo') + '<div class="x-cards">' + cards.map(function (c) { return '<div style="border-top-color:' + c[3] + '"><span>' + c[0] + '</span><b style="color:' + c[3] + '">' + c[1] + '</b><small>' + esc(c[2]) + '</small></div>'; }).join('') + '</div>';
     var PG = (R.prog && R.prog.tipos) || [];
@@ -318,14 +319,11 @@
     x += h2('Evaluaciones aplicadas (detalle)') + tabla(['Fecha', 'Ruta', 'Código', 'Modo', 'Responsable', 'Evaluados', 'Aprobados', 'Resultado'],
       R.anexo.map(function (a) { return [a.fechaTxt, esc(a.ruta || '—'), esc(a.cod || '—'), a.mod, esc(a.sup || '—'), a.n, a.apr == null ? '—' : a.apr, chip(a.prom)]; }),
       ['left', 'left', 'left', 'left', 'left', 'right', 'right', 'left']);
-    if (R.sat && R.sat.n) x += h2('Satisfacción del personal capacitado') + tabla(['Aspecto', 'Puntaje (0–100)'],
-      [['Capacitador', R.sat.cap], ['Material', R.sat.mat], ['Contenido', R.sat.cont], ['Logística', R.sat.log], ['<b>General</b>', R.sat.gen]].filter(function (r) { return r[1] != null; }).map(function (r) { return [r[0], '<b>' + Math.round(r[1]) + '</b>']; }), ['left', 'right']) +
-      '<p class="x-p">' + R.sat.n + ' respuestas anónimas por QR.</p>';
-    else x += h2('Satisfacción del personal capacitado') + '<p class="x-p" style="color:#64748b">No se aplicó la encuesta de satisfacción por QR a este sector en el periodo elegido.</p>';
-    x += h2('Conclusiones') + '<ul class="x-ul">' + K.lista.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul>' +
+    /* _SIN_SATISFACCION_V1 (10-nov): la encuesta de satisfaccion no va en estos informes */
+    x += h2('Conclusiones') + '<ul class="x-ul">' + K.lista.filter(function (l) { return !/^Satisfacci/.test(l); }).map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul>' +
       h2('Decisión de reforzamiento') + '<ul class="x-ul">' + String(K.decision || '').split('\n').filter(Boolean).map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul>' +
       '<p class="x-p"><b>Documentos del expediente:</b> Informes INF-SC-GH-03 de cada sesión (modelo oficial), registro de asistencia y base de datos en Excel del sector.</p>';
-    x += '<p class="x-p">Es todo en cuanto tengo que informar.</p><div class="x-firmas">' + firmas.map(function (f) { return '<div><div class="x-l">' + esc(f.nom) + '</div><small>' + esc(f.cargo) + '</small></div>'; }).join('') + '</div>';
+    x += '<p class="x-p">Es todo en cuanto tengo que informar.</p>' + firmaEmisor();
     x += '<div class="x-pie"><span>Gestión Humana · Relaciones Laborales · Unifrutti Perú</span><span>Generado por el sistema desde Supabase · ' + new Date().toLocaleString('es-PE') + '</span></div>';
     return '<div class="x-doc">' + estilosDoc() + x + '</div>';
   }
@@ -341,6 +339,13 @@
       '<div class="x-tit">INFORME DE CAPACITACIONES DE BUENAS PRÁCTICAS SOCIALES</div><div class="x-c2">Versión N° 0.0</div><div class="x-c3"><b>Última revisión:</b><br>24/03/2026</div></div>' +
       '<div class="x-sub"><b>' + esc(titulo) + '</b><br>' + esc(sub) + '</div>';
   }
+  /* _FIRMA_EMISOR_V1 (10-nov): firma SOLO quien emite el informe (Joel, Lucia o Eduardo; otro usuario, con su nombre) */
+  function firmaEmisor() {
+    var s = ses() || {}, u = String(s.user || '').toLowerCase();
+    var M = { jtimoteo: ['Joel Angel Timoteo Gonza', 'Coordinador de Relaciones Laborales'], lcastillo: ['Lucia Gabriela Castillo Celi', 'Responsable de capacitaciones de ética social'], lcovenas: ['Luis Eduardo Coveñas Chero', 'Subgerente de Personas'] };
+    var f = M[u] || [s.nom || u, 'Gestión Humana'];
+    return '<div class="x-firmas"><div><div class="x-l">' + esc(f[0]) + '</div><small>' + esc(f[1]) + '</small></div></div>';
+  }
   function montar(el, html) { if (!el) return; try { var sh = el.shadowRoot || el.attachShadow({ mode: 'open' }); sh.innerHTML = html; } catch (e) { el.innerHTML = html; } }
   function estilosDoc() {
     var B = '1px solid #000';
@@ -355,7 +360,7 @@
       '.x-cards{display:grid;grid-template-columns:repeat(3,1fr);border-top:' + B + ';border-left:' + B + '}.x-cards>div{border-right:' + B + ';border-bottom:' + B + ';padding:5px 8px;break-inside:avoid}.x-cards span{display:block;font-weight:700}.x-cards b{display:block;font-size:15px;line-height:1.3;color:#000!important}.x-cards small{font-size:11px;color:#333}' +
       '.x-t{width:100%;border-collapse:collapse;font-size:12px}.x-t th{background:#d9d9d9;color:#000;font-weight:700;padding:3px 5px;border:' + B + ';text-align:center!important}.x-t td{padding:3px 5px;border:' + B + '}.x-t tr{break-inside:avoid}' +
       '.x-chip{display:inline-block;padding:0 6px;border-radius:3px;font-weight:700;font-size:12px;white-space:nowrap}.x-p{margin:5px 0 6px;text-align:justify}.x-ul{margin:0;padding-left:30px}.x-ul li{margin-bottom:3px;text-align:justify}' +
-      '.x-firmas{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:54px;text-align:center;break-inside:avoid}.x-l{border-top:' + B + ';padding-top:4px;font-weight:400}.x-firmas small{font-size:12px;color:#000}' +
+      '.x-firmas{display:flex;justify-content:center;margin-top:60px;text-align:center;break-inside:avoid}.x-firmas>div{width:300px}.x-l{border-top:' + B + ';padding-top:4px;font-weight:400}.x-firmas small{font-size:12px;color:#000}' +
       '.x-pie{display:flex;justify-content:space-between;gap:10px;margin-top:18px;border-top:1px solid #999;padding-top:5px;color:#555;font-size:10px}</style>';
   }
   function imprimirHtml(html, t) {
@@ -398,7 +403,7 @@
   }
 
   /* compartidos con 20-informe-capacitaciones-v1.js (_INFORME_CAP_V1): misma ventana, mismo modelo de documento */
-  window.etiCentroInformes = { abrir: abrirCentro, expediente: abrirExpediente, _documento: documento, _modal: modal, _estilosDoc: estilosDoc, _cabecera: cabecera, _montar: montar, _ab: abTema, _leyenda: leyendaTemas, _logo: logo, _imprimir: imprimirHtml, version: 2 };
+  window.etiCentroInformes = { abrir: abrirCentro, expediente: abrirExpediente, _documento: documento, _modal: modal, _estilosDoc: estilosDoc, _cabecera: cabecera, _montar: montar, _firma: firmaEmisor, _ab: abTema, _leyenda: leyendaTemas, _logo: logo, _imprimir: imprimirHtml, version: 2 };
   setInterval(function () { menu(); autoAbrir(); }, 1500); setTimeout(menu, 700);
   console.log('[_CENTRO_INFORMES_V1] activo' + (CLASICO ? ' (menú clásico)' : ''));
 })();
