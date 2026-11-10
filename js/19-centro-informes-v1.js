@@ -8,6 +8,7 @@
    · EXPEDIENTE DE AUDITORIA POR SECTOR (Joel, Lucia, administradores): usa EXACTAMENTE los datos y
      calculos del Informe de cierre de ciclo (etiInformeCicloUI.datos/armar/conclusiones), todo leido
      de Supabase (eti/consultar). Vista en pantalla, Imprimir / PDF (A4) y Excel. Solo lee: no cambia nada.
+   v9 (10-nov): _DOC_GH03_V1 · documentos con el modelo INF-SC-GH-03, montados aislados de los estilos de la pagina.
    v8 (10-nov): _DOC_FORMATO_V2 · formato del documento protegido de los estilos de la pagina; temas abreviados con leyenda.
    v7 (10-nov): _EXP_RANGO_V1 · expediente por un ciclo, rango de ciclos o todo el año; cada cuadro vacio explica el motivo.
    v6 (10-nov): tarjeta del Informe de Evaluaciones ETI (21-informe-evaluaciones-v1.js).
@@ -260,7 +261,7 @@
       var o = { modo: 'sector', ciclo: c, emp: empDe(sector), sector: sector }, R = await correr(o), K = etiInformeCicloUI.conclusiones(o, R);
       ULT = { o: o, R: R, K: K, html: documento(o, R, K) };
       out.innerHTML = '<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.8rem"><button class="ci-b" id="xp-atras">← Sectores</button><button class="ci-b r" id="xp-pdf">🖨 Imprimir / PDF</button><button class="ci-b p" id="xp-xls">📊 Excel del sector</button></div>' +
-        '<div class="ci-doc"><div style="max-width:794px;margin:0 auto">' + ULT.html + '</div></div>';
+        '<div class="ci-doc"><div id="ci-docm" style="max-width:794px;margin:0 auto"></div></div>'; window.etiCentroInformes._montar(document.getElementById('ci-docm'), ULT.html);
       $('xp-atras').onclick = resumen; $('xp-pdf').onclick = imprimir; $('xp-xls').onclick = excel;
     } catch (e) { console.error('[_CENTRO_INFORMES_V1]', e); out.innerHTML = '<div class="ci-vacio">No se pudo armar el expediente: ' + esc(e.message) + '</div>'; }
   }
@@ -269,7 +270,7 @@
   function documento(o, R, K) {
     var ev = R.ev, s = ses() || {}, emp = o.emp === 'RAPEL' ? 'Sociedad Agrícola Rapel S.A.C.' : 'Sociedad Exportadora Verfrut S.A.C.';
     var T = ev.temas, n = 0;
-    var h2 = function (t) { n++; return '<h2 class="x-h2">' + n + '. ' + t + '</h2>'; };
+    var h2 = function (t) { n++; return '<h2 class="x-h2">' + ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI'][n - 1] + '.&nbsp;&nbsp;' + t + ':</h2>'; };
     var VAC = '';   /* motivo que se muestra cuando un cuadro no tiene datos */
     var tabla = function (heads, filas, alinea) { return '<table class="x-t"><thead><tr>' + heads.map(function (x, i) { return '<th style="text-align:' + ((alinea || [])[i] || 'left') + '">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' +
       (filas.length ? filas.map(function (f) { return '<tr>' + f.map(function (x, i) { return '<td style="text-align:' + ((alinea || [])[i] || 'left') + '">' + x + '</td>'; }).join('') + '</tr>'; }).join('') : '<tr><td colspan="' + heads.length + '" style="text-align:center;color:#64748B">' + (VAC || 'Sin registros en el periodo') + '</td></tr>') + '</tbody></table>'; };
@@ -284,8 +285,7 @@
       ['Satisfacción del personal', R.sat && R.sat.n ? Math.round(R.sat.gen) + '/100' : '—', R.sat ? R.sat.n + ' respuestas (QR)' : 'sin encuesta', '#0b2a6f']];
     var firmas = [{ nom: R.supervisores[0] || 'Supervisor(a) de Gestión Humana', cargo: 'Supervisor(a) de Gestión Humana · ' + o.sector }, COORD];
     var x = '';
-    x += '<div class="x-hd"><div class="x-logo">' + (logo() ? '<img src="' + logo() + '" alt="Unifrutti">' : '') + '</div><div class="x-tit"><b>EXPEDIENTE DE AUDITORÍA ETI · SECTOR ' + esc(String(o.sector).toUpperCase()) + '</b><small>' + esc(emp) + ' · ' + esc(o.ciclo.nom) + '</small></div>' +
-      '<div class="x-cod"><div>Código: <b>Por asignar</b></div><div>Versión N.º 0.0</div><div>Emitido: <b>' + fF(hoy()) + '</b></div></div></div>';
+    x += cabecera(emp, 'EXPEDIENTE DE AUDITORÍA ETI · SECTOR ' + String(o.sector).toUpperCase(), o.ciclo.nom + ' · emitido el ' + fF(hoy()));
     x += h2('Generalidades') + '<table class="x-kv"><tbody>' + [['Empresa', emp], ['Sector', o.sector], ['Responsable(s)', R.supervisores.join(' · ') || '—'], ['Periodo', esc(o.ciclo.nom) + ' · ' + fF(o.ciclo.desde) + ' al ' + fF(o.ciclo.hasta)],
       ['Tema', 'CAP-SC-10 · Legislación laboral, mecanismo de quejas y sugerencias, hostigamiento sexual, código de conducta, medioambiente, ética empresarial'],
       ['Fuente de datos', 'Programación ETI, Capacitaciones ETI, Evaluaciones ETI (QR y manual), alertas de reforzamiento y encuesta de satisfacción · Supabase'],
@@ -325,7 +325,7 @@
     x += h2('Conclusiones') + '<ul class="x-ul">' + K.lista.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul>' +
       h2('Decisión de reforzamiento') + '<ul class="x-ul">' + String(K.decision || '').split('\n').filter(Boolean).map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul>' +
       '<p class="x-p"><b>Documentos del expediente:</b> Informes INF-SC-GH-03 de cada sesión (modelo oficial), registro de asistencia y base de datos en Excel del sector.</p>';
-    x += '<div class="x-firmas">' + firmas.map(function (f) { return '<div><div class="x-l">' + esc(f.nom) + '</div><small>' + esc(f.cargo) + '</small></div>'; }).join('') + '</div>';
+    x += '<p class="x-p">Es todo en cuanto tengo que informar.</p><div class="x-firmas">' + firmas.map(function (f) { return '<div><div class="x-l">' + esc(f.nom) + '</div><small>' + esc(f.cargo) + '</small></div>'; }).join('') + '</div>';
     x += '<div class="x-pie"><span>Gestión Humana · Relaciones Laborales · Unifrutti Perú</span><span>Generado por el sistema desde Supabase · ' + new Date().toLocaleString('es-PE') + '</span></div>';
     return '<div class="x-doc">' + estilosDoc() + x + '</div>';
   }
@@ -333,23 +333,30 @@
   function abTema(nom) { var u = String(nom || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     return /LEGIS/.test(u) ? 'Legis.' : /BIENEST/.test(u) ? 'Bienest.' : /SUSTENT/.test(u) ? 'Sust.' : /ETICA/.test(u) ? 'Ética' : /SEGURIDAD|SST/.test(u) ? 'SST' : /AMBIENT/.test(u) ? 'Medioamb.' : esc(String(nom || '').slice(0, 10)); }
   function leyendaTemas(T) { return T.length ? '<p class="x-p" style="color:#64748b;margin-top:4px">' + T.map(function (t) { return '<b>' + abTema(t.nom) + '</b> ' + esc(t.nom); }).join(' · ') + '</p>' : ''; }
+  /* _DOC_GH03_V1 (10-nov): el documento sigue el MODELO INF-SC-GH-03 (cabecera, secciones en romanos, cuadros de borde negro, Arial).
+     En pantalla se monta aislado (Shadow DOM) para que los estilos de la pagina no lo alteren. */
+  function cabecera(razon, titulo, sub) {
+    var l = logo();
+    return '<div class="x-hd"><div class="x-logo">' + (l ? '<img src="' + l + '" alt="Unifrutti">' : '') + '</div><div class="x-rz">' + esc(String(razon).toUpperCase()) + '</div><div class="x-c1">INF-SC-GH-03</div>' +
+      '<div class="x-tit">INFORME DE CAPACITACIONES DE BUENAS PRÁCTICAS SOCIALES</div><div class="x-c2">Versión N° 0.0</div><div class="x-c3"><b>Última revisión:</b><br>24/03/2026</div></div>' +
+      '<div class="x-sub"><b>' + esc(titulo) + '</b><br>' + esc(sub) + '</div>';
+  }
+  function montar(el, html) { if (!el) return; try { var sh = el.shadowRoot || el.attachShadow({ mode: 'open' }); sh.innerHTML = html; } catch (e) { el.innerHTML = html; } }
   function estilosDoc() {
-    return '<style>.x-doc{font-family:Inter,Arial,sans-serif;color:#0f172a;font-size:12px;line-height:1.45}.x-doc *{box-sizing:border-box}' +
-      '.x-hd{display:grid;grid-template-columns:96px 1fr 170px;border:1px solid #0f172a}.x-logo{display:flex;align-items:center;justify-content:center;border-right:1px solid #0f172a;padding:6px}.x-logo img{height:56px;width:auto}' +
-      '.x-tit{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:8px 10px;border-right:1px solid #0f172a}.x-tit b{font-size:14px}.x-tit small{color:#475569;font-size:12px;margin-top:2px}' +
-      '.x-cod div{padding:4px 8px;border-bottom:1px solid #0f172a;font-size:12px}.x-cod div:last-child{border-bottom:0}' +
-      '.x-h2{margin:14px 0 6px;font-size:13px;font-weight:800;color:#0b2a6f;text-transform:uppercase;letter-spacing:.4px;border-bottom:2px solid #0b2a6f;padding-bottom:3px;break-after:avoid}' +
-      '.x-kv{width:100%;border-collapse:collapse;border:1px solid #cbd5e1;font-size:12px}.x-kv th{width:150px;background:#f1f5f9;text-align:left;padding:4px 8px;border-top:1px solid #cbd5e1}.x-kv td{padding:4px 8px;border-top:1px solid #cbd5e1}' +
-      '.x-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.x-cards>div{border:1px solid #cbd5e1;border-top:4px solid #0b2a6f;border-radius:6px;padding:7px 9px;break-inside:avoid}.x-cards span{display:block;font-size:12px;color:#475569;font-weight:600}.x-cards b{display:block;font-size:20px;line-height:1.2}.x-cards small{font-size:12px;color:#475569}' +
-      '.x-t{width:100%;border-collapse:collapse;border:1px solid #0f172a;font-size:12px}.x-t th{background:#0b2a6f;color:#fff;font-weight:700;padding:4px 6px}.x-t td{padding:4px 6px;border-top:1px solid #cbd5e1}.x-t tbody tr:nth-child(even) td{background:#f8fafc}.x-t tr{break-inside:avoid}' +
-      '.x-chip{display:inline-block;padding:1px 7px;border-radius:999px;font-weight:700;font-size:12px;white-space:nowrap}.x-p{margin:4px 0 6px}.x-ul{margin:0;padding-left:18px}.x-ul li{margin-bottom:3px}' +
-      '.x-firmas{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:40px;text-align:center;break-inside:avoid}.x-l{border-top:1px solid #0f172a;padding-top:4px;font-weight:700}.x-firmas small{color:#475569}' +
-      '.x-pie{display:flex;justify-content:space-between;gap:10px;margin-top:18px;border-top:1px solid #cbd5e1;padding-top:6px;color:#475569;font-size:12px}' +
-      /* _DOC_FORMATO_V2: el documento conserva su formato aunque la pagina que lo muestra tenga estilos propios para tablas */
-      '.x-doc table{margin:0;table-layout:auto}.x-doc table.x-t th{background:#0b2a6f!important;color:#fff!important;font-family:Inter,Arial,sans-serif!important;font-size:12px!important;font-weight:700!important;text-transform:none!important;letter-spacing:0!important;padding:4px 6px!important;border:0!important;white-space:normal!important;line-height:1.3!important}' +
-      '.x-doc table.x-t td{font-family:Inter,Arial,sans-serif!important;font-size:12px!important;padding:4px 6px!important;color:#0f172a;border-left:0!important;border-right:0!important;border-bottom:0!important;line-height:1.35!important;text-transform:none!important}' +
-      '.x-doc table.x-kv th{background:#f1f5f9!important;color:#0f172a!important;font-family:Inter,Arial,sans-serif!important;font-size:12px!important;font-weight:700!important;text-transform:none!important;letter-spacing:0!important;padding:4px 8px!important}.x-doc table.x-kv td{font-family:Inter,Arial,sans-serif!important;font-size:12px!important;padding:4px 8px!important}' +
-      '.x-doc h2.x-h2{font-family:Inter,Arial,sans-serif!important;font-size:13px!important}</style>';
+    var B = '1px solid #000';
+    return '<style>.x-doc{font-family:Arial,Helvetica,sans-serif;color:#000;font-size:12px;line-height:1.45;background:#fff}.x-doc *{box-sizing:border-box}' +
+      '.x-hd{display:grid;grid-template-columns:112px 1fr 128px;border:' + B + ';font-size:12px}.x-logo{grid-row:1 / span 3;display:flex;align-items:center;justify-content:center;border-right:' + B + ';padding:4px}.x-logo img{height:64px;width:auto}' +
+      '.x-rz{text-align:center;font-weight:700;padding:3px;border-right:' + B + ';border-bottom:' + B + '}.x-c1{text-align:center;font-weight:700;padding:3px;border-bottom:' + B + '}' +
+      '.x-tit{grid-row:2 / span 2;grid-column:2;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:700;padding:4px 10px;border-right:' + B + '}' +
+      '.x-c2{text-align:center;font-weight:700;padding:3px;border-bottom:' + B + '}.x-c3{text-align:center;padding:3px}' +
+      '.x-sub{text-align:center;margin:12px 0 4px;font-size:12px}.x-sub b{font-size:13px}' +
+      '.x-h2{margin:16px 0 8px;font-size:12px;font-weight:700;color:#000;text-transform:uppercase;break-after:avoid}' +
+      '.x-kv{border-collapse:collapse;margin-left:14px;font-size:12px}.x-kv th{width:150px;text-align:left;vertical-align:top;font-weight:700;padding:2px 8px 2px 0}.x-kv th:after{content:":"}.x-kv td{padding:2px 0;text-align:justify}' +
+      '.x-cards{display:grid;grid-template-columns:repeat(3,1fr);border-top:' + B + ';border-left:' + B + '}.x-cards>div{border-right:' + B + ';border-bottom:' + B + ';padding:5px 8px;break-inside:avoid}.x-cards span{display:block;font-weight:700}.x-cards b{display:block;font-size:15px;line-height:1.3;color:#000!important}.x-cards small{font-size:11px;color:#333}' +
+      '.x-t{width:100%;border-collapse:collapse;font-size:12px}.x-t th{background:#d9d9d9;color:#000;font-weight:700;padding:3px 5px;border:' + B + ';text-align:center!important}.x-t td{padding:3px 5px;border:' + B + '}.x-t tr{break-inside:avoid}' +
+      '.x-chip{display:inline-block;padding:0 6px;border-radius:3px;font-weight:700;font-size:12px;white-space:nowrap}.x-p{margin:5px 0 6px;text-align:justify}.x-ul{margin:0;padding-left:30px}.x-ul li{margin-bottom:3px;text-align:justify}' +
+      '.x-firmas{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:54px;text-align:center;break-inside:avoid}.x-l{border-top:' + B + ';padding-top:4px;font-weight:400}.x-firmas small{font-size:12px;color:#000}' +
+      '.x-pie{display:flex;justify-content:space-between;gap:10px;margin-top:18px;border-top:1px solid #999;padding-top:5px;color:#555;font-size:10px}</style>';
   }
   function imprimirHtml(html, t) {
     var w = window.open('', '_blank'); if (!w) { aviso('Permite las ventanas emergentes para imprimir', 'e'); return; }
@@ -391,7 +398,7 @@
   }
 
   /* compartidos con 20-informe-capacitaciones-v1.js (_INFORME_CAP_V1): misma ventana, mismo modelo de documento */
-  window.etiCentroInformes = { abrir: abrirCentro, expediente: abrirExpediente, _documento: documento, _modal: modal, _estilosDoc: estilosDoc, _ab: abTema, _leyenda: leyendaTemas, _logo: logo, _imprimir: imprimirHtml, version: 2 };
+  window.etiCentroInformes = { abrir: abrirCentro, expediente: abrirExpediente, _documento: documento, _modal: modal, _estilosDoc: estilosDoc, _cabecera: cabecera, _montar: montar, _ab: abTema, _leyenda: leyendaTemas, _logo: logo, _imprimir: imprimirHtml, version: 2 };
   setInterval(function () { menu(); autoAbrir(); }, 1500); setTimeout(menu, 700);
   console.log('[_CENTRO_INFORMES_V1] activo' + (CLASICO ? ' (menú clásico)' : ''));
 })();

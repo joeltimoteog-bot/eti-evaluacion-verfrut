@@ -121,7 +121,7 @@
   function documento(P, alc, R, K) {
     var CI = window.etiCentroInformes || {}, s = ses() || {}, n = 0, emp = alc.sector ? empDe(alc.sector) : alc.emp;
     var razon = emp === 'RAPEL' ? 'Sociedad Agrícola Rapel S.A.C.' : emp === 'VERFRUT' ? 'Sociedad Exportadora Verfrut S.A.C.' : 'Sociedad Agrícola Rapel S.A.C. · Sociedad Exportadora Verfrut S.A.C.';
-    var h2 = function (t) { n++; return '<h2 class="x-h2">' + n + '. ' + t + '</h2>'; };
+    var h2 = function (t) { n++; return '<h2 class="x-h2">' + ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI'][n - 1] + '.&nbsp;&nbsp;' + t + ':</h2>'; };
     var tabla = function (heads, filas, al, total) { return '<table class="x-t"><thead><tr>' + heads.map(function (x, i) { return '<th style="text-align:' + ((al || [])[i] || 'left') + '">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' +
       (filas.length ? filas.map(function (f) { return '<tr>' + f.map(function (x, i) { return '<td style="text-align:' + ((al || [])[i] || 'left') + '">' + x + '</td>'; }).join('') + '</tr>'; }).join('') : '<tr><td colspan="' + heads.length + '" style="text-align:center;color:#64748B">Sin registros en el periodo</td></tr>') +
       (total && filas.length ? '<tr>' + total.map(function (x, i) { return '<td style="text-align:' + ((al || [])[i] || 'left') + ';background:#e2e8f0;font-weight:800">' + x + '</td>'; }).join('') + '</tr>' : '') + '</tbody></table>'; };
@@ -134,8 +134,7 @@
       ['Satisfacción del personal', R.sat && R.sat.n ? Math.round(R.sat.gen) + '/100' : '—', R.sat ? R.sat.n + ' respuestas (QR)' : 'sin encuesta', '#0b2a6f'],
       [alc.sector ? 'Fechas por venir' : 'Sectores en meta', alc.sector ? String(c.fut) : enMeta + ' de ' + conPct, alc.sector ? 'programadas dentro del periodo' : 'cumplimiento ≥ 95 %', '#0b2a6f']];
     var logo = CI._logo ? CI._logo() : '';
-    var x = '<div class="x-hd"><div class="x-logo">' + (logo ? '<img src="' + logo + '" alt="Unifrutti">' : '') + '</div><div class="x-tit"><b>' + esc(titulo) + '</b><small>' + esc(razon) + ' · ' + esc(P.nom) + '</small></div>' +
-      '<div class="x-cod"><div>Código: <b>Por asignar</b></div><div>Versión N.º 0.0</div><div>Emitido: <b>' + fF(hoy()) + '</b></div></div></div>';
+    var x = (CI._cabecera ? CI._cabecera(razon, titulo, P.nom + ' · emitido el ' + fF(hoy())) : '');
     x += h2('Generalidades') + '<table class="x-kv"><tbody>' + [['Periodo', esc(P.nom) + ' · ' + fF(P.desde) + ' al ' + fF(P.hasta)], ['Empresa', esc(razon)],
       ['Alcance', alc.sector ? 'Sector ' + esc(alc.sector) + (R.sectores[0] && R.sectores[0].sups.length ? ' · ' + esc(R.sectores[0].sups.join(' · ')) : '') : R.sectores.length + ' sectores'],
       ['Tema', 'Capacitaciones ETI · CAP-SC-10 Ética social e ingresos masivos'],
@@ -165,7 +164,7 @@
       h2('Acciones de mejora') + '<ul class="x-ul">' + K.acciones.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul>';
     var firmas = alc.sector ? [{ nom: (R.sectores[0] && R.sectores[0].sups[0]) || 'Supervisor(a) de Gestión Humana', cargo: 'Supervisor(a) de Gestión Humana · ' + alc.sector }, COORD]
       : [COORD, { nom: 'Luis Eduardo Coveñas Chero', cargo: 'Subgerente de Personas' }];
-    x += '<div class="x-firmas">' + firmas.map(function (f) { return '<div><div class="x-l">' + esc(f.nom) + '</div><small>' + esc(f.cargo) + '</small></div>'; }).join('') + '</div>';
+    x += '<p class="x-p">Es todo en cuanto tengo que informar.</p><div class="x-firmas">' + firmas.map(function (f) { return '<div><div class="x-l">' + esc(f.nom) + '</div><small>' + esc(f.cargo) + '</small></div>'; }).join('') + '</div>';
     x += '<div class="x-pie"><span>Gestión Humana · Relaciones Laborales · Unifrutti Perú</span><span>Generado por el sistema desde Supabase · ' + new Date().toLocaleString('es-PE') + '</span></div>';
     return '<div class="x-doc">' + (CI._estilosDoc ? CI._estilosDoc() : '') + x + '</div>';
   }
@@ -201,7 +200,7 @@
       if (!R.tot.sesiones && !R.cumpl.prog) { out.innerHTML = '<div class="ci-vacio">No hay capacitaciones programadas ni registradas en ' + esc(P.nom) + (alc.sector ? ' para ' + esc(alc.sector) : '') + '.</div>'; return; }
       ULT = { P: P, alc: alc, R: R, K: K, html: documento(P, alc, R, K) };
       out.innerHTML = '<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.8rem"><button class="ci-b r" id="ic-pdf">🖨 Imprimir / PDF</button><button class="ci-b p" id="ic-xls">📊 Excel</button></div>' +
-        '<div class="ci-doc"><div style="max-width:794px;margin:0 auto">' + ULT.html + '</div></div>';
+        '<div class="ci-doc"><div id="ci-docm" style="max-width:794px;margin:0 auto"></div></div>'; window.etiCentroInformes._montar(document.getElementById('ci-docm'), ULT.html);
       $('ic-pdf').onclick = function () { window.etiCentroInformes._imprimir(ULT.html, nombre()); };
       $('ic-xls').onclick = excel;
     } catch (e) { console.error('[_INFORME_CAP_V1]', e); out.innerHTML = '<div class="ci-vacio">No se pudo preparar el informe: ' + esc(e.message) + '</div>'; }

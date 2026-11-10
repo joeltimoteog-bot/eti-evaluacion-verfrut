@@ -72,7 +72,7 @@
   function documento(P, alc, R) {
     var CI = window.etiCentroInformes || {}, s = ses() || {}, n = 0, ev = R.ev, T = ev.temas, emp = alc.sector ? empDe(alc.sector) : alc.emp;
     var razon = emp === 'RAPEL' ? 'Sociedad Agrícola Rapel S.A.C.' : emp === 'VERFRUT' ? 'Sociedad Exportadora Verfrut S.A.C.' : 'Sociedad Agrícola Rapel S.A.C. · Sociedad Exportadora Verfrut S.A.C.';
-    var h2 = function (t) { n++; return '<h2 class="x-h2">' + n + '. ' + t + '</h2>'; };
+    var h2 = function (t) { n++; return '<h2 class="x-h2">' + ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI'][n - 1] + '.&nbsp;&nbsp;' + t + ':</h2>'; };
     var ab = CI._ab || function (z) { return esc(z); }, ley = CI._leyenda ? CI._leyenda(T) : '';
     var tabla = function (heads, filas, al, total) { return '<table class="x-t"><thead><tr>' + heads.map(function (x, i) { return '<th style="text-align:' + ((al || [])[i] || 'left') + '">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' +
       (filas.length ? filas.map(function (f) { return '<tr>' + f.map(function (x, i) { return '<td style="text-align:' + ((al || [])[i] || 'left') + '">' + x + '</td>'; }).join('') + '</tr>'; }).join('') : '<tr><td colspan="' + heads.length + '" style="text-align:center;color:#64748B">Sin registros en el periodo</td></tr>') +
@@ -86,8 +86,7 @@
       ['Alertas de reforzamiento', String(R.alertas.length), R.abiertas + ' por cerrar · ' + (R.alertas.length - R.abiertas) + ' superadas', R.abiertas ? '#b91c1c' : '#15803d'],
       alc.sector ? ['Evaluados aprobados', pc(R.aprPct), 'resultado individual ≥ 70 % (donde hay detalle)', R.aprPct == null ? '#64748b' : colP(R.aprPct)[1]] : ['Sectores que aprueban', aprS + ' de ' + ev.sectores.length, 'resultado del sector ≥ 70 %', '#0b2a6f']];
     var logo = CI._logo ? CI._logo() : '';
-    var x = '<div class="x-hd"><div class="x-logo">' + (logo ? '<img src="' + logo + '" alt="Unifrutti">' : '') + '</div><div class="x-tit"><b>' + esc(titulo) + '</b><small>' + esc(razon) + ' · ' + esc(P.nom) + '</small></div>' +
-      '<div class="x-cod"><div>Código: <b>Por asignar</b></div><div>Versión N.º 0.0</div><div>Emitido: <b>' + fF(hoy()) + '</b></div></div></div>';
+    var x = (CI._cabecera ? CI._cabecera(razon, titulo, P.nom + ' · emitido el ' + fF(hoy())) : '');
     x += h2('Generalidades') + '<table class="x-kv"><tbody>' + [['Periodo', esc(P.nom) + ' · ' + fF(P.desde) + ' al ' + fF(P.hasta)], ['Empresa', esc(razon)],
       ['Alcance', alc.sector ? 'Sector ' + esc(alc.sector) + (R.sups.length ? ' · ' + esc(R.sups.join(' · ')) : '') : ev.sectores.length + ' sectores evaluados'],
       ['Instrumento', 'Check list de conocimiento por temas ponderados · aprobación ≥ 70 % · una ruta queda observada si algún tema está bajo 70 %'],
@@ -115,7 +114,7 @@
       h2('Acciones de mejora') + '<ul class="x-ul">' + R.acciones.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul>';
     var firmas = alc.sector ? [{ nom: R.sups[0] || 'Supervisor(a) de Gestión Humana', cargo: 'Supervisor(a) de Gestión Humana · ' + alc.sector }, COORD]
       : [COORD, { nom: 'Lucia Gabriela Castillo Celi', cargo: 'Responsable de capacitaciones de ética social' }];
-    x += '<div class="x-firmas">' + firmas.map(function (f) { return '<div><div class="x-l">' + esc(f.nom) + '</div><small>' + esc(f.cargo) + '</small></div>'; }).join('') + '</div>';
+    x += '<p class="x-p">Es todo en cuanto tengo que informar.</p><div class="x-firmas">' + firmas.map(function (f) { return '<div><div class="x-l">' + esc(f.nom) + '</div><small>' + esc(f.cargo) + '</small></div>'; }).join('') + '</div>';
     x += '<div class="x-pie"><span>Gestión Humana · Relaciones Laborales · Unifrutti Perú</span><span>Generado por el sistema desde Supabase · ' + new Date().toLocaleString('es-PE') + '</span></div>';
     return '<div class="x-doc">' + (CI._estilosDoc ? CI._estilosDoc() : '') + x + '</div>';
   }
@@ -157,7 +156,7 @@
       if (!R.ev.n) { out.innerHTML = '<div class="ci-vacio">No hay evaluaciones registradas en ' + esc(P.nom) + (alc.sector ? ' para ' + esc(alc.sector) : '') + '.</div>'; return; }
       ULT = { P: P, alc: alc, R: R, html: documento(P, alc, R) };
       out.innerHTML = '<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.8rem"><button class="ci-b r" id="ie-pdf">🖨 Imprimir / PDF</button><button class="ci-b p" id="ie-xls">📊 Excel</button></div>' +
-        '<div class="ci-doc"><div style="max-width:794px;margin:0 auto">' + ULT.html + '</div></div>';
+        '<div class="ci-doc"><div id="ci-docm" style="max-width:794px;margin:0 auto"></div></div>'; window.etiCentroInformes._montar(document.getElementById('ci-docm'), ULT.html);
       $('ie-pdf').onclick = function () { window.etiCentroInformes._imprimir(ULT.html, nombre()); };
       $('ie-xls').onclick = excel;
     } catch (e) { console.error('[_INFORME_EVAL_V1]', e); out.innerHTML = '<div class="ci-vacio">No se pudo preparar el informe: ' + esc(e.message) + '</div>'; }
