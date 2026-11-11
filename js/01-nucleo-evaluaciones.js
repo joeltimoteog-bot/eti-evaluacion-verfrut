@@ -831,7 +831,7 @@ function togglePwd(){
       Cuando el pase del servidor este probado, poner ETI_ACEPTA_PASE_ANTIGUO=false.
    ═══════════════════════════════════════════════════════════════════════════ */
 const ETI_SSO_URL = 'https://rl-fn-verfrut.azurewebsites.net/api/auth/sso';
-const ETI_ACEPTA_PASE_ANTIGUO = true;
+const ETI_ACEPTA_PASE_ANTIGUO = false;   /* _SSO_SOLO_SERVIDOR_V1 (10-nov-2026): solo vale el pase firmado por el servidor (sso2). El pase antiguo se firmaba con un secreto visible en el navegador y permitia fabricar un pase a nombre de otro usuario. */
 async function _ssoEntrar(){
   if(window._ssoHecho) return false;
   const h = location.hash || '';
@@ -856,7 +856,7 @@ async function _ssoEntrar(){
   // 0) _SSO_RAPIDO_V1: supervisor con pase antiguo valido → entra AL INSTANTE (sin esperar al servidor)
   if(m && ETI_ACEPTA_PASE_ANTIGUO){
     try{
-      const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(m[1]+'|RL-SSO-VERFRUT-2026'));
+      const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(m[1]+'|RETIRADO'));
       const firma=Array.from(new Uint8Array(buf)).map(x=>x.toString(16).padStart(2,'0')).join('');
       const d=(firma===m[2])?JSON.parse(decodeURIComponent(escape(atob(m[1])))):null;
       if(d&&d.u&&d.exp&&Date.now()<=Number(d.exp)){
@@ -896,7 +896,7 @@ async function _ssoEntrar(){
   // 2) Pase antiguo (transicion): solo supervisores
   if(m && ETI_ACEPTA_PASE_ANTIGUO){
     try{
-      const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(m[1]+'|RL-SSO-VERFRUT-2026'));
+      const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(m[1]+'|RETIRADO'));
       const firma=Array.from(new Uint8Array(buf)).map(x=>x.toString(16).padStart(2,'0')).join('');
       if(firma!==m[2]) return false;                                     // pase adulterado
       const d=JSON.parse(decodeURIComponent(escape(atob(m[1]))));
