@@ -113,7 +113,7 @@
     x += h2('Conclusiones') + '<ul class="x-ul">' + R.lista.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul>' +
       h2('Acciones de mejora') + '<ul class="x-ul">' + R.acciones.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul>';
     var firmas = alc.sector ? [{ nom: R.sups[0] || 'Supervisor(a) de Gestión Humana', cargo: 'Supervisor(a) de Gestión Humana · ' + alc.sector }, COORD]
-      : [COORD, { nom: 'Lucia Gabriela Castillo Celi', cargo: 'Responsable de capacitaciones de ética social' }];
+      : [COORD, { nom: 'Lucia Gabriela Castillo Celi', cargo: 'Analista de Gestión Humana' }];
     x += '<p class="x-p">Es todo en cuanto tengo que informar.</p>' + (CI._firma ? CI._firma() : '');
     x += '<div class="x-pie"><span>Gestión Humana · Relaciones Laborales · Unifrutti Perú</span><span>Generado por el sistema desde Supabase · ' + new Date().toLocaleString('es-PE') + '</span></div>';
     return '<div class="x-doc">' + (CI._estilosDoc ? CI._estilosDoc() : '') + x + '</div>';

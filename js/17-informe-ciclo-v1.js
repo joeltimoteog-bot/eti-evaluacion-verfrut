@@ -13,7 +13,7 @@
   if (window.etiInformeCicloUI) return;
   var API = 'https://exdjzbfinppzatjyimxn.supabase.co/functions/v1/api/', REG = '?forceFunctionRegion=sa-east-1';
   var EDITORES = ['jtimoteo', 'lcastillo'], MIN = 0.70;
-  var FIRMA_LUCIA = { nom: 'Lucia Gabriela Castillo Celi', cargo: 'Responsable de capacitaciones de ética social' };
+  var FIRMA_LUCIA = { nom: 'Lucia Gabriela Castillo Celi', cargo: 'Analista de Gestión Humana' };
   var FIRMAS_GEN = [{ nom: 'Joel Angel Timoteo Gonza', cargo: 'Coordinador de Relaciones Laborales' }, FIRMA_LUCIA, { nom: 'Luis Eduardo Coveñas Chero', cargo: 'Subgerente de personas' }];
   var EST_TXT = { pendiente: 'PENDIENTE', reforzado: 'REFORZADO', reevaluar: 'SIGUE BAJO', superada: 'SUPERADA' };
 

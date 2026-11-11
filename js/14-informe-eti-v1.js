@@ -21,7 +21,7 @@
   /* destinatarios del informe (se pueden completar sin tocar nada mas) */
   var DESTINOS = [
     { nom: 'Joel Angel Timoteo Gonza', cargo: 'Responsable de capacitaciones de ética social · desarrollador del Sistema RR.LL.', correo: 'joel.timoteo@unifrutti.com' },
-    { nom: 'Lucia Gabriela Castillo Celi', cargo: 'Responsable de capacitaciones de ética social', correo: 'lucia.castillo@unifrutti.com' },
+    { nom: 'Lucia Gabriela Castillo Celi', cargo: 'Analista de Gestión Humana', correo: 'lucia.castillo@unifrutti.com' },
     { nom: 'Luis Eduardo Coveñas Chero', cargo: 'Subgerente de personas', correo: 'eduardo.covenas@unifrutti.com' }
   ];
   var MIN_FOTOS = 4, MAX_FOTOS = 6, LADO = 1600, CALIDAD = 0.82;
