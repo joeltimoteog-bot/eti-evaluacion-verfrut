@@ -32,6 +32,9 @@
   var masDias = function (f, n) { var p = f.split('-').map(Number), d = new Date(p[0], p[1] - 1, p[2] + n); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
   function token() { try { return sessionStorage.getItem('eti_token') || ''; } catch (e) { return ''; } }
   function esEditor() { var s = ses(); return !!s && (s.rol === 'admin' || EDITORES.indexOf(String(s.user || '').toLowerCase()) >= 0); }
+  /* _ENCUESTA_SOLO_EDITORES_V1 (13-nov-2026): el QR de la encuesta lo generan solo Joel y Lucia Castillo (eligen al capacitador);
+     el supervisor lo recibe en "Mis QR" y ve sus Resultados. */
+  function puedeGenerar() { var s = ses(); return !!s && EDITORES.indexOf(String(s.user || '').toLowerCase()) >= 0; }
   function post(ruta, cuerpo) {
     var h = { 'Content-Type': 'application/json' }, t = token(); if (t) h.Authorization = 'Bearer ' + t;
     return fetch(API + ruta + REG, { method: 'POST', headers: h, body: JSON.stringify(cuerpo) }).then(function (r) {
@@ -109,10 +112,11 @@
     css(); cerrar();
     M = document.createElement('div'); M.className = 'enc-ov';
     M.innerHTML = '<div class="enc-box" role="dialog" aria-modal="true"><div class="enc-hd"><div><b>😊 Encuesta de satisfacción de la capacitación</b><small>El personal capacitado califica la charla escaneando un QR · anónima · 1 minuto</small></div><button class="enc-b" id="enc-x" aria-label="Cerrar">✕</button></div>' +
-      '<div class="enc-tabs"><button class="enc-tab" data-t="qr">📱 Generar QR</button><button class="enc-tab" data-t="mis">🗂 ' + (esEditor() ? 'QR emitidos' : 'Mis QR') + '</button><button class="enc-tab" data-t="res">📊 Resultados</button></div><div class="enc-bd" id="enc-bd"></div></div>';
+      '<div class="enc-tabs">' + (puedeGenerar() ? '<button class="enc-tab" data-t="qr">📱 Generar QR</button>' : '') + '<button class="enc-tab" data-t="mis">🗂 ' + (esEditor() ? 'QR emitidos' : 'Mis QR') + '</button><button class="enc-tab" data-t="res">📊 Resultados</button></div><div class="enc-bd" id="enc-bd"></div></div>';
     document.body.appendChild(M);
     $('enc-x').onclick = cerrar;
     Array.prototype.forEach.call(M.querySelectorAll('.enc-tab'), function (b) { b.onclick = function () { ir(b.getAttribute('data-t')); }; });
+    if (!puedeGenerar() && (!tab || tab === 'qr')) tab = 'mis';   /* _ENCUESTA_SOLO_EDITORES_V1 */
     ir(tab || 'qr');
   }
   function cerrar() { if (timer) { clearInterval(timer); timer = null; } if (M) { M.remove(); M = null; } }
@@ -124,6 +128,7 @@
 
   /* ── 1) Generar QR ── */
   function formQR() {
+    if (!puedeGenerar()) { ir('mis'); return; }   /* _ENCUESTA_SOLO_EDITORES_V1 */
     var s = ses() || {}, adm = esEditor(), yo = supDe(s.nom);
     var supOps = adm ? sups() : [];
     $('enc-bd').innerHTML = '<div class="enc-grid enc-f">' +
@@ -144,6 +149,7 @@
     $('enc-crear').onclick = crearQR;
   }
   async function crearQR() {
+    if (!puedeGenerar()) { aviso('Solo la Coordinación y la Analista de Gestión Humana generan el QR de la encuesta', 'e'); return; }   /* _ENCUESTA_SOLO_EDITORES_V1 */
     var s = ses() || {}, v = function (id) { return String(($(id) || {}).value || '').trim(); };
     var d = { emp: v('enc-emp'), sup: v('enc-sup'), tema: v('enc-tema'), fecha: v('enc-fecha'), sector: v('enc-sec') };
     if (d.tema.length < 4) { aviso('Escribe el tema de la capacitación', 'e'); $('enc-tema').focus(); return; }
@@ -193,7 +199,7 @@
     } catch (e) { bd.innerHTML = '<div class="enc-vacio">No se pudo cargar: ' + esc(e.message) + '</div>'; return; }
     var n = {}; R.forEach(function (r) { n[r.ses] = (n[r.ses] || 0) + 1; });
     Q.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
-    if (!Q.length) { bd.innerHTML = '<div class="enc-vacio">Aún no hay QR de encuesta. Créalo en <b>📱 Generar QR</b>.</div>'; return; }
+    if (!Q.length) { bd.innerHTML = '<div class="enc-vacio">' + (puedeGenerar() ? 'Aún no hay QR de encuesta. Créalo en <b>📱 Generar QR</b>.' : 'Aún no tienes QR de encuesta asignados. Los genera la Coordinación o la Analista de Gestión Humana y aparecen aquí.') + '</div>'; return; }
     bd.innerHTML = '<div style="overflow-x:auto"><table class="enc-tab2"><thead><tr><th>Fecha</th><th>Tema</th><th>Capacitador</th><th>Sector</th><th>Respuestas</th><th>Estado</th><th></th></tr></thead><tbody>' +
       Q.map(function (q, i) {
         var ab = q.estado === 'abierta' && !(q.expira && Date.now() > q.expira);

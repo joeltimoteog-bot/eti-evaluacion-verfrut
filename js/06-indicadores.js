@@ -126,7 +126,7 @@ async function cargarFilas(desde,hasta,forzar){
   const k=desde+'|'+hasta, c=CACHE.get(k);
   if(!forzar&&c&&Date.now()-c.t<60000) return c;
   let filas,fuente;
-  try{ filas=await desdeAzure(desde,hasta); fuente='Azure SQL'; }
+  try{ filas=await desdeAzure(desde,hasta); fuente='Supabase'; }   /* _FUENTE_SUPABASE_V1 (13-nov-2026): solo la etiqueta */
   catch(e){ console.warn('Indicadores: Azure no disponible, uso Firebase:',e.message); filas=await desdeFirebase(desde,hasta); fuente='Firebase (respaldo)'; }
   const v={filas,fuente,t:Date.now()}; CACHE.set(k,v); return v;
 }

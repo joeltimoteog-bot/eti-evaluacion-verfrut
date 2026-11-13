@@ -35,6 +35,9 @@
   var pc = function (x) { return x == null || isNaN(x) ? '—' : (Math.round(x * 1000) / 10).toFixed(1) + '%'; };
   function esEditor() { var s = ses(); return !!s && (s.rol === 'admin' || EDITORES.indexOf(String(s.user || '').toLowerCase()) >= 0); }
   function esAdmin() { var s = ses(); return !!s && s.rol === 'admin'; }
+  /* _CENTRO_SOLO_EDITORES_V1 (13-nov-2026): el Centro de informes es solo de Joel y Lucia Castillo; los demas usuarios no lo ven
+     (sus informes GH-03 y GH-04 siguen en Mis evaluaciones). */
+  function puedeCentro() { var s = ses(); return !!s && EDITORES.indexOf(String(s.user || '').toLowerCase()) >= 0; }
   function empDe(sec) { try { return window.etiAlertasRef.empDe(sec, '') || ''; } catch (e) { return ''; } }
   function cerrarLateral() { document.body.classList.remove('side-open'); }
 
@@ -70,7 +73,7 @@
   function menu() {
     var nav = $('es-nav'), s = ses(); if (!nav || !s) return;
     var rol = s.rol === 'admin' ? 'adm' : 'sup', grupos = rol === 'adm' ? ORDEN_ADM : ORDEN_SUP;
-    if (!$('ci-menu')) {
+    if (!$('ci-menu') && puedeCentro()) {   /* _CENTRO_SOLO_EDITORES_V1 */
       var b = document.createElement('button'); b.id = 'ci-menu'; b.className = 'es-it'; b.type = 'button';
       b.innerHTML = '<span>📑</span><span>Centro de informes</span>';
       b.onclick = function () { cerrarLateral(); abrirCentro(); };
@@ -80,6 +83,7 @@
     cssMenu();
     document.body.classList.add('eti-ci'); document.body.classList.toggle('ci-adm', rol === 'adm'); document.body.classList.toggle('ci-sup', rol === 'sup');
     grupos.forEach(function (g, gi) {
+      if (!puedeCentro() && g[0] === 'Informes') return;   /* _CENTRO_SOLO_EDITORES_V1: sin titulo "Informes" vacio */
       if (nav.querySelector('.ci-sec[data-r="' + rol + '"][data-g="' + gi + '"]')) return;
       var d = document.createElement('div'); d.className = 'es-sec ci-sec'; d.setAttribute('data-r', rol); d.setAttribute('data-g', gi); d.textContent = g[0];
       nav.appendChild(d);
@@ -151,6 +155,7 @@
     return '<div class="ci-pasos"><b style="color:#475569;margin-right:.3rem">Así se trabaja:</b>' + L.map(function (x, i) { return '<span><i>' + (i + 1) + '</i><b>' + x[0] + '</b> <small style="color:#64748B">' + x[1] + '</small></span>'; }).join('<span class="f">→</span>') + '</div>';
   }
   function abrirCentro() {
+    if (!puedeCentro()) { try { alert('El Centro de informes es solo para la Coordinación de Relaciones Laborales y la Analista de Gestión Humana.'); } catch (e) {} return; }   /* _CENTRO_SOLO_EDITORES_V1 */
     var ed = esEditor(), adm = esAdmin(), c = [];
     if (window._ETI_EN_RL) return abrirCentroRL();   /* _ETI_EN_RL: abierto dentro de Programacion ETI (Sistema RR.LL.) */
     c.push(tarjeta(1, '#0E2A5C', 'Informe Check List · GH-03', 'Informe oficial de cada sesión de evaluación, con fotos. El sistema llena los cuadros.', ed ? 'Supervisor lo emite · administración lo revisa' : 'Tú', 'Al terminar cada evaluación',

@@ -183,9 +183,9 @@ function reporteTxt(F,R,nom){
 function cuadrosHTML(F,R){
   const T=temas(F), G=grupos(F), r1=v=>Math.round(v*10)/10, r2=v=>Math.round(v*100)/100;
   const gt=g=>temas(F.filter(r=>(r.tipo==='empleado'?'E':'O')===(g.tipo==='empleado'?'E':'O')&&(r.sector||'—')===g.sector&&String(r.ruta||'—').toUpperCase()===g.ruta&&String(r.cod||'').toUpperCase()===g.cod));
-  const ab=n=>{const w=n.split(' ').filter(x=>x.length>2);return (w[0]||n).slice(0,8)+'.';};
+  const ab=n=>n;   /* _ENCAB_COMPLETOS_V1 (13-nov-2026): el nombre completo del tema, en dos lineas si hace falta (antes se recortaba a 8 letras: "Legislac.", "Segurida.") */
   /* 1) Resultado por ruta */
-  let t1=`<div class="ptit" style="font-size:.98rem;margin-bottom:.75rem">Resultado por Ruta</div><div style="overflow-x:auto"><table class="rtbl"><thead><tr><th>Cód.</th><th>Ruta / Grupo</th><th>Sector</th><th>Tipo</th><th>Eval.</th>${T.map(s=>`<th title="${esc(s.nom)}">${esc(ab(s.nom))}</th>`).join('')}<th>Resultado</th><th>Estado</th></tr></thead><tbody>`;
+  let t1=`<div class="ptit" style="font-size:.98rem;margin-bottom:.75rem">Resultado por Ruta</div><div style="overflow-x:auto"><table class="rtbl"><thead><tr><th>Cód.</th><th>Ruta / Grupo</th><th>Sector</th><th>Tipo</th><th>Eval.</th>${T.map(s=>`<th title="${esc(s.nom)}" style="white-space:normal;min-width:84px;line-height:1.15;vertical-align:middle">${esc(ab(s.nom))}</th>`).join('')}<th>Resultado</th><th>Estado</th></tr></thead><tbody>`;
   G.forEach(g=>{const Ts=gt(g), rp=g.s/g.n, ok=rp>=0.7;
     t1+=`<tr><td><span class="cpill">${esc(g.cod||'—')}</span></td><td style="font-weight:600">${esc(g.ruta)}</td><td style="font-size:.72rem">${esc(g.sector)}</td><td style="font-size:.7rem">${g.tipo==='empleado'?'Empleado':'Obrero'}</td><td style="text-align:center">${g.n}</td>`+
       T.map(s=>{const x=Ts.find(y=>y.nom===s.nom);const v=x?x.prom:0;return `<td style="text-align:center;font-size:.74rem;color:${v>=0.7?'var(--gdim)':'var(--red)'}">${x?(v*100).toFixed(1)+'%':'—'}</td>`;}).join('')+
