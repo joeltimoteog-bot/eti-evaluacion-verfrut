@@ -617,7 +617,7 @@ if(SESSION) setTimeout(()=>{
 
    Se agrega ademas limite de intentos, que este sistema no tenia.
    ═══════════════════════════════════════════════════════════════════════════ */
-const ETI_LOGIN_URL = 'https://rl-fn-verfrut.azurewebsites.net/api/auth/login';
+const ETI_LOGIN_URL = 'https://exdjzbfinppzatjyimxn.supabase.co/functions/v1/api/auth/login?forceFunctionRegion=sa-east-1';   /* _SUPABASE_DIRECTO_V1 (14-nov-2026): antes la direccion de Azure, que reescribia rl-edge.js */
 const ETI_MAX_INTENTOS = 5;
 let _etiIntentos = 0;
 
@@ -830,7 +830,7 @@ function togglePwd(){
       el: se le muestra el login para que use su contraseña.
       Cuando el pase del servidor este probado, poner ETI_ACEPTA_PASE_ANTIGUO=false.
    ═══════════════════════════════════════════════════════════════════════════ */
-const ETI_SSO_URL = 'https://rl-fn-verfrut.azurewebsites.net/api/auth/sso';
+const ETI_SSO_URL = 'https://exdjzbfinppzatjyimxn.supabase.co/functions/v1/api/auth/sso?forceFunctionRegion=sa-east-1';   /* _SUPABASE_DIRECTO_V1 (14-nov-2026): antes la direccion de Azure, que reescribia rl-edge.js */
 const ETI_ACEPTA_PASE_ANTIGUO = false;   /* _SSO_SOLO_SERVIDOR_V1 (10-nov-2026): solo vale el pase firmado por el servidor (sso2). El pase antiguo se firmaba con un secreto visible en el navegador y permitia fabricar un pase a nombre de otro usuario. */
 async function _ssoEntrar(){
   if(window._ssoHecho) return false;
@@ -1141,7 +1141,7 @@ function _evCargarElimRL(){
   let tk=''; try{ tk=sessionStorage.getItem('eti_token')||''; }catch(e){}
   if(!tk) return;
   _evElimPid=true;
-  fetch('https://rl-fn-verfrut.azurewebsites.net/api/usuarios/lista?incluirEliminados=1',{headers:{Authorization:'Bearer '+tk}})
+  fetch('https://exdjzbfinppzatjyimxn.supabase.co/functions/v1/api/usuarios/lista?incluirEliminados=1&forceFunctionRegion=sa-east-1',{headers:{Authorization:'Bearer '+tk}})
     .then(r=>r.ok?r.json():null)
     .then(j=>{ if(j&&j.success){ const m={}; (j.data||[]).forEach(x=>{ if(x.eliminado) m[String(x.usuario||'').trim().toLowerCase()]=true; }); window._evElimRL=m; try{ renderAdminUsers(); }catch(e){} } })
     .catch(()=>{}).finally(()=>{ _evElimPid=false; });

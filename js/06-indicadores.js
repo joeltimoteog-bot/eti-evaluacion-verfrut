@@ -7,7 +7,7 @@
    ══════════════════════════════════════════════════════════════ */
 (function(){
 'use strict';
-const AZ_ETI='https://rl-fn-verfrut.azurewebsites.net/api/etieval';
+const AZ_ETI='https://exdjzbfinppzatjyimxn.supabase.co/functions/v1/api/etieval';   /* _SUPABASE_DIRECTO_V1 (14-nov-2026): antes la direccion de Azure, que reescribia rl-edge.js */
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const pct=v=>(Math.round((v||0)*1000)/10).toFixed(1)+'%';
