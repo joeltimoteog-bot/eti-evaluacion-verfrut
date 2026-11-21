@@ -494,7 +494,7 @@ async function actualizarPermanentes(secs,ver){
   }
   return n;
 }
-const empTxt=s=>s&&s.emp?s.emp:'VERFRUT / RAPEL';
+const empTxt=s=>s&&s.emp?s.emp:(s&&s.sede==='OLMOS'?'Empresas de Olmos':'VERFRUT / RAPEL');   /* _ETI_EMP_OLMOS_V1 */
 async function bancoPublico(id,secsIn){
   return Promise.all((secsIn||SECS).map(async s=>({id:s.id,nom:s.nom,peso:s.peso,maxSec:s.maxSec,
     pregs:await Promise.all(s.pregs.map(async p=>{
@@ -537,7 +537,7 @@ function crearPantallaQR(){
         </div>
         <div class="fg"><label class="fl">Asignar a (supervisor que mostrará el QR) *</label><select class="fc" id="qr-sup" onchange="ETIM.qrSupCambio()"></select></div>
         <div class="m-f2">
-          <div class="fg"><label class="fl" id="qr-sec-lbl">Sector / fundo</label><select class="fc" id="qr-sector"></select></div>
+          <div class="fg"><label class="fl" id="qr-sec-lbl">Sector / fundo</label><select class="fc" id="qr-sector" onchange="ETIM.qrEmpSync()"></select></div>
           <div class="fg"><label class="fl">Tipo de personal *</label><select class="fc" id="qr-tipo"><option value="todos" selected>👥 Todo el personal (el trabajador elige)</option><option value="obrero">👷 Solo obreros (ruta)</option><option value="empleado">💼 Solo empleados (área)</option></select></div>
         </div>
         <button class="btn bpri" style="width:100%;padding:.85rem;" onclick="ETIM.qrCrear()">⚡ Generar QR</button>
@@ -587,9 +587,25 @@ function escucharSesiones(){
 }
 /* _ETI_SEDES_V1 (21-nov-2026): cada QR nuevo lleva SOLO los sectores de su sede (la del sector elegido; si es "varios", la del usuario
    que lo crea, y Piura para quien ve las dos). Asi un trabajador de Piura nunca ve empresas de Olmos en su QR, ni al reves. */
-function _sectoresQR(sector){
-  try{ if(window.ETI_SEDES) return ETI_SEDES.sectores((ETI_SEDES.esOlmos(sector)||ETI_SEDES.sede()==='OLMOS')?'OLMOS':'PIURA'); }catch(e){}
+function _sectoresQR(sector,sedeQR){
+  try{ if(window.ETI_SEDES) return ETI_SEDES.sectores(sedeQR||((ETI_SEDES.esOlmos(sector)||ETI_SEDES.sede()==='OLMOS')?'OLMOS':'PIURA')); }catch(e){}
   return SECTORES_TODOS.slice();
+}
+/* _ETI_EMP_OLMOS_V1 (21-nov-2026): deja coherentes empresa, sector y sede de un QR nuevo.
+   · Sector de Olmos -> la empresa ES ese sector (Bomarea S.R.L., Inversiones Pirona S.A.C....).
+   · Sector de Piura -> nunca una empresa de Olmos.
+   · Sin sector ("varios"): la sede sale de la empresa elegida ("crudo" = valor de la lista Empresa) o de la sede de quien lo crea.
+   · Si la empresa queda a eleccion del trabajador, el QR lleva la lista de empresas de SU sede. */
+function _qrNorm(d,crudo){
+  try{
+    if(!window.ETI_SEDES||!ETI_SEDES.empresaDeSector) return d;
+    const eo=ETI_SEDES.empresaDeSector(d.sector);
+    if(eo){d.emp=eo;d.sede='OLMOS';}
+    else if(d.sector){if(ETI_SEDES.esEmpresaOlmos(d.emp))d.emp='';d.sede='PIURA';}
+    else d.sede=(ETI_SEDES.esEmpresaOlmos(d.emp)||crudo==='*OLMOS'||ETI_SEDES.sede()==='OLMOS')?'OLMOS':'PIURA';
+    if(!d.emp) d.empresas=ETI_SEDES.empresas(d.sede);
+  }catch(e){console.warn('[_ETI_EMP_OLMOS_V1]',e);}
+  return d;
 }
 function nomSesion(s){return s.ruta?s.ruta:(s.sector?'Sector: '+s.sector:'Varios sectores');}
 function renderListaSes(){
@@ -750,17 +766,33 @@ const QR={
   },
   qrSupCambio(){
     const nom=$('qr-sup').value, sd=SUPERVISORES.find(s=>s.nom===nom), sel=$('qr-sector');
-    if(!sd){sel.innerHTML='<option value="">— Varios (el trabajador elige) —</option>'+SECTORES_TODOS.map(x=>`<option>${esc(x)}</option>`).join('');return;}
+    if(!sd){sel.innerHTML='<option value="">— Varios (el trabajador elige) —</option>'+SECTORES_TODOS.map(x=>`<option>${esc(x)}</option>`).join('');QR.qrEmpSync();return;}
     let ops=SECTORES_TODOS;
     if(sd&&sd.multiSector) ops=sd.sectores; else if(sd&&sd.sector&&!sd.reemplazante) ops=[sd.sector];
     sel.innerHTML='<option value="">— Varios (el trabajador elige) —</option>'+ops.map(x=>`<option>${esc(x)}</option>`).join('');
     if(ops.length===1) sel.value=ops[0];
+    QR.qrEmpSync();
+  },
+  /* _ETI_EMP_OLMOS_V1: la lista Empresa sigue al sector y a la sede del usuario */
+  qrEmpSync(){
+    try{
+      const e=$('qr-emp'), sec=($('qr-sector')||{}).value||''; if(!e||!window.ETI_SEDES||!ETI_SEDES.empresas) return;
+      const prev=e.value, o=x=>`<option>${esc(x)}</option>`, P=ETI_SEDES.empresas('PIURA'), O=ETI_SEDES.empresas('OLMOS'), sd=ETI_SEDES.sede();
+      const eligeP='<option value="*">🏢 El trabajador elige (VERFRUT / RAPEL)</option>', eligeO='<option value="*OLMOS">🏢 El trabajador elige (empresas de Olmos)</option>';
+      let h;
+      if(ETI_SEDES.esOlmos(sec)) h=o(ETI_SEDES.empresaDeSector(sec));
+      else if(sec||sd==='PIURA') h=eligeP+P.map(o).join('');
+      else if(sd==='OLMOS') h=eligeO+O.map(o).join('');
+      else h=eligeP+P.map(o).join('')+'<optgroup label="Sede Olmos">'+eligeO+O.map(o).join('')+'</optgroup>';
+      e.innerHTML=h; if([...e.options].some(x=>x.value===prev)) e.value=prev;
+    }catch(err){console.warn('[_ETI_EMP_OLMOS_V1]',err);}
   },
   qrTipo(){},
   async qrCrear(){
     const v=id=>($(id).value||'').trim();
     const perm=v('qr-clase')!=='dia';
-    const d={emp:v('qr-emp')==='*'?'':v('qr-emp'),sup:v('qr-sup'),sector:v('qr-sector'),tipo:v('qr-tipo'),fecha:perm?'':v('qr-fecha')};
+    const er=v('qr-emp');
+    const d=_qrNorm({emp:er.charAt(0)==='*'?'':er,sup:v('qr-sup'),sector:v('qr-sector'),tipo:v('qr-tipo'),fecha:perm?'':v('qr-fecha')},er);
     if(perm){return QR.qrCrearPerm(d);}
     if(!d.emp){toast('Para un QR especial elige la empresa','e');return;}
     const falta=[['emp','la empresa'],['sup','el supervisor'],['fecha','la fecha']].find(([k])=>!d[k]);
@@ -769,7 +801,7 @@ const QR={
     const btn=event&&event.target; if(btn){btn.disabled=true;btn.textContent='Generando…';}
     try{
       const id=idSesion(), [y,m,dd]=d.fecha.split('-').map(Number);
-      const doc={...d,asignado:userDeSup(d.sup),ruta:'',cod:'',anonima:true,sectores:_sectoresQR(d.sector),areas:(typeof AREAS!=='undefined'?AREAS.slice():[]),id,estado:'abierta',usuario:SESSION.user,nomUsuario:SESSION.nom,
+      const doc={...d,asignado:userDeSup(d.sup),ruta:'',cod:'',anonima:true,sectores:_sectoresQR(d.sector,d.sede),areas:(typeof AREAS!=='undefined'?AREAS.slice():[]),id,estado:'abierta',usuario:SESSION.user,nomUsuario:SESSION.nom,
         creadoEn:new Date().toISOString(),ts:Date.now(),expira:new Date(y,m-1,dd,23,59,59).getTime(),banco:await bancoPublico(id),bancoVersion:(bancoMeta&&bancoMeta.version)||0};
       await fbdb.collection(COL_SES).doc(id).set(doc);
       sesActiva=doc; escucharResp(id); renderActiva(); toast(SESSION.rol==='admin'?'✅ QR generado y asignado a '+d.sup+'. Ya lo ve en su panel.':'✅ QR generado. Muéstralo a los trabajadores.','s');
@@ -790,7 +822,7 @@ const QR={
     const ya=await fbdb.collection(COL_SES).where('permanente','==',true).where('sup','==',d.sup).get();
     if(!ya.empty){const x={id:ya.docs[0].id,...ya.docs[0].data()};if(!silencio){sesActiva=x;escucharResp(x.id);renderActiva();toast('ℹ '+d.sup+' ya tiene su QR permanente (se muestra abajo). Para cambiarlo, edítalo en la lista.','i');}return null;}
     const id='P'+idSesion().slice(1);
-    const doc={...d,tipo:d.tipo||'todos',fecha:'',permanente:true,asignado:userDeSup(d.sup),ruta:'',cod:'',anonima:true,sectores:_sectoresQR(d.sector),areas:(typeof AREAS!=='undefined'?AREAS.slice():[]),
+    const doc={...d,tipo:d.tipo||'todos',fecha:'',permanente:true,asignado:userDeSup(d.sup),ruta:'',cod:'',anonima:true,sectores:_sectoresQR(d.sector,d.sede),areas:(typeof AREAS!=='undefined'?AREAS.slice():[]),
       id,estado:'abierta',usuario:SESSION.user,nomUsuario:SESSION.nom,creadoEn:new Date().toISOString(),ts:Date.now(),expira:null,
       banco:await bancoPublico(id),bancoVersion:(bancoMeta&&bancoMeta.version)||0};
     await fbdb.collection(COL_SES).doc(id).set(doc);
@@ -800,7 +832,7 @@ const QR={
   async qrPermTodos(){
     if(!fbdb){toast('Sin conexión a la nube','e');return;}
     window.etiSubirExtras();
-    const emp=$('qr-emp').value==='*'?'':$('qr-emp').value;
+    const er=$('qr-emp').value, emp=(er.charAt(0)==='*'||(window.ETI_SEDES&&ETI_SEDES.esEmpresaOlmos&&ETI_SEDES.esEmpresaOlmos(er)))?'':er;   /* _ETI_EMP_OLMOS_V1: en la carga masiva la empresa de Olmos sale del sector de cada supervisor */
     const q=await fbdb.collection(COL_SES).where('permanente','==',true).get();
     const perms=q.docs.map(d=>({id:d.id,ref:d.ref,...d.data()}));
     const tiene=nom=>perms.find(p=>p.sup===nom||_cumCoincide(p.sup,nom));
@@ -822,7 +854,7 @@ const QR={
       const sel=[...document.querySelectorAll('.qt-c')].filter(c=>c.checked).map(c=>falt[+c.dataset.i]);
       m.classList.remove('on'); toast('⏳ Creando QR permanentes…','i');
       let c=0,v=0;
-      for(const x of sel){try{if(await QR.qrCrearPerm({emp,sup:x.nom,sector:x.sector,tipo:'todos',fecha:''},true))c++;}catch(e){console.warn(x.nom,e);}}
+      for(const x of sel){try{if(await QR.qrCrearPerm(_qrNorm({emp,sup:x.nom,sector:x.sector,tipo:'todos',fecha:''},''),true))c++;}catch(e){console.warn(x.nom,e);}}
       for(const {p,u} of vincular){try{await p.ref.update({asignado:u});v++;}catch(e){console.warn(p.sup,e);}}
       toast(`✅ ${c} QR nuevo(s)${v?` · ${v} vinculado(s) a su usuario`:''}. Ya aparecen en la lista y en el panel de cada supervisor.`,'s');
     };

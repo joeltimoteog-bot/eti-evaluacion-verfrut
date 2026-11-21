@@ -36,7 +36,13 @@
     for (var i = 0; i < claves.length; i++) if (k.indexOf(claves[i]) >= 0) return RAZON[claves[i]];
     return '';
   }
-  window.ETI_SEDES = { PIURA: PIURA.slice(), OLMOS: OLMOS.slice(), sede: sede, sectores: sectores, esOlmos: esOlmos, aplicar: aplicar, razonDe: razonDe, sedeDeEmpresa: sedeDeEmpresa, guardarSedeDeEmpresa: guardarSedeDeEmpresa };
+  /* _ETI_EMP_OLMOS_V1 (21-nov-2026): en Olmos cada empresa es un sector -> la empresa de la evaluacion sale del sector.
+     Se usa la razon social; Lefkada va con su nombre hasta que Joel confirme la razon social. */
+  var EMP_PIURA = ['VERFRUT S.A.C.', 'RAPEL S.A.C.'];
+  function empresaDeSector(sector) { var k = N(sector), x = OLMOS.filter(function (o) { return N(o) === k; })[0]; return x ? (RAZON[N(x)] || x) : ''; }
+  function empresas(s) { s = s || sede(); var o = OLMOS.map(empresaDeSector); return s === 'OLMOS' ? o : (s === 'AMBAS' ? EMP_PIURA.concat(o) : EMP_PIURA.slice()); }
+  function esEmpresaOlmos(emp) { var k = N(emp); return !!k && OLMOS.some(function (x) { return k.indexOf(N(x)) >= 0; }); }
+  window.ETI_SEDES = { PIURA: PIURA.slice(), OLMOS: OLMOS.slice(), sede: sede, sectores: sectores, esOlmos: esOlmos, aplicar: aplicar, razonDe: razonDe, sedeDeEmpresa: sedeDeEmpresa, guardarSedeDeEmpresa: guardarSedeDeEmpresa, empresaDeSector: empresaDeSector, empresas: empresas, esEmpresaOlmos: esEmpresaOlmos };
   /* al cargar (sesion ya iniciada o recarga): la lista general toma los sectores de la sede del usuario */
   try { if (typeof SECTORES_TODOS !== 'undefined') aplicar(SECTORES_TODOS); } catch (e) {}
   try { console.log('[_ETI_SEDES_V1] sede: ' + sede() + ' · sectores: ' + sectores().length); } catch (e) {}

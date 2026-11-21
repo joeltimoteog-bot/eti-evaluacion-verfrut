@@ -138,7 +138,7 @@ function bienvenida(){
   barra(false);
   app.innerHTML='<div class="card"><h1>¡Hola! 👋</h1><p>Bienvenido a la evaluación de conocimiento ETI.</p>'+
    (PREVIA?'<div class="hint" style="margin:0 0 10px">👁 <b>Vista previa para supervisores:</b> puedes recorrer las preguntas; no se guarda nada.</div>':'')+
-   '<div class="info"><div><span>Empresa</span><b>'+esc(S.emp||'VERFRUT / RAPEL')+'</b></div><div><span>Fecha</span><b>'+esc(fmtF(FECHA))+'</b></div></div>'+
+   '<div class="info"><div><span>Empresa</span><b>'+esc(S.emp||(S.sede==='OLMOS'?'Empresas de Olmos':'VERFRUT / RAPEL'))+'</b></div><div><span>Fecha</span><b>'+esc(fmtF(FECHA))+'</b></div></div>'+
    '<div class="pasos"><div><i>1</i>Dinos dónde trabajas</div><div><i>2</i>Responde '+P.length+' preguntas</div><div><i>3</i>Envía y listo</div></div>'+
    '<div class="anon">🔒 <span><b>Es anónima:</b> no te pediremos DNI ni nombre. Solo si eres obrero o empleado, tu sector y tu ruta o área.</span></div>'+
    '<ul class="tips"><li>📝 <span><b>'+P.length+' preguntas</b> de opción múltiple.</span></li><li>👆 <span>Toca la respuesta que creas correcta. Algunas permiten marcar varias.</span></li><li>⏱ <span>Toma entre 8 y 12 minutos. Responde tú solo, con calma.</span></li></ul>'+
@@ -162,7 +162,10 @@ function ubicacion(){
   var last={}; try{last=JSON.parse(ls('eti_qr_ult')||'{}')||{};}catch(e){}
   var fijo=(S.tipo==='obrero'||S.tipo==='empleado')?S.tipo:'';
   var empFija=S.emp||'';
+  /* _ETI_EMP_OLMOS_V1 (21-nov-2026): las empresas a elegir vienen en el QR (Olmos trae las suyas); los QR anteriores siguen con VERFRUT / RAPEL */
+  var EMPS=(S.empresas&&S.empresas.length?S.empresas:['VERFRUT S.A.C.','RAPEL S.A.C.']);
   var st={emp:empFija||W.emp||last.emp||'',tipo:fijo||W.tipo||last.tipo||'',sector:W.sector||S.sector||last.sector||'',ruta:W.ruta||'',cod:W.cod||'',area:'',sexo:W.sexo||''};   /* _SEXO_V1: no se recuerda entre trabajadores */
+  if(!empFija&&EMPS.indexOf(st.emp)<0) st.emp='';   /* _ETI_EMP_OLMOS_V1: no arrastrar una empresa recordada que no es de este QR */
   if(st.tipo==='empleado'){st.area=st.ruta||(last.tipo==='empleado'?last.ruta:'')||'';st.ruta='';}
   else if(!st.ruta&&last.tipo!=='empleado'){st.ruta=last.ruta||'';st.cod=st.cod||last.cod||'';}
   function leer(){var g=function(id){var e=document.getElementById(id);return e?e.value:null;};
@@ -179,7 +182,7 @@ function ubicacion(){
   function pintar(){
     var h='<div class="card"><h2>¿Dónde trabajas hoy?</h2><p>Estos datos sirven para ver los resultados por sector, ruta o área. <b>No se guarda tu nombre ni tu DNI.</b></p>';
     if(!empFija) h+='<label>¿En qué empresa trabajas?</label><div class="tipos">'+
-      ['VERFRUT S.A.C.','RAPEL S.A.C.'].map(function(e){return '<button type="button" class="tipo emp'+(st.emp===e?' sel':'')+'" data-e="'+e+'"><span>🏢</span>'+e.replace(' S.A.C.','')+'</button>';}).join('')+'</div>';
+      EMPS.map(function(e){return '<button type="button" class="tipo emp'+(st.emp===e?' sel':'')+'" data-e="'+esc(e)+'"><span>🏢</span>'+esc(String(e).replace(/ S\.(A\.C|R\.L)\.$/,''))+'</button>';}).join('')+'</div>';
     if(!fijo) h+='<label>¿Qué tipo de trabajador eres?</label><div class="tipos">'+
       '<button type="button" class="tipo'+(st.tipo==='obrero'?' sel':'')+'" data-t="obrero"><span>👷</span>Obrero<small>Trabajo por ruta</small></button>'+
       '<button type="button" class="tipo'+(st.tipo==='empleado'?' sel':'')+'" data-t="empleado"><span>💼</span>Empleado<small>Trabajo en un área</small></button></div>';
