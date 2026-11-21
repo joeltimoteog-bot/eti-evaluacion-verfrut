@@ -114,14 +114,34 @@ function barra(on){bar.classList.toggle('hide',!on);}
 function mensaje(ico,tit,txt){barra(false);app.innerHTML='<div class="card center"><div class="big">'+ico+'</div><h1>'+tit+'</h1><p>'+txt+'</p></div><div class="foot">Unifrutti Group · Gestión Humana</div>';}
 function mezclar(n,seed){var a=[];for(var i=0;i<n;i++)a.push(i);var s=seed;for(var j=n-1;j>0;j--){s=(s*9301+49297)%233280;var k=Math.floor(s/233280*(j+1));var t=a[j];a[j]=a[k];a[k]=t;}return a;}
 
+/* _QR_SUPABASE_V1 (21-nov-2026): la evaluacion del QR se lee PRIMERO de Supabase (donde Gestion la guarda desde la etapa 3).
+   Si Supabase no responde o no la tiene, se lee de Firebase como siempre; y si tampoco hay señal, de la copia que quedo en el celular.
+   Solo cambia la LECTURA: el envio de respuestas sigue igual (_ENVIO_SEGURO_V1). */
+var API_ETI='https://exdjzbfinppzatjyimxn.supabase.co/functions/v1/api/eti/', REG_ETI='?forceFunctionRegion=sa-east-1';
+function sbPost(accion,cuerpo,ms){
+  var ctl=(typeof AbortController!=='undefined')?new AbortController():null, t=setTimeout(function(){try{if(ctl)ctl.abort();}catch(e){}},ms||7000);
+  return fetch(API_ETI+accion+REG_ETI,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cuerpo),signal:ctl?ctl.signal:undefined,cache:'no-store'})
+    .then(function(r){return r.json().catch(function(){return null;}).then(function(j){clearTimeout(t);if(!r.ok||!j||j.success===false)throw new Error((j&&j.error)||('HTTP '+r.status));return j;});},
+          function(e){clearTimeout(t);throw e;});
+}
+function leerSesion(){
+  var K='eti_qr_ses_'+SID;
+  var guardar=function(d){try{localStorage.setItem(K,JSON.stringify({t:Date.now(),d:d}));}catch(e){} return d;};
+  var deFS=function(){return db.collection(COL_SES).doc(SID).get().then(function(d){return d.exists?guardar(d.data()):null;});};
+  var deCel=function(e){try{var x=JSON.parse(localStorage.getItem(K)||'null');if(x&&x.d&&Date.now()-x.t<7*864e5){console.warn('[QR] sin señal: se usa la copia guardada en el celular');return x.d;}}catch(_){ } throw e;};
+  return sbPost('doc',{col:COL_SES,id:SID},7000)
+    .then(function(j){if(j.existe&&j.datos)return guardar(j.datos);return deFS();},
+          function(e){console.warn('[QR] Supabase no respondio; se lee de Firebase:',e&&e.message);return deFS();})
+    .catch(deCel);
+}
 /* 1) Validar la sesión del QR */
 function iniciar(){
   SID=(new URLSearchParams(location.search).get('s')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
   if(!SID){mensaje('🔍','Código no válido','Escanea nuevamente el código QR que te muestra tu supervisor.');return;}
   try{firebase.initializeApp(FB_CONFIG);db=firebase.firestore();try{db.enablePersistence({synchronizeTabs:true}).catch(function(){});}catch(e){} if(!PREVIA)setTimeout(reenviarPendientes,1500);}catch(e){mensaje('📶','Sin conexión','No se pudo conectar. Revisa tu señal o datos móviles e inténtalo de nuevo.');return;}
-  db.collection(COL_SES).doc(SID).get().then(function(d){
-    if(!d.exists){mensaje('🔍','Evaluación no encontrada','El código QR no corresponde a una evaluación activa. Pide a tu supervisor que lo muestre de nuevo.');return;}
-    S=d.data();
+  leerSesion().then(function(S0){   /* _QR_SUPABASE_V1 */
+    if(!S0){mensaje('🔍','Evaluación no encontrada','El código QR no corresponde a una evaluación activa. Pide a tu supervisor que lo muestre de nuevo.');return;}
+    S=S0;
     if(S.estado!=='abierta'||(S.expira&&Date.now()>S.expira)){
       if(S.permanente) mensaje('⏸','QR pausado','Este código QR no está activo en este momento. Pide a tu supervisor o a Gestión Humana el QR vigente.');
       else mensaje('⏹','Evaluación cerrada','Esta sesión de evaluación ya fue cerrada por el supervisor.');
