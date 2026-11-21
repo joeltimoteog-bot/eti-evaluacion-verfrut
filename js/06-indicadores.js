@@ -18,6 +18,8 @@ const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+Stri
 const secId=nom=>{const s=(typeof SECS!=='undefined'?SECS:[]).find(x=>x.nom===nom);return s?s.id:String(nom||'').toLowerCase().normalize('NFD').replace(/[^a-z]/g,'').slice(0,12);};
 const U=s=>String(s||'').trim().toUpperCase();
 const esAdmin=()=>!!(SESSION&&SESSION.rol==='admin');
+/* _ETI_STATS_SEDE_V1 (21-nov-2026): los indicadores se piden CON la sesion, para que el servidor entregue solo los de la sede del usuario */
+const _hSes=()=>{try{const t=sessionStorage.getItem('eti_token');return t?{Authorization:'Bearer '+t}:{};}catch(e){return {};}};
 /* paleta (método dataviz): serie azul, estado bueno/crítico con etiqueta, rampa azul para magnitud */
 const C={serie:'#2a78d6',bueno:'#0ca30c',critico:'#d03b3b',aviso:'#fab219',meta:'#52514e',grid:'#E6ECF6',
   rampa:['#cde2fb','#b7d3f6','#9ec5f4','#86b6ef','#6da7ec','#5598e7','#3987e5','#2a78d6','#256abf','#1c5cab','#184f95','#104281']};
@@ -50,7 +52,7 @@ function regDeRespuesta(d,id){
 }
 /* _TRAFICO_V1: helpers de Azure para el panel de tráfico */
 window.etiAzure={post:azPost,regQR:regDeRespuesta,regsManual:regsDeEval,
-  ping:async()=>{const t=Date.now(),ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),12000);try{const d=new Date().toISOString().slice(0,10);const r=await fetch(AZ_ETI+'/stats?desde='+d+'&hasta='+d,{signal:ctl.signal,cache:'no-store'});return {ok:r.ok,ms:Date.now()-t};}catch(e){return {ok:false,ms:Date.now()-t,err:e.message};}finally{clearTimeout(to);}}};
+  ping:async()=>{const t=Date.now(),ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),12000);try{const d=new Date().toISOString().slice(0,10);const r=await fetch(AZ_ETI+'/stats?desde='+d+'&hasta='+d,{signal:ctl.signal,cache:'no-store',headers:_hSes()});return {ok:r.ok,ms:Date.now()-t};}catch(e){return {ok:false,ms:Date.now()-t,err:e.message};}finally{clearTimeout(to);}}};
 /* Recalificación al cerrar: Azure no actualiza registros existentes, así que (con token de admin) se borra y se vuelve a insertar.
    Se marca azOk:false antes, para que el panel de tráfico lo reenvíe si algo falla a mitad. */
 /* _CAMBIAR_FECHA_V1 (19-oct-2026): corrige la FECHA DE EVALUACIÓN de un registro (QR o manual) en Azure y Firebase.
@@ -99,7 +101,7 @@ const binDe=v=>Math.min(9,Math.max(0,Math.floor((v||0)*10+1e-9)));
 async function desdeAzure(desde,hasta){
   const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(),15000);
   try{
-    const r=await fetch(AZ_ETI+'/stats?desde='+desde+'&hasta='+hasta,{signal:ctl.signal,cache:'no-store'});
+    const r=await fetch(AZ_ETI+'/stats?desde='+desde+'&hasta='+hasta,{signal:ctl.signal,cache:'no-store',headers:_hSes()});
     if(!r.ok) throw new Error('Azure '+r.status);
     const j=await r.json(); if(!j.success) throw new Error(j.error||'Azure');
     return (j.filas||[]).map(f=>{ if(!Array.isArray(f.bins)){f.bins=new Array(10).fill(0);f.bins[binDe(f.n?f.sr/f.n:0)]=f.n;} return f; });
