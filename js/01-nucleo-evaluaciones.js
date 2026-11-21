@@ -724,6 +724,7 @@ function mostrarAvisoIngresoRRLL(){
 function iniciarSesionCon(usr){
   SESSION={user:usr.user, nom:usr.nom, rol:usr.rol};
   sessionStorage.setItem('eti_session',JSON.stringify(SESSION));
+  try{ if(window.ETI_SEDES) ETI_SEDES.aplicar(SECTORES_TODOS); }catch(e){}   /* _ETI_SEDES_V1: sectores de la sede del usuario */
   escucharNube(); // sincronizar programaciones y evaluaciones desde la nube
   iniciarPresencia();   // marcar en línea (visible para el administrador)
   iniciarChat();        // mensajería admin ↔ usuario
@@ -884,6 +885,7 @@ async function _ssoEntrar(){
         const usr=fichaDe(_u1) || (String(j.user.rol||'')!=='admin' ? altaSso(_u1, j.user.nombre) : null);   /* _SSO_ALTA_V1 */
         if(usr){
           if(j.token) sessionStorage.setItem('eti_token', j.token);
+          try{ if(window.ETI_SEDES) ETI_SEDES.guardarSedeDeEmpresa(j.user.empresa); }catch(e){}   /* _ETI_SEDES_V1: sede del usuario segun su empresa en el Sistema RR.LL. */
           iniciarSesionCon(usr);
           console.log('[SSO] ingreso validado por el servidor:', usr.user, usr.rol);
           return true;

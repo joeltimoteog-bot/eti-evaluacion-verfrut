@@ -585,6 +585,12 @@ function escucharSesiones(){
     const u2=col.where('asignado','==',SESSION.user).onSnapshot(s=>{partes.b=map(s);unir();},err);
     unsubSes=()=>{u1();u2();};}
 }
+/* _ETI_SEDES_V1 (21-nov-2026): cada QR nuevo lleva SOLO los sectores de su sede (la del sector elegido; si es "varios", la del usuario
+   que lo crea, y Piura para quien ve las dos). Asi un trabajador de Piura nunca ve empresas de Olmos en su QR, ni al reves. */
+function _sectoresQR(sector){
+  try{ if(window.ETI_SEDES) return ETI_SEDES.sectores((ETI_SEDES.esOlmos(sector)||ETI_SEDES.sede()==='OLMOS')?'OLMOS':'PIURA'); }catch(e){}
+  return SECTORES_TODOS.slice();
+}
 function nomSesion(s){return s.ruta?s.ruta:(s.sector?'Sector: '+s.sector:'Varios sectores');}
 function renderListaSes(){
   const el=$('qr-lista'); if(!el) return;
@@ -763,7 +769,7 @@ const QR={
     const btn=event&&event.target; if(btn){btn.disabled=true;btn.textContent='Generando…';}
     try{
       const id=idSesion(), [y,m,dd]=d.fecha.split('-').map(Number);
-      const doc={...d,asignado:userDeSup(d.sup),ruta:'',cod:'',anonima:true,sectores:SECTORES_TODOS.slice(),areas:(typeof AREAS!=='undefined'?AREAS.slice():[]),id,estado:'abierta',usuario:SESSION.user,nomUsuario:SESSION.nom,
+      const doc={...d,asignado:userDeSup(d.sup),ruta:'',cod:'',anonima:true,sectores:_sectoresQR(d.sector),areas:(typeof AREAS!=='undefined'?AREAS.slice():[]),id,estado:'abierta',usuario:SESSION.user,nomUsuario:SESSION.nom,
         creadoEn:new Date().toISOString(),ts:Date.now(),expira:new Date(y,m-1,dd,23,59,59).getTime(),banco:await bancoPublico(id),bancoVersion:(bancoMeta&&bancoMeta.version)||0};
       await fbdb.collection(COL_SES).doc(id).set(doc);
       sesActiva=doc; escucharResp(id); renderActiva(); toast(SESSION.rol==='admin'?'✅ QR generado y asignado a '+d.sup+'. Ya lo ve en su panel.':'✅ QR generado. Muéstralo a los trabajadores.','s');
@@ -784,7 +790,7 @@ const QR={
     const ya=await fbdb.collection(COL_SES).where('permanente','==',true).where('sup','==',d.sup).get();
     if(!ya.empty){const x={id:ya.docs[0].id,...ya.docs[0].data()};if(!silencio){sesActiva=x;escucharResp(x.id);renderActiva();toast('ℹ '+d.sup+' ya tiene su QR permanente (se muestra abajo). Para cambiarlo, edítalo en la lista.','i');}return null;}
     const id='P'+idSesion().slice(1);
-    const doc={...d,tipo:d.tipo||'todos',fecha:'',permanente:true,asignado:userDeSup(d.sup),ruta:'',cod:'',anonima:true,sectores:SECTORES_TODOS.slice(),areas:(typeof AREAS!=='undefined'?AREAS.slice():[]),
+    const doc={...d,tipo:d.tipo||'todos',fecha:'',permanente:true,asignado:userDeSup(d.sup),ruta:'',cod:'',anonima:true,sectores:_sectoresQR(d.sector),areas:(typeof AREAS!=='undefined'?AREAS.slice():[]),
       id,estado:'abierta',usuario:SESSION.user,nomUsuario:SESSION.nom,creadoEn:new Date().toISOString(),ts:Date.now(),expira:null,
       banco:await bancoPublico(id),bancoVersion:(bancoMeta&&bancoMeta.version)||0};
     await fbdb.collection(COL_SES).doc(id).set(doc);
