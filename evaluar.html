@@ -364,15 +364,36 @@ function subirAZ(p,intentos){
   };
   return go(1);
 }
+/* _QR_ENVIO_SUPABASE_V1 (21-nov-2026): Supabase es el destino PRINCIPAL del envio; Firebase queda de RESPALDO y Azure/etieval como copia.
+   "Enviada" = la confirma Supabase (o Firebase si Supabase no responde). Mismo id en todos los reintentos: el servidor ignora un id
+   que ya existe, asi que nunca se duplica. Volver al envio anterior (Firebase manda): localStorage.eti_qr_envio='firebase' */
+var SB_MANDA=ls('eti_qr_envio')!=='firebase';
+function sbEscribir(ops){
+  return fetch(API_ETI+'escribir'+REG_ETI,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ops:ops}),cache:'no-store'})
+    .then(function(r){return r.json().catch(function(){return {};}).then(function(j){if(!r.ok||!j||j.success!==true)throw new Error((j&&j.error)||('Supabase '+r.status));return j;});});
+}
+function subirSB(p,intentos){
+  var go=function(n){
+    return sbEscribir([{col:COL_RESP,id:p.id,op:'set',datos:p.doc,merge:false,origen:'qr'}]).then(function(){return true;},function(e){
+      console.warn('Supabase intento '+n,e&&e.message);if(n<intentos)return espera(1500*n).then(function(){return go(n+1);});return false;});
+  };
+  return go(1);
+}
+function principal(p){return !!(p&&(p.sb||p.fs));}
+function completo(p){return !!(p&&p.az&&(p.sb||!SB_MANDA)&&(p.fs||!db));}
 function despachar(p,iFs,iAz){
   var t=[];
+  if(SB_MANDA&&!p.sb) t.push(subirSB(p,iFs||4).then(function(ok){if(ok)p.sb=true;}));   /* _QR_ENVIO_SUPABASE_V1 */
   if(!p.fs&&db) t.push(subirFS(p,iFs||4).then(function(ok){if(ok)p.fs=true;}));
   if(!p.az) t.push(subirAZ(p,iAz||4).then(function(ok){if(ok)p.az=true;}));
   return Promise.all(t).then(function(){
     /* _TRAFICO_V1: marca en Firebase que Azure ya lo tiene (el panel de tráfico lo muestra con ☁ ✓) */
     if(p.fs&&p.az&&!p.azMarcado&&db) return db.collection(COL_RESP).doc(p.id).set({azOk:true,azEn:new Date().toISOString()},{merge:true})
       .then(function(){p.azMarcado=true;},function(e){console.warn('marca azOk',e&&e.message);p.azMarcado=true;});
-  }).then(function(){if(p.fs&&p.az)pendQuitar(p.id);else pendPoner(p);return p;});
+  }).then(function(){   /* _QR_ENVIO_SUPABASE_V1: la marca azOk tambien directo en Supabase (no depende de Firebase) */
+    if(SB_MANDA&&p.sb&&p.az&&!p.sbMarcado) return sbEscribir([{col:COL_RESP,id:p.id,op:'update',datos:{azOk:true,azEn:new Date().toISOString()},origen:'qr'}])
+      .then(function(){p.sbMarcado=true;},function(e){console.warn('marca azOk Supabase',e&&e.message);});
+  }).then(function(){if(completo(p))pendQuitar(p.id);else pendPoner(p);return p;});
 }
 function reenviarPendientes(){
   var m=pendLeer(), lim=Date.now()-10*864e5;
@@ -405,7 +426,7 @@ function enviar(){
     return PACK;
   });
   prep.then(function(p){return despachar(p);}).then(function(p){
-    if(p.fs||p.az){fin();return;}   /* lo que falte (Firebase o Azure) se sigue reintentando en segundo plano */
+    if(p.sb||p.fs||p.az){fin();return;}   /* _QR_ENVIO_SUPABASE_V1 */   /* lo que falte (Firebase o Azure) se sigue reintentando en segundo plano */
     throw new Error('sin envio');
   }).catch(function(e){
     console.error(e);bNext.disabled=false;bPrev.disabled=false;bNext.textContent='Reintentar envío ↻';
@@ -413,16 +434,16 @@ function enviar(){
     autoT=setTimeout(enviar,10000);
   });
 }
-window.addEventListener('online',function(){if(PACK&&!PACK.fs){if(W.enviado)despachar(PACK).then(function(p){if(p.fs)cierre();});else enviar();}else reenviarPendientes();});
+window.addEventListener('online',function(){if(PACK&&!principal(PACK)){if(W.enviado)despachar(PACK).then(function(p){if(principal(p))cierre();});else enviar();}else reenviarPendientes();});
 /* 7) Fin: mensaje y salida del sitio */
 function fin(){
   W.enviado=true; progBorrar();
   barra(false);
-  if(PACK&&!(PACK.fs&&PACK.az)){   /* esperamos que Firebase Y Azure confirmen antes de cerrar (Azure: máx. ~25 s; luego lo reenvía el panel) */
+  if(PACK&&!completo(PACK)){   /* _QR_ENVIO_SUPABASE_V1 */   /* esperamos que Firebase Y Azure confirmen antes de cerrar (Azure: máx. ~25 s; luego lo reenvía el panel) */
     app.innerHTML='<div class="card center"><div class="ok-anim"><svg viewBox="0 0 24 24" fill="none" stroke="#007A3D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>'+
      '<h1>Evaluación recibida</h1><p style="font-size:17px;color:var(--text)"><b>¡Gracias por participar!</b></p>'+resultadoHTML()+'<p id="cuenta">Terminando de guardar… espera unos segundos antes de cerrar.</p></div>';
     var t0=Date.now();
-    var listo=function(){return PACK.fs&&(PACK.az||Date.now()-t0>25000);};
+    var listo=function(){return principal(PACK)&&(completo(PACK)||Date.now()-t0>25000);};   /* _QR_ENVIO_SUPABASE_V1 */
     var loop=function(){if(listo()){cierre();return;}despachar(PACK,2,2).then(function(){setTimeout(loop,listo()?0:6000);});};
     setTimeout(loop,1500);
     return;
@@ -454,7 +475,7 @@ function salir(){
     try{location.replace('about:blank');}catch(e){}
   },400);
 }
-window.addEventListener('beforeunload',function(e){if((P.length&&Object.keys(R).length&&!W.enviado)||(PACK&&!PACK.fs)){e.preventDefault();e.returnValue='';}});
+window.addEventListener('beforeunload',function(e){if((P.length&&Object.keys(R).length&&!W.enviado)||(PACK&&!principal(PACK))){e.preventDefault();e.returnValue='';}});
 iniciar();
 })();
 </script>
