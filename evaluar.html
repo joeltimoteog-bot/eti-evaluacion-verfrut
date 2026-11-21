@@ -127,18 +127,19 @@ function sbPost(accion,cuerpo,ms){
 function leerSesion(){
   var K='eti_qr_ses_'+SID;
   var guardar=function(d){try{localStorage.setItem(K,JSON.stringify({t:Date.now(),d:d}));}catch(e){} return d;};
-  var deFS=function(){return db.collection(COL_SES).doc(SID).get().then(function(d){return d.exists?guardar(d.data()):null;});};
+  var deFS=function(){if(!db)return Promise.resolve(null);   /* _QR_SIN_FIREBASE_V1 */
+    return db.collection(COL_SES).doc(SID).get().then(function(d){return d.exists?guardar(d.data()):null;});};
   var deCel=function(e){try{var x=JSON.parse(localStorage.getItem(K)||'null');if(x&&x.d&&Date.now()-x.t<7*864e5){console.warn('[QR] sin señal: se usa la copia guardada en el celular');return x.d;}}catch(_){ } throw e;};
   return sbPost('doc',{col:COL_SES,id:SID},7000)
     .then(function(j){if(j.existe&&j.datos)return guardar(j.datos);return deFS();},
-          function(e){console.warn('[QR] Supabase no respondio; se lee de Firebase:',e&&e.message);return deFS();})
+          function(e){console.warn('[QR] Supabase no respondio; se lee de Firebase:',e&&e.message);if(!db)throw e;return deFS();})   /* _QR_SIN_FIREBASE_V1: sin Firebase, un corte es "sin señal" (copia del celular), no "evaluacion no encontrada" */
     .catch(deCel);
 }
 /* 1) Validar la sesión del QR */
 function iniciar(){
   SID=(new URLSearchParams(location.search).get('s')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
   if(!SID){mensaje('🔍','Código no válido','Escanea nuevamente el código QR que te muestra tu supervisor.');return;}
-  try{firebase.initializeApp(FB_CONFIG);db=firebase.firestore();try{db.enablePersistence({synchronizeTabs:true}).catch(function(){});}catch(e){} if(!PREVIA)setTimeout(reenviarPendientes,1500);}catch(e){mensaje('📶','Sin conexión','No se pudo conectar. Revisa tu señal o datos móviles e inténtalo de nuevo.');return;}
+  try{firebase.initializeApp(FB_CONFIG);db=firebase.firestore();try{db.enablePersistence({synchronizeTabs:true}).catch(function(){});}catch(e){} if(!PREVIA)setTimeout(reenviarPendientes,1500);}catch(e){db=null;console.warn('[_QR_SIN_FIREBASE_V1] Firebase no cargo: la pagina sigue solo con Supabase',e&&e.message);if(!PREVIA)setTimeout(reenviarPendientes,1500);}   /* _QR_SIN_FIREBASE_V1 (21-nov-2026): antes, sin Firebase la pagina no abria ("Sin conexion") aunque Supabase estuviera bien */
   leerSesion().then(function(S0){   /* _QR_SUPABASE_V1 */
     if(!S0){mensaje('🔍','Evaluación no encontrada','El código QR no corresponde a una evaluación activa. Pide a tu supervisor que lo muestre de nuevo.');return;}
     S=S0;
@@ -321,9 +322,14 @@ function calificar(){
 var ATR={sups:[],progs:[]};
 function normTxt(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');}
 function cargarAtribucion(){
-  if(PREVIA||!db) return;
-  db.collection('config_eti').doc('atribucion').get().then(function(d){ATR.sups=d.exists?(d.data().sups||[]):[];}).catch(function(e){console.warn('atribucion sups',e&&e.message);});
-  db.collection('programaciones_eval').where('fechas','array-contains',FECHA).get().then(function(q){ATR.progs=q.docs.map(function(d){return d.data();});}).catch(function(e){console.warn('atribucion progs',e&&e.message);});
+  if(PREVIA) return;
+  /* _QR_SIN_FIREBASE_V1 (21-nov-2026): la atribucion se lee de Supabase; Firebase solo si Supabase no responde y aun existe */
+  var fsSups=function(e){console.warn('atribucion sups (Supabase)',e&&e.message);if(!db)return;
+    return db.collection('config_eti').doc('atribucion').get().then(function(d){ATR.sups=d.exists?(d.data().sups||[]):[];}).catch(function(e2){console.warn('atribucion sups',e2&&e2.message);});};
+  var fsProgs=function(e){console.warn('atribucion progs (Supabase)',e&&e.message);if(!db)return;
+    return db.collection('programaciones_eval').where('fechas','array-contains',FECHA).get().then(function(q){ATR.progs=q.docs.map(function(d){return d.data();});}).catch(function(e2){console.warn('atribucion progs',e2&&e2.message);});};
+  sbPost('doc',{col:'config_eti',id:'atribucion'},7000).then(function(j){ATR.sups=(j.existe&&j.datos&&j.datos.sups)||[];},fsSups);
+  sbPost('consultar',{col:'programaciones_eval',filtros:[['fechas','array-contains',FECHA]]},7000).then(function(j){ATR.progs=(j.docs||[]).map(function(d){return d.datos||{};});},fsProgs);
 }
 function atribuir(){
   var sec=normTxt(W.sector); if(!sec||!ATR.progs.length) return null;
@@ -381,6 +387,9 @@ function subirSB(p,intentos){
 }
 function principal(p){return !!(p&&(p.sb||p.fs));}
 function completo(p){return !!(p&&p.az&&(p.sb||!SB_MANDA)&&(p.fs||!db));}
+function idNuevo(){var A='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',s='',b;
+  try{b=new Uint8Array(40);crypto.getRandomValues(b);for(var i=0;i<40&&s.length<20;i++){if(b[i]<248)s+=A.charAt(b[i]%62);}}catch(e){s='';}
+  while(s.length<20)s+=A.charAt(Math.floor(Math.random()*62));return s;}
 function despachar(p,iFs,iAz){
   var t=[];
   if(SB_MANDA&&!p.sb) t.push(subirSB(p,iFs||4).then(function(ok){if(ok)p.sb=true;}));   /* _QR_ENVIO_SUPABASE_V1 */
@@ -408,7 +417,7 @@ function enviar(){
   bNext.disabled=true;bPrev.disabled=true;bNext.textContent='Enviando…';
   var er=document.getElementById('err');if(er)er.style.display='none';
   var prep=PACK?Promise.resolve(PACK):calificar().then(function(c){
-    if(!W.docId) W.docId=db.collection(COL_RESP).doc().id;   /* mismo id en reintentos: no duplica */
+    if(!W.docId) W.docId=idNuevo();   /* _QR_SIN_FIREBASE_V1 */   /* mismo id en reintentos: no duplica */
     var userQR=S.asignado||S.usuario||'', at=atribuir(), supF=S.sup, userF=userQR, extra={};
     if(at&&at.user&&at.user!==userQR){supF=at.nom;userF=at.user;extra={supQR:S.sup,aplicadoPor:userQR,atribucion:'programacion'};}
     /* _COBERTURAS_ETI_V1: deja constancia de a quién reemplaza (por programación o porque el dueño del QR está cubriendo) */
