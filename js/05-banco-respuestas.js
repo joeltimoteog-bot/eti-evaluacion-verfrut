@@ -820,7 +820,20 @@ const QR={
     if(usrOff(d.sup)){if(!silencio)toast(d.sup+' está desactivado o eliminado','e');return null;}
     if(!fbdb){toast('Sin conexión a la nube','e');return null;}
     const ya=await fbdb.collection(COL_SES).where('permanente','==',true).where('sup','==',d.sup).get();
-    if(!ya.empty){const x={id:ya.docs[0].id,...ya.docs[0].data()};if(!silencio){sesActiva=x;escucharResp(x.id);renderActiva();toast('ℹ '+d.sup+' ya tiene su QR permanente (se muestra abajo). Para cambiarlo, edítalo en la lista.','i');}return null;}
+    if(!ya.empty){const x={id:ya.docs[0].id,...ya.docs[0].data()};
+      /* _ETI_QR_CAMBIO_V1 (21-nov-2026): si el supervisor YA tiene QR permanente y en el formulario se eligio otra empresa, sector o sede,
+         antes no pasaba nada (el QR seguia con VERFRUT / RAPEL). Ahora pregunta y actualiza ese mismo QR; el impreso sigue sirviendo. */
+      try{
+        const sedeX=x.sede||(window.ETI_SEDES?ETI_SEDES.sedeDeEmpresa((x.emp||'')+' '+(x.sector||'')):'');
+        if(!silencio&&window.ETI_SEDES&&d.sede&&((d.emp||'')!==(x.emp||'')||(d.sector||'')!==(x.sector||'')||d.sede!==sedeX)){
+          confMod('¿Cambiar el QR permanente de '+d.sup+'?','Hoy está con empresa: '+(x.emp||'el trabajador elige')+' · sector: '+(x.sector||'varios')+'. Pasará a empresa: '+(d.emp||'el trabajador elige')+' · sector: '+(d.sector||'varios')+' (sede '+(d.sede==='OLMOS'?'Olmos':'Piura')+'). El mismo QR impreso sigue sirviendo.',async()=>{
+            try{const u={emp:d.emp||'',sector:d.sector||'',sede:d.sede,sectores:_sectoresQR(d.sector,d.sede),empresas:d.empresas||[]};
+              await ya.docs[0].ref.update(u); const y2={...x,...u}; sesActiva=y2; escucharResp(y2.id); renderActiva(); toast('✅ QR permanente de '+d.sup+' actualizado','s');
+            }catch(e){toast('No se pudo actualizar: '+e.message,'e');}});
+          return null;
+        }
+      }catch(e){console.warn('[_ETI_QR_CAMBIO_V1]',e);}
+      if(!silencio){sesActiva=x;escucharResp(x.id);renderActiva();toast('ℹ '+d.sup+' ya tiene su QR permanente (se muestra abajo). Para cambiarlo, edítalo en la lista.','i');}return null;}
     const id='P'+idSesion().slice(1);
     const doc={...d,tipo:d.tipo||'todos',fecha:'',permanente:true,asignado:userDeSup(d.sup),ruta:'',cod:'',anonima:true,sectores:_sectoresQR(d.sector,d.sede),areas:(typeof AREAS!=='undefined'?AREAS.slice():[]),
       id,estado:'abierta',usuario:SESSION.user,nomUsuario:SESSION.nom,creadoEn:new Date().toISOString(),ts:Date.now(),expira:null,
@@ -918,6 +931,9 @@ const QR={
     $('es-ok').onclick=async()=>{const sup=$('es-sup').value,fecha=$('es-fec').value,[y,mo,dd]=fecha.split('-').map(Number);
       const u=s.permanente?{sup,asignado:userDeSup(sup),sector:$('es-sec').value,estado:$('es-est').value}
         :{sup,asignado:userDeSup(sup),sector:$('es-sec').value,fecha,estado:$('es-est').value,expira:new Date(y,mo-1,dd,23,59,59).getTime()};
+      /* _ETI_QR_CAMBIO_V1: al cambiar el sector, la empresa, la sede y las listas del QR quedan coherentes (Olmos / Piura) */
+      try{const nn=_qrNorm({emp:s.emp||'',sector:u.sector},(s.sede==='OLMOS'&&!u.sector)?'*OLMOS':'');
+        if(nn.sede) Object.assign(u,{emp:nn.emp||'',sede:nn.sede,sectores:_sectoresQR(u.sector,nn.sede),empresas:nn.empresas||[]});}catch(e){console.warn('[_ETI_QR_CAMBIO_V1]',e);}
       m.classList.remove('on');
       try{await fbdb.collection(COL_SES).doc(id).update(u);toast('✅ Sesión actualizada','s');}catch(e){toast('No se pudo guardar: '+e.message,'e');}};},
   qrEliminarSesion(id){const s=sesiones.find(x=>x.id===id);if(!s)return;

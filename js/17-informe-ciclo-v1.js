@@ -27,8 +27,11 @@
   var EMP = function (s) { return U(s).replace(/\s*S\.?\s*A\.?\s*C\.?$/, ''); };
   /* empresa OFICIAL de cada sector (misma tabla que Programacion ETI del Sistema RR.LL.); si no esta, la del registro */
   var EMP_SECTOR = { 'EL PAPAYO': 'RAPEL', 'PAPAYO': 'RAPEL', 'LIMONES': 'RAPEL', 'LOS OLIVARES': 'RAPEL', 'APROA': 'RAPEL', 'OLIVARES APROA': 'RAPEL', 'ALGARROBOS': 'RAPEL', 'SAN VICENTE': 'RAPEL', 'PLANTA RAPEL': 'RAPEL', 'PLANTA': 'RAPEL',
-    'OLIVARES BAJO': 'VERFRUT', 'SANTA ROSA': 'VERFRUT', 'SANTA ROSA I': 'VERFRUT', 'SANTA ROSA II': 'VERFRUT', 'SANTA ROSA 1': 'VERFRUT', 'SANTA ROSA 2': 'VERFRUT', 'PUNTA ARENAS': 'VERFRUT', 'SAN RAFAEL': 'VERFRUT' };
+    'OLIVARES BAJO': 'VERFRUT', 'SANTA ROSA': 'VERFRUT', 'SANTA ROSA I': 'VERFRUT', 'SANTA ROSA II': 'VERFRUT', 'SANTA ROSA 1': 'VERFRUT', 'SANTA ROSA 2': 'VERFRUT', 'PUNTA ARENAS': 'VERFRUT', 'SAN RAFAEL': 'VERFRUT', 'BOMAREA': 'BOMAREA', 'PIRONA': 'PIRONA', 'MOSQUETA': 'MOSQUETA', 'HEFEI': 'HEFEI', 'LEFKADA': 'LEFKADA' };   /* _ETI_SEDE_TODO_V1: en Olmos cada empresa es su propio sector */
   var empDe = function (sector, emp) { var s = U(sector).replace(/^SECTOR\s+/, ''); return EMP_SECTOR[s] || EMP(emp); };
+  /* _ETI_SEDE_TODO_V1 (21-nov-2026): razon social de Olmos en la cabecera · un informe general SIN empresa (ambas de Piura) no mezcla registros de Olmos */
+  var RZ = function (k, d) { try { return window.ETI_SEDES.razonInforme(k, d); } catch (e) { return d; } };
+  var noOl = function (x) { try { return !window.ETI_SEDES.claveDe(x.sector); } catch (e) { return true; } };
   var pc = function (x) { return x == null ? '—' : Math.round(x * 1000) / 10 + '%'; };
   function token() { try { return sessionStorage.getItem('eti_token') || ''; } catch (e) { return ''; } }
   function esEditor() { var s = ses(); return !!s && (s.rol === 'admin' || EDITORES.indexOf(String(s.user || '').toLowerCase()) >= 0); }
@@ -89,6 +92,7 @@
     var Q = await Promise.all([evaluaciones(c, user), consultar('capacitaciones', [['fechaEjecucion', '>=', c.desde], ['fechaEjecucion', '<=', c.hasta]]),
       consultar('alertas_ref', [['ciclo', '==', c.id]]), consultar('encuestas_sat', [['fecha', '>=', c.desde], ['fecha', '<=', c.hasta]]).catch(function () { return []; }), progsCiclo(c)]);
     var F = Q[0].filter(function (x) { return o.sector ? mismoSec(x.sector, o.sector) : (!o.emp || x.emp === o.emp); });
+    var soloPiura = !o.sector && !o.emp; if (soloPiura) F = F.filter(noOl);   /* _ETI_SEDE_TODO_V1 */
     var sectEmp = {}; Q[0].forEach(function (x) { if (x.sector) sectEmp[U(x.sector)] = x.emp; });
     var CAP = Q[1].filter(function (x) { if (x.eliminado || x.anulado || x.eliminada) return false; var se = U(x.sector);
       if (o.sector) return mismoSec(x.sector, o.sector); var e = EMP_SECTOR[se.replace(/^SECTOR\s+/, '')] || sectEmp[se]; return !o.emp || !e || e === o.emp; });
@@ -96,6 +100,7 @@
     var A = window.etiAlertasRef.analizar(F, c.id, segs);
     var SAT = Q[3].filter(function (x) { return o.sector ? mismoSec(x.sector, o.sector) : (!o.emp || empDe(x.sector, x.emp) === o.emp); });
     var PRG = Q[4].filter(function (x) { var se = U(x.sector).replace(/^SECTOR\s+/, ''); if (o.sector) return mismoSec(x.sector, o.sector); var e = x.empresa || EMP_SECTOR[se] || sectEmp[U(x.sector)]; return !o.emp || !e || EMP(e) === o.emp; });
+    if (soloPiura) { CAP = CAP.filter(noOl); SAT = SAT.filter(noOl); PRG = PRG.filter(noOl); }   /* _ETI_SEDE_TODO_V1 */
     return { F: F, CAP: CAP, A: A, SAT: SAT, PRG: PRG };
   }
   /* ── 2) calculos del informe ── */
@@ -197,12 +202,13 @@
   function abrir() {
     css(); if (M) M.remove(); var ed = esEditor(), cs = window.etiAlertasRef.ciclos(), h = hoy(), act = cs.find(function (c) { return h >= c.desde && h <= c.hasta; }) || cs[0];
     var todos = ['San Vicente', 'Algarrobos', 'Punta Arenas', 'Planta Rapel', 'El Papayo', 'Limones', 'Olivares Bajo', 'Los Olivares', 'Aproa', 'Santa Rosa'], mios = sectoresDe();
+    var empsG = ['VERFRUT', 'RAPEL']; try { todos = window.ETI_SEDES.sectoresInforme(todos); empsG = window.ETI_SEDES.clavesEmp(); } catch (e) {}   /* _ETI_SEDE_TODO_V1 */
     var sects = ed || !mios.length ? todos : mios;
     M = document.createElement('div'); M.className = 'icc-ov';
     M.innerHTML = '<div class="icc-box" role="dialog" aria-modal="true"><div class="icc-hd"><div><b>📑 Informes de cierre de ciclo ETI</b><small>Capacitaciones + evaluación checklist + reforzamientos + encuesta de satisfacción · vista previa y Word</small></div><button class="icc-b" id="icc-x">✕</button></div>' +
       '<div class="icc-bd"><div class="icc-f"><div><label>Informe</label><div class="icc-seg"><button data-m="sector" class="on">📍 Por sector</button>' + (ed ? '<button data-m="general">🏢 General</button>' : '') + '</div></div>' +
       '<div><label>Ciclo</label><select id="icc-ci">' + cs.map(function (c) { return '<option value="' + c.id + '"' + (c.id === act.id ? ' selected' : '') + '>' + c.nom + '</option>'; }).join('') + '</select></div>' +
-      '<div id="icc-empw" style="display:none"><label>Empresa</label><select id="icc-emp"><option>VERFRUT</option><option>RAPEL</option></select></div>' +
+      '<div id="icc-empw" style="display:none"><label>Empresa</label><select id="icc-emp">' + empsG.map(function (x) { return '<option>' + esc(x) + '</option>'; }).join('') + '</select></div>' +
       '<div id="icc-secw"><label>Sector</label><select id="icc-sec">' + sects.map(function (x) { return '<option value="' + esc(x) + '">' + esc(x) + ' · ' + (empDe(x, '') || '?') + '</option>'; }).join('') + '</select></div>' +
       '<div><button class="icc-b p" id="icc-ver">👁 Ver resultados</button></div></div><div id="icc-out"><div class="icc-vacio" style="margin-top:1rem">Elige el ciclo' + (ed ? ', el tipo de informe' : '') + ' y el sector, y pulsa <b>👁 Ver resultados</b>.</div></div></div></div>';
     document.body.appendChild(M);
@@ -249,7 +255,7 @@
       if (typeof window.etiInformeCiclo !== 'function' || (window.etiInformeCiclo.version || 0) < 2) await cargarJS('lib/eti-informe-ciclo.js?v=2');
       var logo = ''; try { logo = (getComputedStyle(document.documentElement).getPropertyValue('--logo').match(/base64,([^)'"]+)/) || [])[1] || ''; } catch (e) {}
       var p1 = o.ciclo.desde, p2 = o.ciclo.hasta, em = fF(hoy());
-      var D = Object.assign({}, R, { modo: o.modo, razon: o.emp === 'RAPEL' ? 'Sociedad Agricola Rapel S.A.C.' : 'Sociedad Exportadora Verfrut S.A.C.', sector: o.sector, alcance: 'Todos los sectores de ' + o.emp,
+      var D = Object.assign({}, R, { modo: o.modo, razon: RZ(o.emp, o.emp === 'RAPEL' ? 'Sociedad Agricola Rapel S.A.C.' : 'Sociedad Exportadora Verfrut S.A.C.'), sector: o.sector, alcance: 'Todos los sectores de ' + o.emp,
         ciclo: { nom: o.ciclo.nom, desdeTxt: fF(p1), hastaTxt: fF(p2) }, fechaEmision: em, emisor: (s.nom || s.user || '') + ' (' + (s.user || '') + ')',
         conclusiones: $('icc-con').value.split('\n').map(function (x) { return x.trim(); }).filter(Boolean), decision: $('icc-dec').value.trim(),
         firmas: gen ? FIRMAS_GEN : firmasSector(R), logoBase64: logo });

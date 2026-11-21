@@ -24,6 +24,11 @@
   var fF = function (f) { return f ? String(f).slice(0, 10).split('-').reverse().join('/') : '—'; };
   var pc = function (x) { return x == null || isNaN(x) ? '—' : (Math.round(x * 1000) / 10).toFixed(1) + '%'; };
   var empDe = function (s) { try { return window.etiAlertasRef.empDe(s, '') || ''; } catch (e) { return ''; } };
+  /* _ETI_SEDE_TODO_V1 (21-nov-2026): sectores segun la sede del usuario · razon social de Olmos · "General · ambas empresas" es solo Piura */
+  var SECT = function () { try { return window.ETI_SEDES.sectoresInforme(SECTORES); } catch (e) { return SECTORES; } };
+  var SEDE = function () { try { return window.ETI_SEDES.sede(); } catch (e) { return 'PIURA'; } };
+  var RZ = function (k, d) { try { return window.ETI_SEDES.razonInforme(k, d); } catch (e) { return d; } };
+  var esOl = function (sector) { try { return !!window.ETI_SEDES.claveDe(sector); } catch (e) { return false; } };
   function esEditor() { var s = ses(); return !!s && (s.rol === 'admin' || EDITORES.indexOf(String(s.user || '').toLowerCase()) >= 0); }
   var ciclos = function () { return window.etiAlertasRef.ciclos(); };
 
@@ -71,7 +76,7 @@
   var est = function (t, k) { var c = { ok: ['#DCFCE7', '#166534'], med: ['#FEF3C7', '#92400E'], bad: ['#FEE2E2', '#991B1B'], info: ['#E0E7FF', '#1E3A8A'] }[k]; return '<span class="x-chip" style="background:' + c[0] + ';color:' + c[1] + '">' + esc(t) + '</span>'; };
   function documento(P, alc, R) {
     var CI = window.etiCentroInformes || {}, s = ses() || {}, n = 0, ev = R.ev, T = ev.temas, emp = alc.sector ? empDe(alc.sector) : alc.emp;
-    var razon = emp === 'RAPEL' ? 'Sociedad Agrícola Rapel S.A.C.' : emp === 'VERFRUT' ? 'Sociedad Exportadora Verfrut S.A.C.' : 'Sociedad Agrícola Rapel S.A.C. · Sociedad Exportadora Verfrut S.A.C.';
+    var razon = RZ(alc.sector || emp, emp === 'RAPEL' ? 'Sociedad Agrícola Rapel S.A.C.' : emp === 'VERFRUT' ? 'Sociedad Exportadora Verfrut S.A.C.' : 'Sociedad Agrícola Rapel S.A.C. · Sociedad Exportadora Verfrut S.A.C.');
     var h2 = function (t) { n++; return '<h2 class="x-h2">' + ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI'][n - 1] + '.&nbsp;&nbsp;' + t + ':</h2>'; };
     var ab = CI._ab || function (z) { return esc(z); }, ley = CI._leyenda ? CI._leyenda(T) : '';
     var tabla = function (heads, filas, al, total) { return '<table class="x-t"><thead><tr>' + heads.map(function (x, i) { return '<th style="text-align:' + ((al || [])[i] || 'left') + '">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' +
@@ -134,7 +139,7 @@
       '<div id="ie-w-mes"><label>Mes</label><select id="ie-mes">' + opt(MESES.map(function (m, i) { return [i + 1, m]; }), d.getMonth() + 1) + '</select></div>' +
       '<div id="ie-w-ciclo" style="display:none"><label>Ciclo</label><select id="ie-ciclo">' + opt(cs.map(function (c) { return [c.id, c.nom]; }), act && act.id) + '</select></div>' +
       '<div id="ie-w-anio"><label>Año</label><select id="ie-anio">' + opt(anios.map(function (a) { return [a, a]; }), y) + '</select></div>' +
-      '<div><label>Alcance</label><select id="ie-alc">' + opt([['', 'General · ambas empresas'], ['E:RAPEL', 'General · RAPEL'], ['E:VERFRUT', 'General · VERFRUT']].concat(SECTORES.map(function (s) { return ['S:' + s, 'Sector ' + s]; })), '') + '</select></div>' +
+      '<div><label>Alcance</label><select id="ie-alc">' + opt((SEDE() === 'OLMOS' ? [] : [['', 'General · ambas empresas'], ['E:RAPEL', 'General · RAPEL'], ['E:VERFRUT', 'General · VERFRUT']]).concat(SECT().map(function (s) { return ['S:' + s, 'Sector ' + s]; })), '') + '</select></div>' +
       '<div><button class="ci-b p" id="ie-ver">👁 Ver informe</button></div></div><div id="ie-out"><div class="ci-vacio">Elige el periodo y el alcance, y pulsa <b>👁 Ver informe</b>.</div></div>');
     var sync = function () { var t = $('ie-tipo').value; $('ie-w-mes').style.display = t === 'mes' ? '' : 'none'; $('ie-w-ciclo').style.display = t === 'ciclo' ? '' : 'none'; $('ie-w-anio').style.display = t === 'ciclo' ? 'none' : ''; };
     $('ie-tipo').onchange = sync; sync();

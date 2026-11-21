@@ -82,7 +82,7 @@
       'table{width:100%;border-collapse:collapse;margin-top:6px}th{background:#E6EBF2;color:#3D4C63;font-size:9px;text-transform:uppercase;letter-spacing:.3px;padding:6px;border:1px solid #D9E0EC;text-align:left}td{padding:6px;border:1px solid #D9E0EC;font-size:10.5px}.c{text-align:center}.ok{color:#0B6B36;font-weight:700;background:#E6F7EE}.no{color:#B00020;font-weight:700;background:#FDE4E7}tfoot td{font-weight:800;background:#F3F5F8}' +
       '.res{display:flex;justify-content:space-between;align-items:center;gap:8px}.badge{border-radius:99px;padding:3px 10px;font-weight:800}' +
       '@media print{body{background:#fff}.bar{display:none}.hoja{box-shadow:none;margin:0;max-width:none;padding:0}}';
-    var empTxt = o.emp ? RAZON[o.emp] : 'Sociedad Agricola Rapel S.A.C. · Sociedad Exportadora Verfrut S.A.C.';
+    var empTxt = o.emp ? (RAZON[o.emp] || (function () { try { return ETI_SEDES.razonInforme(o.emp, o.emp); } catch (e) { return o.emp; } })()) : 'Sociedad Agricola Rapel S.A.C. · Sociedad Exportadora Verfrut S.A.C.';
     var n = R.reduce(function (a, r) { return a + r.n; }, 0);
     var html = '<section class="hoja"><h1>Hoja de resultados por ruta · Evaluaciones ETI</h1><div class="mut">Evaluación de Conocimiento de Buenas Prácticas Sociales y Laborales · evidencia para auditoría</div>' +
       '<div class="cab"><div><span>Empresa</span><b>' + e(empTxt) + '</b></div><div><span>Periodo</span><b>' + e(fF(o.desde) + ' al ' + fF(o.hasta)) + '</b></div><div><span>Hojas</span><b>' + R.length + ' rutas / áreas</b></div><div><span>Evaluados</span><b>' + n + '</b></div></div>' +
@@ -150,7 +150,7 @@
       var c = celda(x.sector || '—'), z = w0(c, semISO(x.fecha)); z.n++; z.sr += (+x.resultado || 0); z.sups[x.sup || '—'] = 1; z.mods.QR = 1; });
     try {
       var pq = await f.collection('programaciones_eti').get();
-      pq.docs.forEach(function (d) { var x = d.data(); if (!/CHECK/i.test(x.tema || '')) return; if (o.emp && x.empresa && o.emp.indexOf(String(x.empresa).toUpperCase()) < 0) return;
+      pq.docs.forEach(function (d) { var x = d.data(); if (!/CHECK/i.test(x.tema || '')) return; if (o.emp && x.empresa && o.emp.toUpperCase().indexOf(String(x.empresa).toUpperCase()) < 0) return;
         var ws = (x.semanas && x.semanas.length) ? x.semanas : (x.fechas || []).filter(function (fe) { return fe >= o.desde && fe <= o.hasta; }).map(semISO);
         if (x.anio && +x.anio !== anio) return;
         var c = celda(x.sector || '—', true); ws.forEach(function (w) { var z = w0(c, +w); z.prog = true; z.progSup = x.supervisor || ''; z.progEst = x.estado || ''; }); });
@@ -185,7 +185,7 @@
     ov.innerHTML = '<div style="background:#fff;border-radius:8px;max-width:980px;width:100%;max-height:90vh;display:flex;flex-direction:column;font-family:Inter,Segoe UI,Arial,sans-serif;box-shadow:0 20px 50px rgba(15,39,72,.25)">' +
       '<div style="padding:14px 20px;background:#EDF1F6;border-bottom:1px solid #D6DEE9;border-radius:8px 8px 0 0;font-weight:700;color:#0F2748">Informe para auditoría</div>' +
       '<div style="padding:4px 20px 10px"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">' +
-      '<div style="flex:2;min-width:200px"><label style="' + fl + '">Empresa</label><select id="iaEmp" class="fc" style="width:100%"><option value="RAPEL S.A.C.">RAPEL S.A.C.</option><option value="VERFRUT S.A.C.">VERFRUT S.A.C.</option></select></div>' +
+      '<div style="flex:2;min-width:200px"><label style="' + fl + '">Empresa</label><select id="iaEmp" class="fc" style="width:100%">' + (function () { var L = ['RAPEL S.A.C.', 'VERFRUT S.A.C.']; try { var sd = ETI_SEDES.sede(), ol = ETI_SEDES.empresas('OLMOS'); L = sd === 'OLMOS' ? ol : sd === 'AMBAS' ? L.concat(ol) : L; } catch (e) {} return L.map(function (x) { return '<option value="' + esc(x) + '">' + esc(x) + '</option>'; }).join(''); })() + '</select></div>' +
       '<div style="flex:1;min-width:130px"><label style="' + fl + '">Desde</label><input id="iaDes" type="date" class="fc" style="width:100%" value="2026-06-19"></div>' +
       '<div style="flex:1;min-width:130px"><label style="' + fl + '">Hasta</label><input id="iaHas" type="date" class="fc" style="width:100%" value="' + hoyI() + '"></div>' +
       '<button class="btn bpri" id="iaBus" style="height:38px">Buscar</button><button class="btn bout" id="iaHis" style="height:38px" title="Sector × semana: qué semanas tienen Check List realizado o programado">Histórico semanal</button></div>' +

@@ -26,7 +26,7 @@
   var EMP = function (s) { return U(s).replace(/\s*S\.?\s*A\.?\s*C\.?$/, ''); };   /* "VERFRUT S.A.C." = "VERFRUT" */
   /* empresa OFICIAL de cada sector (misma tabla que Programacion ETI del Sistema RR.LL.); si no esta, la del registro */
   var EMP_SECTOR = { 'EL PAPAYO': 'RAPEL', 'PAPAYO': 'RAPEL', 'LIMONES': 'RAPEL', 'LOS OLIVARES': 'RAPEL', 'APROA': 'RAPEL', 'OLIVARES APROA': 'RAPEL', 'ALGARROBOS': 'RAPEL', 'SAN VICENTE': 'RAPEL', 'PLANTA RAPEL': 'RAPEL', 'PLANTA': 'RAPEL',
-    'OLIVARES BAJO': 'VERFRUT', 'SANTA ROSA': 'VERFRUT', 'SANTA ROSA I': 'VERFRUT', 'SANTA ROSA II': 'VERFRUT', 'SANTA ROSA 1': 'VERFRUT', 'SANTA ROSA 2': 'VERFRUT', 'PUNTA ARENAS': 'VERFRUT', 'SAN RAFAEL': 'VERFRUT' };
+    'OLIVARES BAJO': 'VERFRUT', 'SANTA ROSA': 'VERFRUT', 'SANTA ROSA I': 'VERFRUT', 'SANTA ROSA II': 'VERFRUT', 'SANTA ROSA 1': 'VERFRUT', 'SANTA ROSA 2': 'VERFRUT', 'PUNTA ARENAS': 'VERFRUT', 'SAN RAFAEL': 'VERFRUT', 'BOMAREA': 'BOMAREA', 'PIRONA': 'PIRONA', 'MOSQUETA': 'MOSQUETA', 'HEFEI': 'HEFEI', 'LEFKADA': 'LEFKADA' };   /* _ETI_SEDE_TODO_V1: en Olmos cada empresa es su propio sector */
   var empDe = function (sector, emp) { var s = U(sector).replace(/^SECTOR\s+/, ''); return EMP_SECTOR[s] || EMP(emp); };
   var P = function (v) { return v == null ? '—' : Math.round(v * 1000) / 10 + '%'; };
   function token() { try { return sessionStorage.getItem('eti_token') || ''; } catch (e) { return ''; } }

@@ -30,6 +30,11 @@
   var secKey = function (s) { var x = U(s).replace(/^SECTOR\s+/, ''); return ALIAS[x] || x; };
   var secTit = function (s) { var x = secKey(s); return x ? x.toLowerCase().replace(/(^|\s)\S/g, function (m) { return m.toUpperCase(); }) : '—'; };
   var empDe = function (s) { try { return window.etiAlertasRef.empDe(s, '') || ''; } catch (e) { return ''; } };
+  /* _ETI_SEDE_TODO_V1 (21-nov-2026): sectores segun la sede del usuario · razon social de Olmos · "General · ambas empresas" es solo Piura */
+  var SECT = function () { try { return window.ETI_SEDES.sectoresInforme(SECTORES); } catch (e) { return SECTORES; } };
+  var SEDE = function () { try { return window.ETI_SEDES.sede(); } catch (e) { return 'PIURA'; } };
+  var RZ = function (k, d) { try { return window.ETI_SEDES.razonInforme(k, d); } catch (e) { return d; } };
+  var esOl = function (sector) { try { return !!window.ETI_SEDES.claveDe(sector); } catch (e) { return false; } };
   function esEditor() { var s = ses(); return !!s && (s.rol === 'admin' || EDITORES.indexOf(String(s.user || '').toLowerCase()) >= 0); }
   function token() { try { return sessionStorage.getItem('eti_token') || ''; } catch (e) { return ''; } }
   function post(ruta, cuerpo) {
@@ -52,7 +57,7 @@
       consultar('capacitaciones', [['fechaEjecucion', '>=', P.desde], ['fechaEjecucion', '<=', P.hasta]]),
       consultar('programaciones_eti', []),
       consultar('encuestas_sat', [['fecha', '>=', P.desde], ['fecha', '<=', P.hasta]]).catch(function () { return []; })]);
-    var enAlc = function (sector, emp) { if (alc.sector) return secKey(sector) === secKey(alc.sector); var e = empDe(sector) || U(emp).replace(/\s*S\.?\s*A\.?\s*C\.?$/, ''); return !alc.emp || e === alc.emp; };
+    var enAlc = function (sector, emp) { if (alc.sector) return secKey(sector) === secKey(alc.sector); var e = empDe(sector) || U(emp).replace(/\s*S\.?\s*A\.?\s*C\.?$/, ''); return alc.emp ? e === alc.emp : !esOl(sector); };   /* _ETI_SEDE_TODO_V1 */
     var CAP = Q[0].filter(function (x) { return !(x.eliminado || x.anulado || x.eliminada) && enAlc(x.sector, x.empresa); });
     var PRG = Q[1].filter(function (x) { return /CAPACITACI/i.test(x.tema || '') && enAlc(x.sector, x.empresa); })
       .map(function (x) { x.fechas = (Array.isArray(x.fechas) && x.fechas.length ? x.fechas.slice() : [x.fechaProgramada, x.fechaFin || x.fechaProgramada].filter(Boolean)).sort(); return x; });
@@ -120,7 +125,7 @@
   var est = function (t, k) { var c = { ok: ['#DCFCE7', '#166534'], med: ['#FEF3C7', '#92400E'], bad: ['#FEE2E2', '#991B1B'], info: ['#E0E7FF', '#1E3A8A'] }[k]; return '<span class="x-chip" style="background:' + c[0] + ';color:' + c[1] + '">' + esc(t) + '</span>'; };
   function documento(P, alc, R, K) {
     var CI = window.etiCentroInformes || {}, s = ses() || {}, n = 0, emp = alc.sector ? empDe(alc.sector) : alc.emp;
-    var razon = emp === 'RAPEL' ? 'Sociedad Agrícola Rapel S.A.C.' : emp === 'VERFRUT' ? 'Sociedad Exportadora Verfrut S.A.C.' : 'Sociedad Agrícola Rapel S.A.C. · Sociedad Exportadora Verfrut S.A.C.';
+    var razon = RZ(alc.sector || emp, emp === 'RAPEL' ? 'Sociedad Agrícola Rapel S.A.C.' : emp === 'VERFRUT' ? 'Sociedad Exportadora Verfrut S.A.C.' : 'Sociedad Agrícola Rapel S.A.C. · Sociedad Exportadora Verfrut S.A.C.');
     var h2 = function (t) { n++; return '<h2 class="x-h2">' + ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI'][n - 1] + '.&nbsp;&nbsp;' + t + ':</h2>'; };
     var tabla = function (heads, filas, al, total) { return '<table class="x-t"><thead><tr>' + heads.map(function (x, i) { return '<th style="text-align:' + ((al || [])[i] || 'left') + '">' + x + '</th>'; }).join('') + '</tr></thead><tbody>' +
       (filas.length ? filas.map(function (f) { return '<tr>' + f.map(function (x, i) { return '<td style="text-align:' + ((al || [])[i] || 'left') + '">' + x + '</td>'; }).join('') + '</tr>'; }).join('') : '<tr><td colspan="' + heads.length + '" style="text-align:center;color:#64748B">Sin registros en el periodo</td></tr>') +
@@ -184,7 +189,7 @@
       '<div id="ic-w-mes"><label>Mes</label><select id="ic-mes">' + opt(MESES.map(function (m, i) { return [i + 1, m]; }), d.getMonth() + 1) + '</select></div>' +
       '<div id="ic-w-ciclo" style="display:none"><label>Ciclo</label><select id="ic-ciclo">' + opt(cs.map(function (c) { return [c.id, c.nom]; }), act && act.id) + '</select></div>' +
       '<div id="ic-w-anio"><label>Año</label><select id="ic-anio">' + opt(anios.map(function (a) { return [a, a]; }), y) + '</select></div>' +
-      '<div><label>Alcance</label><select id="ic-alc">' + opt([['', 'General · ambas empresas'], ['E:RAPEL', 'General · RAPEL'], ['E:VERFRUT', 'General · VERFRUT']].concat(SECTORES.map(function (s) { return ['S:' + s, 'Sector ' + s]; })), '') + '</select></div>' +
+      '<div><label>Alcance</label><select id="ic-alc">' + opt((SEDE() === 'OLMOS' ? [] : [['', 'General · ambas empresas'], ['E:RAPEL', 'General · RAPEL'], ['E:VERFRUT', 'General · VERFRUT']]).concat(SECT().map(function (s) { return ['S:' + s, 'Sector ' + s]; })), '') + '</select></div>' +
       '<div><button class="ci-b p" id="ic-ver">👁 Ver informe</button></div></div><div id="ic-out"><div class="ci-vacio">Elige el periodo y el alcance, y pulsa <b>👁 Ver informe</b>.</div></div>');
     var sync = function () { var t = $('ic-tipo').value; $('ic-w-mes').style.display = t === 'mes' ? '' : 'none'; $('ic-w-ciclo').style.display = t === 'ciclo' ? '' : 'none'; $('ic-w-anio').style.display = t === 'ciclo' ? 'none' : ''; };
     $('ic-tipo').onchange = sync; sync();

@@ -1470,6 +1470,8 @@ function iniciar(){
   // Renderizar select supervisores dinámico
   const selSup = document.getElementById('p1s');
   if(selSup) selSup.innerHTML = renderSupSelect();
+  /* _ETI_SEDE_TODO_V1 (21-nov-2026): la lista Empresa trae las empresas de la sede del usuario (Piura, Olmos o ambas) */
+  try{ if(window.ETI_SEDES&&ETI_SEDES.empresas){ document.getElementById('p1e').innerHTML='<option value="">— Seleccionar —</option>'+ETI_SEDES.empresas().map(x=>`<option value="${x}">${x}</option>`).join(''); } }catch(_){}
   document.getElementById('p1e').value='';
   document.getElementById('p1f').value=hoy();
   document.getElementById('bt1').classList.remove('sel');
@@ -1505,7 +1507,12 @@ function p1next(){
   if(supData && supData.multiSector && !sector){
     toast('Seleccione el fundo o sector donde realizará la evaluación','e'); return;
   }
-  S.emp=e; S.sup=s; S.sector=sector; S.tipo=tipo;
+  /* _ETI_SEDE_TODO_V1: sector de Olmos -> la empresa ES ese sector; sector de Piura -> nunca una empresa de Olmos */
+  let empOk=e;
+  try{ if(window.ETI_SEDES&&ETI_SEDES.empresaDeSector){ const eo=ETI_SEDES.empresaDeSector(sector);
+    if(eo){ empOk=eo; const pe=document.getElementById('p1e'); if(pe&&[...pe.options].some(x=>x.value===eo)) pe.value=eo; }
+    else if(sector&&ETI_SEDES.esEmpresaOlmos(e)){ toast('El sector '+sector+' es de Piura: elige VERFRUT o RAPEL','e'); return; } } }catch(_){}
+  S.emp=empOk; S.sup=s; S.sector=sector; S.tipo=tipo;
   S.fecha=document.getElementById('p1f').value||hoy();
 
   // ── CONTROL DE DESTIEMPO (evaluaciones programadas) ──

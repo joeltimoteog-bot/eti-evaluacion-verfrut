@@ -39,6 +39,9 @@
      (sus informes GH-03 y GH-04 siguen en Mis evaluaciones). */
   function puedeCentro() { var s = ses(); return !!s && EDITORES.indexOf(String(s.user || '').toLowerCase()) >= 0; }
   function empDe(sec) { try { return window.etiAlertasRef.empDe(sec, '') || ''; } catch (e) { return ''; } }
+  /* _ETI_SEDE_TODO_V1 (21-nov-2026): sectores y empresas segun la sede del usuario · razon social de Olmos en la cabecera */
+  function SECT() { try { return window.ETI_SEDES.sectoresInforme(SECTORES); } catch (e) { return SECTORES; } }
+  function RZ(k, d) { try { return window.ETI_SEDES.razonInforme(k, d); } catch (e) { return d; } }
   function cerrarLateral() { document.body.classList.remove('side-open'); }
 
   /* ══ 1) MENU ORDENADO (solo CSS order: los botones son los mismos) ══ */
@@ -207,7 +210,7 @@
       '<div class="ci-f"><div><label>Desde el ciclo</label><select id="xp-ci">' + cs.map(function (c) { return '<option value="' + c.id + '"' + (act && c.id === act.id ? ' selected' : '') + '>' + esc(c.nom) + '</option>'; }).join('') + '</select></div>' +
       '<div><label>Hasta el ciclo</label><select id="xp-ci2">' + cs.map(function (c) { return '<option value="' + c.id + '"' + (act && c.id === act.id ? ' selected' : '') + '>' + esc(c.nom) + '</option>'; }).join('') + '</select></div>' +
       '<div><button class="ci-b" id="xp-anio" title="Los 4 ciclos del año">Todo el año</button></div>' +
-      '<div><label>Empresa</label><select id="xp-emp"><option value="">Todas</option><option>RAPEL</option><option>VERFRUT</option></select></div>' +
+      '<div><label>Empresa</label><select id="xp-emp"><option value="">Todas</option>' + (function () { var L = ['RAPEL', 'VERFRUT']; try { var sd = ETI_SEDES.sede(), ol = ETI_SEDES.clavesEmp('OLMOS'); L = sd === 'OLMOS' ? ol : sd === 'AMBAS' ? L.concat(ol) : L; } catch (e) {} return L.map(function (x) { return '<option>' + esc(x) + '</option>'; }).join(''); })() + '</select></div>' +
       '<div><button class="ci-b p" id="xp-res">📋 Ver sectores</button></div></div><div id="xp-out"><div class="ci-vacio">Elige el ciclo y pulsa <b>📋 Ver sectores</b>.</div></div>');
     $('xp-res').onclick = resumen;
     $('xp-anio').onclick = function () { var y = String(new Date().getFullYear()); $('xp-ci').value = y + '-C1'; $('xp-ci2').value = y + '-C4'; resumen(); };
@@ -244,7 +247,7 @@
       var obs = {}; R.alertas.forEach(function (a) { var k = norm(a.sector); obs[k] = obs[k] || {}; obs[k][a.ruta + '|' + a.cod] = 1; });
       var pend = {}; R.alertas.forEach(function (a) { if (a.estado !== 'superada') { var k = norm(a.sector); pend[k] = (pend[k] || 0) + 1; } });
       var nEv = {}; R.anexo.forEach(function (a) { var k = norm(a.sector); nEv[k] = (nEv[k] || 0) + a.n; });
-      var lista = SECTORES.filter(function (s) { return !emp || empDe(s) === emp; });
+      var lista = SECT().filter(function (s) { return !emp || empDe(s) === emp; });
       var filas = lista.map(function (s) {
         var k = norm(s), cp = cap[k], e = ev[k], hay = !!(cp || e), no = Object.keys(obs[k] || {}).length, pd = pend[k] || 0;
         var estado = !hay ? est('Sin datos', 'info') : pd ? est(pd + ' reforz. por cerrar', 'med') : est('Completo', 'ok');
@@ -274,7 +277,7 @@
   function logo() { try { var m = getComputedStyle(document.documentElement).getPropertyValue('--logo').match(/url\(["']?(data:[^"')]+)/); return m ? m[1] : ''; } catch (e) { return ''; } }
   /* Documento con el MODELO de los informes gerenciales (cabecera, secciones numeradas, tarjetas, tablas) */
   function documento(o, R, K) {
-    var ev = R.ev, s = ses() || {}, emp = o.emp === 'RAPEL' ? 'Sociedad Agrícola Rapel S.A.C.' : 'Sociedad Exportadora Verfrut S.A.C.';
+    var ev = R.ev, s = ses() || {}, emp = RZ(o.emp, o.emp === 'RAPEL' ? 'Sociedad Agrícola Rapel S.A.C.' : 'Sociedad Exportadora Verfrut S.A.C.');
     var T = ev.temas, n = 0;
     var h2 = function (t) { n++; return '<h2 class="x-h2">' + ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI'][n - 1] + '.&nbsp;&nbsp;' + t + ':</h2>'; };
     var VAC = '';   /* motivo que se muestra cuando un cuadro no tiene datos */

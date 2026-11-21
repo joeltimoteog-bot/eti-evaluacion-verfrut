@@ -126,7 +126,9 @@ function bienvenida(){
 function ubicacion(){
   var last={};try{last=JSON.parse(ls('enc_ult')||'{}')||{};}catch(e){}
   W.tipo=W.tipo||'';W.sexo=W.sexo||'';W.sector=W.sector||S.sector||last.sector||'';W.ruta=W.ruta||'';
-  var sects=SECTORES.slice(); if(W.sector&&sects.indexOf(W.sector)<0)sects.unshift(W.sector);
+  /* _ETI_SEDE_TODO_V1 (21-nov-2026): una encuesta de Olmos muestra las empresas de Olmos, no los sectores de Piura */
+  var OLM=['Bomarea','Pirona','Mosqueta','Hefei','Lefkada'], esOl=function(t){t=String(t||'').toUpperCase();return OLM.some(function(o){return t.indexOf(o.toUpperCase())>=0;});};
+  var sects=(esOl(S.sector)||esOl(S.emp)?OLM:SECTORES).slice(); if(W.sector&&sects.indexOf(W.sector)<0)sects.unshift(W.sector);
   function pintar(){
     app.innerHTML='<div class="card"><h2>Cuéntanos un poco de ti</h2><p>Solo para ver los resultados por sector. <b>No guardamos tu nombre ni tu DNI.</b></p>'+
      '<label>Eres…</label><div class="tipos"><button class="tipo'+(W.tipo==='obrero'?' sel':'')+'" data-t="obrero"><span>👷</span>Obrero</button><button class="tipo'+(W.tipo==='empleado'?' sel':'')+'" data-t="empleado"><span>💼</span>Empleado</button></div>'+

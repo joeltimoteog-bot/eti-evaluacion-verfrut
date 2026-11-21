@@ -79,7 +79,7 @@ function render(){
       <input type="date" class="fc" style="width:auto" value="${esc(M.desde)}" onchange="ETIMIS.rango(this.value,null)"><input type="date" class="fc" style="width:auto" value="${esc(M.hasta)}" onchange="ETIMIS.rango(null,this.value)">
     </div></div>
   ${adm?`<div style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;margin:-.3rem 0 .8rem">
-    <select class="fc" style="width:auto" onchange="ETIMIS.filtro('emp',this.value)"><option value="">Todas las empresas</option>${['VERFRUT S.A.C.','RAPEL S.A.C.'].map(e=>`<option ${M.f.emp===e?'selected':''}>${e}</option>`).join('')}</select>
+    <select class="fc" style="width:auto" onchange="ETIMIS.filtro('emp',this.value)"><option value="">Todas las empresas</option>${((window.ETI_SEDES&&ETI_SEDES.empresas)?ETI_SEDES.empresas():['VERFRUT S.A.C.','RAPEL S.A.C.']).map(e=>`<option ${M.f.emp===e?'selected':''}>${e}</option>`).join('')}</select>
     <select class="fc" style="width:auto" onchange="ETIMIS.filtro('mod',this.value)"><option value="">QR y manual</option><option value="QR" ${M.f.mod==='QR'?'selected':''}>Solo QR</option><option value="MANUAL" ${M.f.mod==='MANUAL'?'selected':''}>Solo manual</option></select>
     <select class="fc" style="width:auto" onchange="ETIMIS.filtro('tipo',this.value)"><option value="">Obreros y empleados</option><option value="obrero" ${M.f.tipo==='obrero'?'selected':''}>Solo obreros</option><option value="empleado" ${M.f.tipo==='empleado'?'selected':''}>Solo empleados</option></select>
     ${TD?`<button class="btn bout bsm" onclick="ETIMIS.recargar()">🔄 Actualizar</button>`:''}
@@ -271,7 +271,7 @@ window.ETIMIS={
       const G=grupos(F).map(g=>{const rows=F.filter(r=>(r.tipo==='empleado'?'E':'O')===(g.tipo==='empleado'?'E':'O')&&(r.sector||'—')===g.sector&&String(r.ruta||'—').toUpperCase()===g.ruta&&String(r.cod||'').toUpperCase()===g.cod);return {tipo:g.tipo,ruta:g.ruta,cod:g.cod,n:g.n,prom:g.n?g.s/g.n:0,temas:temas(rows)};});
       let logo='';try{logo=(getComputedStyle(document.documentElement).getPropertyValue('--logo').match(/base64,([^)'"]+)/)||[])[1]||'';}catch(e){}
       const empX=String((F.find(r=>r.emp)||{}).emp||'').toUpperCase();
-      const datos={nom:o.nomO||M.nom,sector:sects[0],fechas:fechas.map(fF),fechaInforme:fF(hoyI()),temas:temas(F),grupos:G,R:R,v:v,logoBase64:logo,razonHead:empX.indexOf('RAPEL')>=0?'Sociedad Agricola Rapel S.A.C.':'Sociedad Exportadora Verfrut S.A.C.'};
+      const datos={nom:o.nomO||M.nom,sector:sects[0],fechas:fechas.map(fF),fechaInforme:fF(hoyI()),temas:temas(F),grupos:G,R:R,v:v,logoBase64:logo,razonHead:(function(d){try{return ETI_SEDES.razonInforme(ETI_SEDES.claveDe(sects[0])?sects[0]:empX,d);}catch(e){return d;}})(empX.indexOf('RAPEL')>=0?'Sociedad Agricola Rapel S.A.C.':'Sociedad Exportadora Verfrut S.A.C.')   /* _ETI_SEDE_TODO_V1: razon social de Olmos si el sector es de Olmos */};
       const nombre='Informe_INF-SC-GH-04_ETI_'+String(sects[0]).replace(/[^\w]+/g,'_')+'_'+(fechas[0]||'').replace(/-/g,'')+'.docx';
       try{const blob=await window.etiInformeGH04(datos);const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=nombre;a.style.display='none';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},800);}
       catch(e){console.error(e);toast('No se pudo generar el Word: '+e.message,'e');return;}

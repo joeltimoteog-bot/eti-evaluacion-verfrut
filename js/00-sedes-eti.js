@@ -42,7 +42,16 @@
   function empresaDeSector(sector) { var k = N(sector), x = OLMOS.filter(function (o) { return N(o) === k; })[0]; return x ? (RAZON[N(x)] || x) : ''; }
   function empresas(s) { s = s || sede(); var o = OLMOS.map(empresaDeSector); return s === 'OLMOS' ? o : (s === 'AMBAS' ? EMP_PIURA.concat(o) : EMP_PIURA.slice()); }
   function esEmpresaOlmos(emp) { var k = N(emp); return !!k && OLMOS.some(function (x) { return k.indexOf(N(x)) >= 0; }); }
-  window.ETI_SEDES = { PIURA: PIURA.slice(), OLMOS: OLMOS.slice(), sede: sede, sectores: sectores, esOlmos: esOlmos, aplicar: aplicar, razonDe: razonDe, sedeDeEmpresa: sedeDeEmpresa, guardarSedeDeEmpresa: guardarSedeDeEmpresa, empresaDeSector: empresaDeSector, empresas: empresas, esEmpresaOlmos: esEmpresaOlmos };
+  /* _ETI_SEDE_TODO_V1 (21-nov-2026): lo que necesitan informes, filtros e indicadores para separar Piura / Olmos.
+     claveDe: 'MOSQUETA' para un sector o empresa de Olmos ('' si es de Piura) · clavesEmp: claves cortas de empresa por sede
+     razonInforme: razon social para la cabecera de un informe (la de Olmos si corresponde; si no, la que ya calculaba el informe)
+     sectoresInforme: lista de sectores de un informe segun la sede del usuario · visible: si un registro es de la sede del usuario */
+  function claveDe(x) { var k = N(x); if (!k) return ''; for (var i = 0; i < OLMOS.length; i++) if (k.indexOf(N(OLMOS[i])) >= 0) return N(OLMOS[i]); return ''; }
+  function clavesEmp(s) { s = s || sede(); var o = OLMOS.map(N), p = ['VERFRUT', 'RAPEL']; return s === 'OLMOS' ? o : (s === 'AMBAS' ? p.concat(o) : p); }
+  function razonInforme(x, porDefecto) { var c = claveDe(x); if (!c) return porDefecto; return RAZON[c] || (OLMOS.filter(function (o) { return N(o) === c; })[0] + ' (razón social por confirmar)'); }
+  function sectoresInforme(base) { var s = sede(); base = (base || PIURA).slice(); return s === 'OLMOS' ? OLMOS.slice() : (s === 'AMBAS' ? base.concat(OLMOS) : base); }
+  function visible(sector, emp) { var s = sede(); if (s === 'AMBAS') return true; var ol = !!(claveDe(sector) || claveDe(emp)); return s === 'OLMOS' ? ol : !ol; }
+  window.ETI_SEDES = { PIURA: PIURA.slice(), OLMOS: OLMOS.slice(), sede: sede, sectores: sectores, esOlmos: esOlmos, aplicar: aplicar, razonDe: razonDe, sedeDeEmpresa: sedeDeEmpresa, guardarSedeDeEmpresa: guardarSedeDeEmpresa, empresaDeSector: empresaDeSector, empresas: empresas, esEmpresaOlmos: esEmpresaOlmos, claveDe: claveDe, clavesEmp: clavesEmp, razonInforme: razonInforme, sectoresInforme: sectoresInforme, visible: visible };
   /* al cargar (sesion ya iniciada o recarga): la lista general toma los sectores de la sede del usuario */
   try { if (typeof SECTORES_TODOS !== 'undefined') aplicar(SECTORES_TODOS); } catch (e) {}
   try { console.log('[_ETI_SEDES_V1] sede: ' + sede() + ' · sectores: ' + sectores().length); } catch (e) {}

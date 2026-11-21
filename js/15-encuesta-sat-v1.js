@@ -132,7 +132,7 @@
     var s = ses() || {}, adm = esEditor(), yo = supDe(s.nom);
     var supOps = adm ? sups() : [];
     $('enc-bd').innerHTML = '<div class="enc-grid enc-f">' +
-      '<div><label>Empresa</label><select id="enc-emp"><option>VERFRUT</option><option>RAPEL</option></select></div>' +
+      '<div><label>Empresa</label><select id="enc-emp">' + (function () { var L = ['VERFRUT', 'RAPEL']; try { L = ETI_SEDES.clavesEmp(); } catch (e) {} return L.map(function (x) { return '<option>' + esc(x) + '</option>'; }).join(''); })() + '</select></div>' +
       '<div><label>Capacitador (supervisor)</label>' + (adm ? '<select id="enc-sup"><option value="' + esc(s.nom || '') + '">' + esc(s.nom || '') + ' (yo)</option>' + supOps.map(function (x) { return '<option>' + esc(x.nom) + '</option>'; }).join('') + '</select>' : '<input id="enc-sup" value="' + esc(s.nom || '') + '" readonly>') + '</div>' +
       '<div style="grid-column:1/-1"><label>Tema de la capacitación</label><input id="enc-tema" list="enc-temas" placeholder="Ej. Reforzamiento ETI: canales de quejas" autocomplete="off"><datalist id="enc-temas">' + TEMAS.map(function (t) { return '<option value="' + esc(t) + '">'; }).join('') + '</datalist></div>' +
       '<div><label>Fecha de la capacitación</label><input id="enc-fecha" type="date" value="' + hoy() + '"></div>' +
@@ -140,7 +140,7 @@
       '<div><label>El QR recibe respuestas</label><select id="enc-vig"><option value="0">Solo hoy (hasta las 23:59)</option><option value="2">3 días</option><option value="6">1 semana</option></select></div>' +
       '</div><div style="margin-top:1rem;display:flex;gap:.5rem;flex-wrap:wrap"><button class="enc-b p" id="enc-crear">📱 Generar QR de la encuesta</button><a class="enc-b" href="' + esc(urlEnc('DEMO', true)) + '" target="_blank" rel="noopener" id="enc-demo">👁 Ver cómo la ve el trabajador</a></div><div id="enc-qrout"></div>';
     function sectores() {
-      var d = supDe($('enc-sup').value), ops = SECT;
+      var d = supDe($('enc-sup').value), ops = SECT; try { ops = ETI_SEDES.sectoresInforme(SECT); } catch (e) {}   /* _ETI_SEDE_TODO_V1 */
       if (d && d.multiSector && d.sectores) ops = d.sectores; else if (d && d.sector && !d.reemplazante) ops = [d.sector];
       $('enc-sec').innerHTML = (ops.length > 1 ? '<option value="">— Varios (el trabajador elige) —</option>' : '') + ops.map(function (x) { return '<option>' + esc(x) + '</option>'; }).join('');
     }
@@ -152,6 +152,8 @@
     if (!puedeGenerar()) { aviso('Solo la Coordinación y la Analista de Gestión Humana generan el QR de la encuesta', 'e'); return; }   /* _ENCUESTA_SOLO_EDITORES_V1 */
     var s = ses() || {}, v = function (id) { return String(($(id) || {}).value || '').trim(); };
     var d = { emp: v('enc-emp'), sup: v('enc-sup'), tema: v('enc-tema'), fecha: v('enc-fecha'), sector: v('enc-sec') };
+    /* _ETI_SEDE_TODO_V1: sector de Olmos -> su empresa; sector de Piura -> nunca una empresa de Olmos */
+    try { var ck = ETI_SEDES.claveDe(d.sector); if (ck) d.emp = ck; else if (d.sector && ETI_SEDES.claveDe(d.emp)) { aviso('El sector ' + d.sector + ' es de Piura: elige VERFRUT o RAPEL', 'e'); return; } } catch (e) {}
     if (d.tema.length < 4) { aviso('Escribe el tema de la capacitación', 'e'); $('enc-tema').focus(); return; }
     if (!d.fecha) { aviso('Elige la fecha', 'e'); return; }
     var fin = masDias(hoy() > d.fecha ? hoy() : d.fecha, +v('enc-vig') || 0).split('-').map(Number);

@@ -249,8 +249,11 @@ function panelStats(pid,filas,opt){
 /* ── Estado del módulo Indicadores ── */
 const IND={filas:[],fuente:'',f:null,busca:'',orden:'prom'};
 function filtrosIni(){const d=new Date();return {desde:d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-01',hasta:hoyL(),empresa:'',sector:'',supervisor:'',modalidad:''};}
+/* _ETI_SEDE_TODO_V1 (21-nov-2026): cada sede ve sus indicadores (jtimoteo y lcastillo ven las dos) */
+function _indSede(r){try{return !(window.ETI_SEDES&&ETI_SEDES.visible)||ETI_SEDES.visible(r.sector,r.empresa);}catch(e){return true;}}
+function _indEmps(){try{if(window.ETI_SEDES&&ETI_SEDES.empresas)return ETI_SEDES.empresas();}catch(e){}return ['VERFRUT S.A.C.','RAPEL S.A.C.'];}
 function filtrar(filas,f){
-  return filas.filter(r=>(!f.empresa||r.empresa===f.empresa)&&(!f.sector||r.sector===f.sector)&&(!f.modalidad||r.modalidad===f.modalidad)
+  return filas.filter(r=>_indSede(r)&&(!f.empresa||r.empresa===f.empresa)&&(!f.sector||r.sector===f.sector)&&(!f.modalidad||r.modalidad===f.modalidad)
     &&(esAdmin()?(!f.supervisor||_cumCoincide(r.supervisor,f.supervisor)):_cumCoincide(r.supervisor,SESSION.nom)));
 }
 function contenedor(){return esAdmin()?$('admin-indicadores'):$('ind-sup');}
@@ -268,7 +271,7 @@ function pintarBase(){
     <div class="ix-filtros">
       <div class="fg"><label class="fl">Desde</label><input class="fc" type="date" id="ind-desde" value="${f.desde}"></div>
       <div class="fg"><label class="fl">Hasta</label><input class="fc" type="date" id="ind-hasta" value="${f.hasta}"></div>
-      <div class="fg"><label class="fl">Empresa</label><select class="fc" id="ind-emp"><option value="">Todas</option><option ${f.empresa==='VERFRUT S.A.C.'?'selected':''}>VERFRUT S.A.C.</option><option ${f.empresa==='RAPEL S.A.C.'?'selected':''}>RAPEL S.A.C.</option></select></div>
+      <div class="fg"><label class="fl">Empresa</label><select class="fc" id="ind-emp"><option value="">Todas</option>${_indEmps().map(e=>`<option ${f.empresa===e?'selected':''}>${e}</option>`).join('')}</select></div>
       <div class="fg"><label class="fl">Sector / fundo</label><select class="fc" id="ind-sec"><option value="">Todos</option>${sects.map(s=>`<option ${f.sector===s?'selected':''}>${esc(s)}</option>`).join('')}</select></div>
       ${esAdmin()?`<div class="fg"><label class="fl">Supervisor</label><select class="fc" id="ind-sup"><option value="">Todos</option>${SUPERVISORES.filter(s=>s.rol!=='Administrador'&&s.activo!==false).map(s=>`<option ${f.supervisor===s.nom?'selected':''}>${esc(s.nom)}</option>`).join('')}</select></div>`:''}
       <div class="fg"><label class="fl">Modalidad</label><select class="fc" id="ind-mod"><option value="">Todas</option><option value="QR" ${f.modalidad==='QR'?'selected':''}>QR (anónima)</option><option value="MANUAL" ${f.modalidad==='MANUAL'?'selected':''}>Manual</option></select></div>
