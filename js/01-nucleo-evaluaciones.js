@@ -885,7 +885,7 @@ async function _ssoEntrar(){
         const usr=fichaDe(_u1) || (String(j.user.rol||'')!=='admin' ? altaSso(_u1, j.user.nombre) : null);   /* _SSO_ALTA_V1 */
         if(usr){
           if(j.token) sessionStorage.setItem('eti_token', j.token);
-          try{ if(window.ETI_SEDES) ETI_SEDES.guardarSedeDeEmpresa(j.user.empresa); }catch(e){}   /* _ETI_SEDES_V1: sede del usuario segun su empresa en el Sistema RR.LL. */
+          try{ if(window.ETI_SEDES) ETI_SEDES.guardarSedeDeEmpresa(j.user.empresa, j.user.sede, j.user.usuario); }catch(e){}   /* _ETI_SEDE_GENERAL_V1: + alcance */   /* _ETI_SEDES_V1: sede del usuario segun su empresa en el Sistema RR.LL. */
           iniciarSesionCon(usr);
           console.log('[SSO] ingreso validado por el servidor:', usr.user, usr.rol);
           return true;

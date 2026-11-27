@@ -21,10 +21,36 @@
   function usuario() { try { return String((JSON.parse(sessionStorage.getItem('eti_session') || '{}') || {}).user || '').toLowerCase().trim(); } catch (e) { return ''; } }
   /* 'PIURA' | 'OLMOS' | 'AMBAS' */
   function sede() {
-    try { if (VEN_AMBAS.indexOf(usuario()) >= 0) return 'AMBAS'; return sessionStorage.getItem('eti_sede') === 'OLMOS' ? 'OLMOS' : 'PIURA'; } catch (e) { return 'PIURA'; }
+    try { if (VEN_AMBAS.indexOf(usuario()) >= 0 || general()) return 'AMBAS'; return sessionStorage.getItem('eti_sede') === 'OLMOS' ? 'OLMOS' : 'PIURA'; } catch (e) { return 'PIURA'; }
   }
   function sedeDeEmpresa(emp) { var e = N(emp); return (e.indexOf('OLMOS') >= 0 || OLMOS.some(function (x) { return e.indexOf(N(x)) >= 0; })) ? 'OLMOS' : 'PIURA'; }
-  function guardarSedeDeEmpresa(emp) { try { sessionStorage.setItem('eti_sede', sedeDeEmpresa(emp)); } catch (e) {} }
+  function guardarSedeDeEmpresa(emp, alcance, usr) { try { sessionStorage.setItem('eti_sede', sedeDeEmpresa(emp)); } catch (e) {} if (alcance) guardarAlcance(alcance, usr); }
+  /* _ETI_SEDE_GENERAL_V1 (27-nov-2026, decision de Joel): ve las DOS sedes quien tenga alcance GENERAL en el Sistema RR.LL.
+     (no solo la lista fija VEN_AMBAS). El alcance lo dice el servidor: en el pase de ingreso (user.sede = 'TODO') o, si se
+     entro de otra forma, con auth/sso accion sesion. Se guarda con el usuario, para que otro usuario en la misma pestaña no lo herede.
+     Apagar en este navegador: localStorage.eti_sede_general = 'off'. */
+  function apagadoGeneral() { try { return localStorage.getItem('eti_sede_general') === 'off'; } catch (e) { return false; } }
+  function guardarAlcance(s, usr) { try { var u = String(usr || usuario() || '').toLowerCase().trim(); if (u) sessionStorage.setItem('eti_sede_alc', JSON.stringify({ u: u, s: String(s || '').toUpperCase() })); } catch (e) {} }
+  function general() {
+    if (apagadoGeneral()) return false;
+    try { var a = JSON.parse(sessionStorage.getItem('eti_sede_alc') || 'null'); return !!(a && a.u && a.u === usuario() && a.s === 'TODO'); } catch (e) { return false; }
+  }
+  function consultarAlcance() {
+    try {
+      if (apagadoGeneral()) return;
+      var tk = sessionStorage.getItem('eti_token') || '', u = usuario();
+      if (!tk || !u) return;
+      var a = null; try { a = JSON.parse(sessionStorage.getItem('eti_sede_alc') || 'null'); } catch (e) {}
+      if (a && a.u === u) return;   /* ya se sabe para este usuario */
+      var antes = sede();
+      fetch('https://exdjzbfinppzatjyimxn.supabase.co/functions/v1/api/auth/sso?forceFunctionRegion=sa-east-1', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion: 'sesion', token: tk }) })
+        .then(function (r) { return r.json(); }).then(function (j) {
+          if (!j || !j.success || !j.user || usuario() !== u) return;
+          guardarAlcance(j.user.sede || 'NO');
+          if (sede() !== antes) { try { if (typeof SECTORES_TODOS !== 'undefined') aplicar(SECTORES_TODOS); } catch (e) {} console.log('[_ETI_SEDE_GENERAL_V1] alcance GENERAL: ve las dos sedes'); try { window.dispatchEvent(new Event('eti-sede')); } catch (e) {} }
+        }).catch(function () {});
+    } catch (e) {}
+  }
   function sectores(s) { s = s || sede(); return s === 'OLMOS' ? OLMOS.slice() : (s === 'AMBAS' ? PIURA.concat(OLMOS) : PIURA.slice()); }
   function esOlmos(sector) { var k = N(sector); return OLMOS.some(function (x) { return N(x) === k; }); }
   /* cambia el CONTENIDO de una lista ya existente (p. ej. SECTORES_TODOS), sin reemplazar la variable */
@@ -54,5 +80,6 @@
   window.ETI_SEDES = { PIURA: PIURA.slice(), OLMOS: OLMOS.slice(), sede: sede, sectores: sectores, esOlmos: esOlmos, aplicar: aplicar, razonDe: razonDe, sedeDeEmpresa: sedeDeEmpresa, guardarSedeDeEmpresa: guardarSedeDeEmpresa, empresaDeSector: empresaDeSector, empresas: empresas, esEmpresaOlmos: esEmpresaOlmos, claveDe: claveDe, clavesEmp: clavesEmp, razonInforme: razonInforme, sectoresInforme: sectoresInforme, visible: visible };
   /* al cargar (sesion ya iniciada o recarga): la lista general toma los sectores de la sede del usuario */
   try { if (typeof SECTORES_TODOS !== 'undefined') aplicar(SECTORES_TODOS); } catch (e) {}
+  consultarAlcance(); setInterval(consultarAlcance, 20000);   /* _ETI_SEDE_GENERAL_V1: si se entro sin el pase o cambio el usuario */
   try { console.log('[_ETI_SEDES_V1] sede: ' + sede() + ' · sectores: ' + sectores().length); } catch (e) {}
 })();
