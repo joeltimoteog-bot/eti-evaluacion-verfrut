@@ -386,20 +386,31 @@ function subirSB(p,intentos){
   return go(1);
 }
 function principal(p){return !!(p&&(p.sb||p.fs));}
-function completo(p){return !!(p&&p.az&&(p.sb||!SB_MANDA)&&(p.fs||!db));}
+/* _QR_FIREBASE_OPCIONAL_V1 (27-nov-2026): con Supabase como destino principal, una respuesta esta COMPLETA cuando la tienen
+   Supabase y la copia de evaluaciones; Firebase es una copia opcional que ya no la deja "pendiente" en el celular.
+   (Con localStorage.eti_qr_envio='firebase' todo sigue como antes: Firebase manda.) */
+function completo(p){return !!(p&&p.az&&(SB_MANDA?p.sb:(p.fs||!db)));}
 function idNuevo(){var A='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',s='',b;
   try{b=new Uint8Array(40);crypto.getRandomValues(b);for(var i=0;i<40&&s.length<20;i++){if(b[i]<248)s+=A.charAt(b[i]%62);}}catch(e){s='';}
   while(s.length<20)s+=A.charAt(Math.floor(Math.random()*62));return s;}
 function despachar(p,iFs,iAz){
   var t=[];
-  if(SB_MANDA&&!p.sb) t.push(subirSB(p,iFs||4).then(function(ok){if(ok)p.sb=true;}));   /* _QR_ENVIO_SUPABASE_V1 */
-  if(!p.fs&&db) t.push(subirFS(p,iFs||4).then(function(ok){if(ok)p.fs=true;}));
-  if(!p.az) t.push(subirAZ(p,iAz||4).then(function(ok){if(ok)p.az=true;}));
-  return Promise.all(t).then(function(){
-    /* _TRAFICO_V1: marca en Firebase que Azure ya lo tiene (el panel de tráfico lo muestra con ☁ ✓) */
+  /* _TRAFICO_V1: marca en Firebase que Azure ya lo tiene (el panel de tráfico lo muestra con ☁ ✓) */
+  var marcaFs=function(){
     if(p.fs&&p.az&&!p.azMarcado&&db) return db.collection(COL_RESP).doc(p.id).set({azOk:true,azEn:new Date().toISOString()},{merge:true})
       .then(function(){p.azMarcado=true;},function(e){console.warn('marca azOk',e&&e.message);p.azMarcado=true;});
-  }).then(function(){   /* _QR_ENVIO_SUPABASE_V1: la marca azOk tambien directo en Supabase (no depende de Firebase) */
+  };
+  /* _QR_FIREBASE_OPCIONAL_V1: con Supabase mandando, Firebase se intenta UNA vez y en segundo plano; solo se espera su
+     respuesta si Supabase no confirmo (ahi Firebase es el respaldo). Asi un Firebase lento o cerrado no demora al trabajador. */
+  var pFs=(!p.fs&&db)?subirFS(p,SB_MANDA?1:(iFs||4)).then(function(ok){if(ok)p.fs=true;}):null;
+  if(SB_MANDA){
+    var pSb=p.sb?Promise.resolve():subirSB(p,iFs||4).then(function(ok){if(ok)p.sb=true;});   /* _QR_ENVIO_SUPABASE_V1 */
+    t.push(pSb.then(function(){if(!p.sb&&pFs)return pFs;}));
+  } else if(pFs) t.push(pFs);
+  if(!p.az) t.push(subirAZ(p,iAz||4).then(function(ok){if(ok)p.az=true;}));
+  var todo=Promise.all(t);
+  if(SB_MANDA&&pFs) pFs.then(function(){return todo;}).then(marcaFs).then(null,function(){});   /* la copia llego despues: se marca cuando llegue */
+  return todo.then(marcaFs).then(function(){   /* _QR_ENVIO_SUPABASE_V1: la marca azOk tambien directo en Supabase (no depende de Firebase) */
     if(SB_MANDA&&p.sb&&p.az&&!p.sbMarcado) return sbEscribir([{col:COL_RESP,id:p.id,op:'update',datos:{azOk:true,azEn:new Date().toISOString()},origen:'qr'}])
       .then(function(){p.sbMarcado=true;},function(e){console.warn('marca azOk Supabase',e&&e.message);});
   }).then(function(){if(completo(p))pendQuitar(p.id);else pendPoner(p);return p;});
