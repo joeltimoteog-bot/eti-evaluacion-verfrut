@@ -21,7 +21,7 @@
   function usuario() { try { return String((JSON.parse(sessionStorage.getItem('eti_session') || '{}') || {}).user || '').toLowerCase().trim(); } catch (e) { return ''; } }
   /* 'PIURA' | 'OLMOS' | 'AMBAS' */
   function sede() {
-    try { if (VEN_AMBAS.indexOf(usuario()) >= 0 || general()) return 'AMBAS'; return sessionStorage.getItem('eti_sede') === 'OLMOS' ? 'OLMOS' : 'PIURA'; } catch (e) { return 'PIURA'; }
+    try { if (general()) return vistaElegida() || 'AMBAS'; if (VEN_AMBAS.indexOf(usuario()) >= 0) return 'AMBAS'; return sessionStorage.getItem('eti_sede') === 'OLMOS' ? 'OLMOS' : 'PIURA'; } catch (e) { return 'PIURA'; }
   }
   function sedeDeEmpresa(emp) { var e = N(emp); return (e.indexOf('OLMOS') >= 0 || OLMOS.some(function (x) { return e.indexOf(N(x)) >= 0; })) ? 'OLMOS' : 'PIURA'; }
   function guardarSedeDeEmpresa(emp, alcance, usr) { try { sessionStorage.setItem('eti_sede', sedeDeEmpresa(emp)); } catch (e) {} if (alcance) guardarAlcance(alcance, usr); }
@@ -34,6 +34,14 @@
   function general() {
     if (apagadoGeneral()) return false;
     try { var a = JSON.parse(sessionStorage.getItem('eti_sede_alc') || 'null'); return !!(a && a.u && a.u === usuario() && a.s === 'TODO'); } catch (e) { return false; }
+  }
+  /* _GH_SEDE_ELEGIR_V1: la sede que eligio en el cuadro de ingreso (plataforma-gh.js); vale solo para esta sesion (token) */
+  function vistaElegida() {
+    try {
+      if (localStorage.getItem('eti_sede_pregunta') === 'off') return '';
+      var x = JSON.parse(sessionStorage.getItem('eti_sede_vista') || 'null'), t = sessionStorage.getItem('eti_token') || '';
+      return (x && t && x.m === t.slice(-24) && (x.v === 'PIURA' || x.v === 'OLMOS')) ? x.v : '';
+    } catch (e) { return ''; }
   }
   function consultarAlcance() {
     try {
